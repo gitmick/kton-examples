@@ -1,0 +1,28 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "pmx/model-role",
+  "target": "file",
+  "predicate": "modelRole",
+  "context": "ctx:pmx",
+  "fields": {
+    "role": {
+      "type": "enum",
+      "values": [
+        "base",
+        "covariate",
+        "final",
+        "bootstrap",
+        "vpc"
+      ],
+      "required": true,
+      "role": "object",
+      "widget": "enum"
+    },
+    "parent": {
+      "type": "ref",
+      "required": false,
+      "role": "object",
+      "widget": "ref"
+    }
+  }
+}
