@@ -5,9 +5,9 @@ tamper-evident.
 
 ## What `run.sh` does
 
-- **ANLEGEN (create):** open a review **scope** with `nekton seed`, then chain two review claims
+- **Create:** open a review **scope** with `nekton seed`, then chain two review claims
   under it (each names the scope and a `prev`).
-- **VERWENDEN (use):** `nekton head <scope>` returns the tip (the seal); a claim with a dangling
+- **Use:** `nekton head <scope>` returns the tip (the seal); a claim with a dangling
   `prev` is rejected.
 
 ## Key idea

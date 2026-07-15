@@ -9,7 +9,7 @@ export PLANKTON_DIR="$PWD/.work/registry"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
 plankton keygen "$PWD/.work/keys/me" >/dev/null
 
-echo "== ANLEGEN: record a foton whose output is a deterministic result =="
+echo "== Create: record a foton whose output is a deterministic result =="
 echo "1 2 3 4" > .work/input.txt
 echo "sum=10"  > .work/result.txt        # a deterministic function of input.txt
 plankton author --cmd "sum input.txt result.txt" \
@@ -20,7 +20,7 @@ REF="$(plankton hash .work/result.txt)"
 echo "  recorded result hash = $REF"
 
 echo ""
-echo "== VERWENDEN: re-run the SAME computation and check reproduction =="
+echo "== Use: re-run the SAME computation and check reproduction =="
 echo "sum=10" > .work/result_rerun.txt      # deterministic -> byte-identical
 RERUN="$(plankton hash .work/result_rerun.txt)"
 echo -n "  reproduces (re-run): "; plankton reproduces "$REF" "$RERUN"

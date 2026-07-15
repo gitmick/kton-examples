@@ -5,9 +5,9 @@ two layers meeting.
 
 ## What `run.sh` does
 
-- **ANLEGEN (create):** an analyst records a foton (plankton); a reviewer records a claim about that
+- **Create:** an analyst records a foton (plankton); a reviewer records a claim about that
   foton (nekton) whose **subject is the foton's id**.
-- **VERWENDEN (use):** `nekton about <fotonId>` (what is said about it), `nekton show` (the claim),
+- **Use:** `nekton about <fotonId>` (what is said about it), `nekton show` (the claim),
   `nekton verify` (the reviewer's signature).
 
 ## Key idea

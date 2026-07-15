@@ -6,11 +6,11 @@ how environments are used, and how the files are named across them.
 
 ## What `run.sh` does
 
-- **ANLEGEN (create):** alice records a foton in **environment A** (`PLANKTON_DIR=.work/env-a`); bob
+- **Create:** alice records a foton in **environment A** (`PLANKTON_DIR=.work/env-a`); bob
   records a foton in **environment B** (`.work/env-b`) that consumes alice's output.
 - **FEDERATION:** environment B runs `plankton mirror <env-a-dir>` - it copies A's records in by
   hash. No server, no shared folder.
-- **VERWENDEN (use):** from B, `plankton uses` and `plankton lineage` now span both environments as
+- **Use:** from B, `plankton uses` and `plankton lineage` now span both environments as
   one graph.
 
 ## Key idea

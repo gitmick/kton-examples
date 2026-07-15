@@ -5,8 +5,8 @@ IRIs**, so a reasoner sees a foton's provenance and the claims about it as one g
 
 ## What `run.sh` does
 
-- **ANLEGEN (create):** a foton plus a claim about it.
-- **VERWENDEN (use):** `plankton export --rdf` (lineage as Turtle / PROV) and `nekton export
+- **Create:** a foton plus a claim about it.
+- **Use:** `plankton export --rdf` (lineage as Turtle / PROV) and `nekton export
   --nanopub` (claim as RDF/TriG), then show that both name the same node.
 
 ## Key idea

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 01 - hello foton: the smallest possible ANLEGEN + VERWENDEN. Record one computation, then query it.
+# 01 - hello foton: the smallest possible create + use. Record one computation, then query it.
 set -euo pipefail
 cd "$(dirname "$0")"
 source ../../lib/common.sh
@@ -11,7 +11,7 @@ source ../../lib/common.sh
 export PLANKTON_DIR="$PWD/.work/registry"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
 
-echo "== ANLEGEN (create) =="
+echo "== Create =="
 # 1) an identity. keygen writes me.key (PRIVATE - keep it) and me.pub (PUBLIC - share it).
 plankton keygen "$PWD/.work/keys/me" >/dev/null
 
@@ -28,7 +28,7 @@ plankton author --cmd "mean data.txt result.txt" \
 plankton add .work/mean.foton.json
 
 echo ""
-echo "== VERWENDEN (use) =="
+echo "== Use =="
 echo "-- show the foton (inputs, outputs, protocol) --"
 plankton show .work/mean.foton.json
 echo "-- verify the signature against the public key --"

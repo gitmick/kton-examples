@@ -11,7 +11,7 @@ rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys" "$
 plankton keygen "$PWD/.work/keys/analyst"  >/dev/null
 nekton  keygen "$PWD/.work/keys/reviewer" >/dev/null
 
-echo "== ANLEGEN: a foton + a claim about it =="
+echo "== Create: a foton + a claim about it =="
 echo "raw" > .work/data.csv; echo "model" > .work/model.txt
 plankton author --cmd "fit data.csv model.txt" --in .work/data.csv --out .work/model.txt \
   --sign "$PWD/.work/keys/analyst.key" -o .work/model.foton.json >/dev/null
@@ -22,7 +22,7 @@ nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.
 nekton add .work/review.dsse.json
 
 echo ""
-echo "== VERWENDEN: export both layers as RDF =="
+echo "== Use: export both layers as RDF =="
 echo "-- plankton lineage as RDF/Turtle (PROV) --"
 plankton export --rdf -o .work/exports/lineage.ttl
 grep -E "a prov:Activity|prov:wasGeneratedBy" .work/exports/lineage.ttl | sed 's/^/    /'

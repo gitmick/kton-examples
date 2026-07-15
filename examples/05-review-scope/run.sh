@@ -10,12 +10,12 @@ export NEKTON_DIR="$PWD/.work/nekton"
 rm -rf "$PWD/.work"; mkdir -p "$NEKTON_DIR" "$PWD/.work/keys"
 nekton keygen "$PWD/.work/keys/chair" >/dev/null
 
-echo "== ANLEGEN: open a review SCOPE (a seed) =="
+echo "== Create: open a review SCOPE (a seed) =="
 SCOPE="$(nekton seed drug-review --sign "$PWD/.work/keys/chair.key" --by "CN=Chair" -o .work/seed.dsse.json | grep -oE 'sha256:[0-9a-f]+' | head -1)"
 nekton add .work/seed.dsse.json >/dev/null
 echo "  scope id = $SCOPE"
 
-echo "== ANLEGEN: chain two review claims under the scope =="
+echo "== Create: chain two review claims under the scope =="
 # first claim: prev = the scope id itself. Each subject here is a URI (any thing can be a subject).
 mkclaim(){ # $1 subj  $2 verdict  $3 prev  $4 out
   printf '{"subject":[{"uri":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"%s"},"by":"CN=Chair","when":"2026-07-15T00:00:00Z","scope":"%s","prev":"%s"}' "$1" "$2" "$SCOPE" "$3" > .work/c.spec.json
@@ -27,7 +27,7 @@ echo "  link1 = $C1"
 echo "  link2 = $C2"
 
 echo ""
-echo "== VERWENDEN: seal the scope =="
+echo "== Use: seal the scope =="
 nekton head "$SCOPE"
 echo "-- a claim with a dangling prev is rejected (chain gap / tamper) --"
 printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-15T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$SCOPE" > .work/bad.spec.json

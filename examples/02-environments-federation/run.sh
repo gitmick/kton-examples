@@ -17,7 +17,7 @@ A="$PWD/.work/env-a"; B="$PWD/.work/env-b"; mkdir -p "$A" "$B"
 plankton keygen "$PWD/.work/keys/alice" >/dev/null
 plankton keygen "$PWD/.work/keys/bob"   >/dev/null
 
-echo "== ANLEGEN: alice records a foton in environment A =="
+echo "== Create: alice records a foton in environment A =="
 # plankton hashes EXISTING files (it never runs --cmd), so both input and output must exist first.
 echo "raw,data"     > .work/dataset.csv
 echo "cleaned,data" > .work/cleaned.csv
@@ -26,7 +26,7 @@ PLANKTON_DIR="$A" plankton author --cmd "clean dataset.csv cleaned.csv" \
   --sign "$PWD/.work/keys/alice.key" -o .work/alice-clean.foton.json >/dev/null
 PLANKTON_DIR="$A" plankton add .work/alice-clean.foton.json
 
-echo "== ANLEGEN: bob records a foton in environment B (consuming alice's output) =="
+echo "== Create: bob records a foton in environment B (consuming alice's output) =="
 echo "model=fit" > .work/model.txt
 PLANKTON_DIR="$B" plankton author --cmd "fit cleaned.csv model.txt" \
   --in .work/cleaned.csv --out .work/model.txt \
@@ -40,7 +40,7 @@ echo "== FEDERATION: environment B mirrors environment A (by hash, no server) ==
 PLANKTON_DIR="$B" plankton mirror "$A"
 
 echo ""
-echo "== VERWENDEN: from B, the two environments are now one lineage =="
+echo "== Use: from B, the two environments are now one lineage =="
 CLEANED="$(PLANKTON_DIR="$B" plankton hash .work/cleaned.csv)"
 echo "-- who USED alice's cleaned.csv as input? (bob's fit, now visible in B) --"
 PLANKTON_DIR="$B" plankton uses "$CLEANED"

@@ -4,8 +4,8 @@ Record a computation, then independently re-derive its output and prove it match
 
 ## What `run.sh` does
 
-- **ANLEGEN (create):** record a foton whose output is a deterministic result.
-- **VERWENDEN (use):** re-run the same computation (byte-identical output) and check with `plankton
+- **Create:** record a foton whose output is a deterministic result.
+- **Use:** re-run the same computation (byte-identical output) and check with `plankton
   reproduces <ref> <cand>`; then tamper the output as a negative control.
 
 ## Key idea

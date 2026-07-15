@@ -31,17 +31,7 @@ no server, no shared folder. Every example makes this explicit in its `run.sh`.
 
 ## Run them yourself
 
-The kton binaries are **not published in this repo**. Build them from the
-[plankton repo](https://github.com/gitmick/plankton) and drop them in `bin/`:
-
-```
-# in a plankton checkout:
-( cd reference        && go build -o /path/to/kton-examples/bin/plankton ./cmd/plankton )
-( cd nekton/reference && go build -o /path/to/kton-examples/bin/nekton  ./cmd/nekton )
-( cd kton/reference   && go build -o /path/to/kton-examples/bin/kton    ./cmd/kton )
-```
-
-Then:
+The examples assume `plankton` and `nekton` are installed and on your PATH. Then just:
 
 ```
 bash examples/01-hello-foton/run.sh
@@ -50,6 +40,19 @@ bash examples/01-hello-foton/run.sh
 Each run writes its graph data under `docs/data/<name>/` and prints a `SEE IT:` line. To view
 locally, serve `docs/` (`python3 -m http.server -d docs`) and open the printed URL; on GitHub Pages
 the graphs are already live.
+
+<details><summary>Not installed yet? Build once from source (contributors)</summary>
+
+The binaries are Go, no dependencies. Build them from the
+[plankton repo](https://github.com/gitmick/plankton) onto your PATH (or into this repo's `bin/`,
+which the run scripts also add to PATH):
+
+```
+( cd reference        && go build -o ~/.local/bin/plankton ./cmd/plankton )
+( cd nekton/reference && go build -o ~/.local/bin/nekton   ./cmd/nekton )
+( cd kton/reference   && go build -o ~/.local/bin/kton     ./cmd/kton )
+```
+</details>
 
 ## What is NOT here
 

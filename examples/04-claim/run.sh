@@ -12,7 +12,7 @@ rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys"
 plankton keygen "$PWD/.work/keys/analyst"  >/dev/null   # makes the foton
 nekton  keygen "$PWD/.work/keys/reviewer" >/dev/null    # makes the claim
 
-echo "== ANLEGEN: analyst records a foton (plankton) =="
+echo "== Create: analyst records a foton (plankton) =="
 echo "raw" > .work/data.csv; echo "fit" > .work/model.txt
 plankton author --cmd "fit data.csv model.txt" \
   --in .work/data.csv --out .work/model.txt \
@@ -21,14 +21,14 @@ plankton add .work/model.foton.json
 FOTON="$(plankton show .work/model.foton.json | awk '/^foton:/{print $2}')"
 echo "  foton id = $FOTON"
 
-echo "== ANLEGEN: reviewer records a CLAIM about that foton (nekton) =="
+echo "== Create: reviewer records a CLAIM about that foton (nekton) =="
 # a claim spec: subject is the foton id; predicate is an opaque IRI (here pav:reviewedBy).
 printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"looks correct"},"by":"CN=Reviewer","when":"2026-07-15T00:00:00Z"}' "$FOTON" > .work/review.spec.json
 nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json >/dev/null
 nekton add .work/review.dsse.json
 
 echo ""
-echo "== VERWENDEN: query the claim by its subject (the foton) =="
+echo "== Use: query the claim by its subject (the foton) =="
 echo "-- what is said ABOUT the foton? --"
 nekton about "$FOTON"
 echo "-- show the claim --"
