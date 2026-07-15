@@ -22,10 +22,9 @@ export PLANKTON_DIR=./plankton-data NEKTON_DIR=./nekton-data
 
 ```
 echo raw > data.csv ; echo fit > model.txt
-plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
-    --sign analyst.key -o model.foton.json
-plankton add model.foton.json
-FOTON=$(plankton show model.foton.json | awk '/^foton:/{print $2}')
+# --add authors + files the foton in one step; the id it prints is what we capture:
+FOTON=$(plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
+    --sign analyst.key --add | awk '/indexed foton/{print $3}')
 echo "$FOTON"                    # sha256:...
 ```
 
@@ -40,9 +39,11 @@ cat > review.spec.json <<JSON
   "object":    {"value": "looks correct"},
   "by": "CN=Reviewer", "when": "2026-07-15T00:00:00Z" }
 JSON
-nekton claim review.spec.json reviewer.key review.dsse.json
-nekton add review.dsse.json
+nekton claim review.spec.json reviewer.key review.dsse.json --add
 ```
+
+`--add` files the claim as it signs it (the same `--add` / `--registry` flags exist on `nekton
+claim`, `annotate`, and `seed`). We keep `review.dsse.json` here so we can `show`/`verify` it next.
 
 `pav:reviewedBy` is just an opaque IRI; the kernel stores it and never interprets what it means.
 

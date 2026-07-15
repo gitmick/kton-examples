@@ -45,27 +45,26 @@ echo "mean=5"  > result.txt
 
 `3 7 2 8` really does have mean 5. plankton stores none of these bytes, only their hash.
 
-**3. Record the computation as a foton.**
+**3. Record the computation as a foton, and file it into the registry.** `--add` does both in one
+step; `-o` also keeps the envelope file so we can show and verify it below.
 
 ```
 plankton author --cmd "mean data.txt result.txt" \
-    --in data.txt --out result.txt --sign me.key -o mean.foton.json
+    --in data.txt --out result.txt --sign me.key --add -o mean.foton.json
+# authored foton ... -> mean.foton.json
+# indexed foton sha256:...  (registry now holds 1 fotons)
 ```
 
 A **foton** is one edge of a lineage graph: `inputs -> command -> outputs`, each file named by its
 hash, signed by you. Again: plankton does not execute `mean`; it records the statement that this
-command, with these input hashes, produced these output hashes.
+command, with these input hashes, produced these output hashes. The registry it was filed into is
+just a directory (`PLANKTON_DIR`, default `./plankton-data`; `--registry <dir>` picks another).
 
-**4. File it into the registry.**
+> `--add` is the convenience for the everyday case. Authoring and filing are still separate
+> underneath: `plankton author` alone just writes the signed record (to hand off or publish), and
+> `plankton add` alone files a record you received from someone else. `--add` fuses the two.
 
-```
-plankton add mean.foton.json
-# indexed foton sha256:...
-```
-
-The registry is just a directory (`PLANKTON_DIR`, default `./plankton-data`).
-
-**5. Read it back.**
+**4. Read it back.**
 
 ```
 plankton show mean.foton.json
@@ -75,7 +74,7 @@ plankton show mean.foton.json
 # outputs: result.txt  sha256:...
 ```
 
-**6. Verify the signature.**
+**5. Verify the signature.**
 
 ```
 plankton verify mean.foton.json me.pub
@@ -84,7 +83,7 @@ plankton verify mean.foton.json me.pub
 
 `verify` checks the signature against the public key you give it.
 
-**7. Ask the graph a question:** who produced `result.txt`?
+**6. Ask the graph a question:** who produced `result.txt`?
 
 ```
 plankton producer $(plankton hash result.txt)

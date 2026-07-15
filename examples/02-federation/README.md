@@ -33,14 +33,13 @@ like a shared database, or a git remote everyone pushes to.
 
 ```
 mkdir shared
-# alice cleans the dataset, into the shared store:
-PLANKTON_DIR=shared plankton author --cmd "clean dataset.csv cleaned.csv" \
-    --in dataset.csv --out cleaned.csv --sign alice.key -o alice.foton.json
-PLANKTON_DIR=shared plankton add alice.foton.json
+# alice cleans the dataset. --add files it into the shared store (--registry shared) in one step;
+# -o keeps the envelope so Act 2 can re-file the SAME record elsewhere.
+plankton author --cmd "clean dataset.csv cleaned.csv" \
+    --in dataset.csv --out cleaned.csv --sign alice.key --add --registry shared -o alice.foton.json
 # bob fits a model on alice's output, into the same store:
-PLANKTON_DIR=shared plankton author --cmd "fit cleaned.csv model.txt" \
-    --in cleaned.csv --out model.txt --sign bob.key -o bob.foton.json
-PLANKTON_DIR=shared plankton add bob.foton.json
+plankton author --cmd "fit cleaned.csv model.txt" \
+    --in cleaned.csv --out model.txt --sign bob.key --add --registry shared -o bob.foton.json
 ```
 
 The closing query - the full lineage of `model.txt`:
@@ -58,8 +57,8 @@ two registries; bob's `reg-b` has never heard of alice's `reg-a`.
 
 ```
 mkdir reg-a reg-b
-PLANKTON_DIR=reg-a plankton add alice.foton.json    # alice's record -> registry A
-PLANKTON_DIR=reg-b plankton add bob.foton.json      # bob's record   -> registry B
+plankton add alice.foton.json --registry reg-a    # alice's record -> registry A
+plankton add bob.foton.json   --registry reg-b    # bob's record   -> registry B
 ```
 
 **Federate:** registry B mirrors registry A. This moves **records (hashes)**, never the file bytes -

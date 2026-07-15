@@ -21,12 +21,12 @@ plankton keygen "$PWD/.work/keys/me" >/dev/null
 echo "3 7 2 8" > .work/data.txt
 echo "mean=5"  > .work/result.txt
 
-# 3) record the computation as a FOTON: inputs -> protocol(a command string) -> outputs. The signed
-#    envelope is named <name>.foton.json by convention.
+# 3) record the computation as a FOTON: inputs -> protocol(a command string) -> outputs, and file it
+#    into the registry in ONE step with --add. We also keep the envelope file (-o) so we can show and
+#    verify it below; --add on its own (no -o) would ingest without writing any file.
 plankton author --cmd "mean data.txt result.txt" \
   --in .work/data.txt --out .work/result.txt \
-  --sign "$PWD/.work/keys/me.key" -o .work/mean.foton.json >/dev/null
-plankton add .work/mean.foton.json
+  --sign "$PWD/.work/keys/me.key" --add -o .work/mean.foton.json
 
 echo ""
 echo "== Use =="

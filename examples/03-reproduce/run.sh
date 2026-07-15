@@ -14,8 +14,7 @@ echo "1 2 3 4" > .work/input.txt
 echo "sum=10"  > .work/result.txt        # a deterministic function of input.txt
 plankton author --cmd "sum input.txt result.txt" \
   --in .work/input.txt --out .work/result.txt \
-  --sign "$PWD/.work/keys/me.key" -o .work/sum.foton.json >/dev/null
-plankton add .work/sum.foton.json
+  --sign "$PWD/.work/keys/me.key" --add >/dev/null   # author + ingest in one step, no file needed
 REF="$(plankton hash .work/result.txt)"
 echo "  recorded result hash = $REF"
 

@@ -18,17 +18,14 @@ and claims ([04](../04-claim/)).
 plankton keygen analyst ; nekton keygen reviewer
 export PLANKTON_DIR=./plankton-data NEKTON_DIR=./nekton-data
 echo raw > data.csv ; echo model > model.txt
-plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
-    --sign analyst.key -o model.foton.json
-plankton add model.foton.json
-FOTON=$(plankton show model.foton.json | awk '/^foton:/{print $2}')
+FOTON=$(plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
+    --sign analyst.key --add | awk '/indexed foton/{print $3}')
 
 cat > review.spec.json <<JSON
 { "subject":[{"hash":"$FOTON"}], "predicate":"pav:reviewedBy",
   "object":{"value":"approved"}, "by":"CN=Reviewer", "when":"2026-07-15T00:00:00Z" }
 JSON
-nekton claim review.spec.json reviewer.key review.dsse.json
-nekton add review.dsse.json
+nekton claim review.spec.json reviewer.key review.dsse.json --add   # file it + keep it for the export
 ```
 
 **2. Export the plankton lineage as RDF (Turtle / PROV).** Each foton becomes a `prov:Activity`,

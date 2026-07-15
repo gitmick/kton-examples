@@ -24,12 +24,14 @@ echo "########## ACT 1 - two people, ONE shared registry ##########"
 # What is shared here: the REGISTRY (the records). alice and bob both `plankton add` into the same
 # PLANKTON_DIR, like a shared database, or a git remote everyone pushes to.
 S="$PWD/.work/shared"; mkdir -p "$S"
-PLANKTON_DIR="$S" plankton author --cmd "clean dataset.csv cleaned.csv" \
-  --in .work/dataset.csv --out .work/cleaned.csv --sign "$PWD/.work/keys/alice.key" -o .work/alice.foton.json >/dev/null
-PLANKTON_DIR="$S" plankton add .work/alice.foton.json
-PLANKTON_DIR="$S" plankton author --cmd "fit cleaned.csv model.txt" \
-  --in .work/cleaned.csv --out .work/model.txt --sign "$PWD/.work/keys/bob.key" -o .work/bob.foton.json >/dev/null
-PLANKTON_DIR="$S" plankton add .work/bob.foton.json
+# --add ingests into the shared store (--registry "$S") in one step; we keep the envelope files (-o)
+# so Act 2 can re-file the SAME records into separate registries.
+plankton author --cmd "clean dataset.csv cleaned.csv" \
+  --in .work/dataset.csv --out .work/cleaned.csv --sign "$PWD/.work/keys/alice.key" \
+  --add --registry "$S" -o .work/alice.foton.json >/dev/null
+plankton author --cmd "fit cleaned.csv model.txt" \
+  --in .work/cleaned.csv --out .work/model.txt --sign "$PWD/.work/keys/bob.key" \
+  --add --registry "$S" -o .work/bob.foton.json >/dev/null
 echo "-- closing query: full lineage of model.txt, from the shared store --"
 PLANKTON_DIR="$S" plankton lineage "$MODEL"
 
@@ -38,8 +40,8 @@ echo "########## ACT 2 - two SEPARATE registries, federated ##########"
 # But often you cannot share a store: different orgs, an air-gap, no server. Each person keeps their
 # OWN registry. Nothing is shared between the two registries except records-by-hash, via `mirror`.
 A="$PWD/.work/reg-a"; B="$PWD/.work/reg-b"; mkdir -p "$A" "$B"
-PLANKTON_DIR="$A" plankton add .work/alice.foton.json   # alice's record -> registry A
-PLANKTON_DIR="$B" plankton add .work/bob.foton.json     # bob's record   -> registry B
+plankton add .work/alice.foton.json --registry "$A"   # alice's record -> registry A
+plankton add .work/bob.foton.json   --registry "$B"   # bob's record   -> registry B
 echo "-- B mirrors A: this moves RECORDS (hashes), never the file bytes --"
 PLANKTON_DIR="$B" plankton mirror "$A"
 echo "-- the SAME closing query, now from registry B --"

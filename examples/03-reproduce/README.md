@@ -15,8 +15,7 @@ plankton keygen me
 echo "1 2 3 4" > input.txt
 echo "sum=10"  > result.txt
 plankton author --cmd "sum input.txt result.txt" \
-    --in input.txt --out result.txt --sign me.key -o sum.foton.json
-plankton add sum.foton.json
+    --in input.txt --out result.txt --sign me.key --add   # author + file it in one step (no file needed)
 ```
 
 Remember the output's hash, that is what we will reproduce:

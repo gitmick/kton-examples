@@ -13,13 +13,11 @@ nekton  keygen "$PWD/.work/keys/reviewer" >/dev/null
 
 echo "== Create: a foton + a claim about it =="
 echo "raw" > .work/data.csv; echo "model" > .work/model.txt
-plankton author --cmd "fit data.csv model.txt" --in .work/data.csv --out .work/model.txt \
-  --sign "$PWD/.work/keys/analyst.key" -o .work/model.foton.json >/dev/null
-plankton add .work/model.foton.json
-FOTON="$(plankton show .work/model.foton.json | awk '/^foton:/{print $2}')"
+FOTON="$(plankton author --cmd "fit data.csv model.txt" --in .work/data.csv --out .work/model.txt \
+  --sign "$PWD/.work/keys/analyst.key" --add | awk '/indexed foton/{print $3}')"
 printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"approved"},"by":"CN=Reviewer","when":"2026-07-15T00:00:00Z"}' "$FOTON" > .work/review.spec.json
-nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json >/dev/null
-nekton add .work/review.dsse.json
+# keep the envelope file (for the nanopub export below) AND ingest, in one step
+nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json --add >/dev/null
 
 echo ""
 echo "== Use: export both layers as RDF =="

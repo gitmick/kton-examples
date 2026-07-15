@@ -21,9 +21,8 @@ export NEKTON_DIR=./nekton-data
 **2. Open a scope with a seed, and capture the scope id.** The seed's id *is* the scope id.
 
 ```
-SCOPE=$(nekton seed drug-review --sign chair.key --by "CN=Chair" -o seed.dsse.json \
+SCOPE=$(nekton seed drug-review --sign chair.key --by "CN=Chair" --add \
         | grep -oE 'sha256:[0-9a-f]+' | head -1)
-nekton add seed.dsse.json
 echo "$SCOPE"                    # sha256:...
 ```
 
@@ -36,8 +35,7 @@ cat > c1.spec.json <<JSON
   "object":{"value":"protocol approved"}, "by":"CN=Chair", "when":"2026-07-15T00:00:00Z",
   "scope":"$SCOPE", "prev":"$SCOPE" }
 JSON
-C1=$(nekton claim c1.spec.json chair.key c1.dsse.json | grep -oE 'sha256:[0-9a-f]+' | head -1)
-nekton add c1.dsse.json
+C1=$(nekton claim c1.spec.json chair.key --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
 echo "$C1"                       # sha256:...
 ```
 
@@ -49,8 +47,7 @@ cat > c2.spec.json <<JSON
   "object":{"value":"results approved"}, "by":"CN=Chair", "when":"2026-07-15T00:01:00Z",
   "scope":"$SCOPE", "prev":"$C1" }
 JSON
-C2=$(nekton claim c2.spec.json chair.key c2.dsse.json | grep -oE 'sha256:[0-9a-f]+' | head -1)
-nekton add c2.dsse.json
+C2=$(nekton claim c2.spec.json chair.key --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
 ```
 
 **5. Seal it: read the head.**
@@ -70,9 +67,9 @@ cockpit tool that adds network features on top of the two kernels; you do not ne
 tampering:
 
 ```
-# author a forged claim with prev = sha256:...deadbeef, then:
-nekton add bad.dsse.json
-# error: prev sha256:... does not resolve in scope ... (chain gap / tamper)
+# a forged claim naming this scope but a prev that does not exist (e.g. "prev":"sha256:deadbeef...")
+nekton claim bad.spec.json chair.key --add
+# error: prev sha256:deadbeef... does not resolve in scope ... (chain gap / tamper)
 ```
 
 Change any earlier claim and its id changes, which breaks the next `prev`, which changes the head.
