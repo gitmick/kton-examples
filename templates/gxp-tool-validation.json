@@ -1,0 +1,32 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "gxp/tool-validation",
+  "target": "foton",
+  "predicate": "validationPerformed",
+  "context": "ctx:gxp",
+  "fields": {
+    "outcome": {
+      "type": "enum",
+      "values": [
+        "pass",
+        "fail"
+      ],
+      "required": true,
+      "role": "object",
+      "widget": "enum"
+    },
+    "sop": {
+      "type": "string",
+      "required": true,
+      "role": "object",
+      "widget": "text"
+    },
+    "protocol": {
+      "type": "file",
+      "mediaType": "application/pdf",
+      "required": true,
+      "role": "evidence",
+      "widget": "file"
+    }
+  }
+}

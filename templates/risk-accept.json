@@ -1,0 +1,32 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "risk/accept",
+  "target": "either",
+  "predicate": "riskAccepted",
+  "context": "ctx:gxp",
+  "fields": {
+    "severity": {
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "required": true,
+      "role": "object",
+      "widget": "enum"
+    },
+    "rationale": {
+      "type": "string",
+      "required": true,
+      "role": "object",
+      "widget": "textarea"
+    },
+    "mitigation": {
+      "type": "file",
+      "required": false,
+      "role": "evidence",
+      "widget": "file"
+    }
+  }
+}

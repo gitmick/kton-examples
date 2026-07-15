@@ -1,0 +1,39 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "gxp/review",
+  "target": "foton",
+  "predicate": "gxpReviewed",
+  "context": "ctx:gxp",
+  "vocab": "sha256:bb2c0ffee0000000000000000000000000000000000000000000000000000000",
+  "fields": {
+    "outcome": {
+      "type": "enum",
+      "values": [
+        "pass",
+        "fail"
+      ],
+      "required": true,
+      "role": "object",
+      "widget": "enum"
+    },
+    "sop": {
+      "type": "string",
+      "required": true,
+      "role": "object",
+      "widget": "text"
+    },
+    "report": {
+      "type": "file",
+      "mediaType": "application/pdf",
+      "required": true,
+      "role": "evidence",
+      "widget": "file"
+    },
+    "notes": {
+      "type": "string",
+      "required": false,
+      "role": "object",
+      "widget": "textarea"
+    }
+  }
+}

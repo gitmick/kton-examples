@@ -1,0 +1,17 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "election/count-finished",
+  "kind": "scope-seal",
+  "target": "scope",
+  "predicate": "gxp:count-finished",
+  "note": "The seal: a chained statement carrying the result, signed by ALL responsible counters named in the scope Seed. Closes the chain. The aggregator gate verifies chain-from-seed AND all-responsible-signed before counting this scope.",
+  "requiresAllResponsible": true,
+  "closesChain": true,
+  "fields": {
+    "result":  {"type": "tally", "required": true,  "widget": "tally",   "role": "object",
+                "note": "per-choice counted totals for this scope"},
+    "turnout": {"type": "int",   "required": true,  "widget": "text",    "role": "object"},
+    "protocol":{"type": "file",  "required": false, "widget": "file",    "role": "evidence",
+                "note": "signed count-board protocol / tally sheet, by hash"}
+  }
+}

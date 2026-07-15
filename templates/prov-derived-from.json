@@ -1,0 +1,14 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "prov/derived-from",
+  "target": "either",
+  "predicate": "derived",
+  "fields": {
+    "from": {
+      "type": "ref",
+      "required": true,
+      "role": "object",
+      "widget": "ref"
+    }
+  }
+}

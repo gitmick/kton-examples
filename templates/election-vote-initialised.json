@@ -1,0 +1,16 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "election/vote-initialised",
+  "kind": "scope-genesis",
+  "target": "scope",
+  "predicateType": "https://kton.dev/scope/v0",
+  "note": "This template emits a Seed (scope genesis) for a municipality's election. Its content hash IS the municipality's scope_id, which the county registers.",
+  "fields": {
+    "scope":       {"type": "string", "required": true,  "widget": "text",     "maps": "seed.scope"},
+    "parent":      {"type": "ref",    "required": true,  "widget": "ref",      "maps": "seed.parent"},
+    "election":    {"type": "string", "required": true,  "widget": "text",     "role": "context"},
+    "responsible": {"type": "idset",  "required": true,  "widget": "idset",    "maps": "seed.responsible"},
+    "roster":      {"type": "file",   "required": false, "widget": "file",     "role": "evidence",
+                    "note": "optional hash of the eligibility roster / precinct definition"}
+  }
+}
