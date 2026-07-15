@@ -4,91 +4,148 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>kton examples</title>
+<meta name="description" content="kton records how data was produced and what has been said about it, as small signed content-addressed units anyone can verify. Worked examples with a graph viewer.">
 <style>
   :root{
-    --bg:#0e1216; --panel:#161d25; --ink:#ccd6df; --muted:#7d8c99; --border:#253039;
-    --accent:#3fbccb; --pass:#5cc27e;
+    --bg:#0e1216; --panel:#161d25; --panel2:#1b232c; --ink:#ccd6df; --muted:#7d8c99; --faint:#566573;
+    --border:#253039; --accent:#3fbccb; --pass:#5cc27e;
     --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   }
   @media (prefers-color-scheme:light){
-    :root{--bg:#eef2f5;--panel:#fff;--ink:#1b2530;--muted:#5a6b78;--border:#dbe3ea;--accent:#0d8898;}
+    :root{--bg:#eef2f5;--panel:#fff;--panel2:#f5f8fa;--ink:#1b2530;--muted:#5a6b78;--faint:#8595a1;--border:#dbe3ea;--accent:#0d8898;}
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
-  .wrap{max-width:820px;margin:0 auto;padding:clamp(1.2rem,4vw,3rem) 1.2rem 4rem}
-  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem}
-  h1{font-size:clamp(1.8rem,5vw,2.6rem);letter-spacing:-.02em;margin:.2rem 0 .5rem}
-  .lede{color:var(--muted);max-width:60ch;margin:0 0 1rem}
-  .note{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;color:var(--muted);font-size:.92rem;margin:1.4rem 0}
-  .note b{color:var(--ink)}
-  .note code{font-family:var(--mono);font-size:.85em;color:var(--ink)}
-  .cards{display:flex;flex-direction:column;gap:1rem;margin-top:1.6rem}
-  .card{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.3rem;transition:border-color .15s}
-  .card:hover{border-color:var(--accent)}
-  .card .n{font-family:var(--mono);color:var(--accent);font-size:.8rem}
-  .card h2{font-size:1.1rem;margin:.3rem 0 .35rem;display:flex;align-items:center;gap:.6rem}
-  .card p{margin:0;color:var(--muted);font-size:.94rem}
-  .card .cmd{font-family:var(--mono);font-size:.8rem;color:var(--muted);margin-top:.6rem}
-  .card .open{color:var(--accent);font-family:var(--mono);font-size:.8rem}
-  footer{margin-top:2.5rem;padding-top:1.4rem;border-top:1px solid var(--border);color:var(--muted);font-size:.82rem;font-family:var(--mono)}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+  .wrap{max-width:840px;margin:0 auto;padding:clamp(1.2rem,4vw,3rem) 1.2rem 4rem}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:.7rem}
+  h1{font-size:clamp(1.9rem,5vw,2.7rem);letter-spacing:-.02em;margin:.1rem 0 .6rem;line-height:1.05}
+  .tagline{color:var(--ink);font-size:1.12rem;max-width:64ch;margin:0 0 1.4rem}
+  h2{font-size:1.15rem;letter-spacing:-.01em;margin:2.2rem 0 .6rem}
+  p{max-width:66ch;color:var(--ink)}
+  p.sub{color:var(--muted)}
   a{color:var(--accent)}
+  code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--ink) 9%,transparent);padding:.06em .35em;border-radius:4px}
+  .defs{display:flex;flex-direction:column;gap:.7rem;margin:1rem 0 0;padding:0;list-style:none}
+  .defs li{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.85rem 1.05rem}
+  .defs .term{font-weight:680}
+  .defs .term .tag{font-family:var(--mono);font-size:.72rem;color:var(--accent);margin-left:.4rem}
+  .defs p{margin:.25rem 0 0;color:var(--muted);font-size:.95rem;max-width:none}
+  .note{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:.85rem 1.1rem;color:var(--muted);font-size:.95rem;margin:1.1rem 0;max-width:none}
+  .note b{color:var(--ink)}
+  .cards{display:flex;flex-direction:column;gap:.9rem;margin-top:1rem}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem}
+  .card:hover{border-color:var(--accent)}
+  .card .n{font-family:var(--mono);color:var(--accent);font-size:.78rem}
+  .card h3{font-size:1.05rem;margin:.25rem 0 .35rem}
+  .card p{margin:0;color:var(--muted);font-size:.94rem;max-width:none}
+  .card .links{margin-top:.7rem;display:flex;gap:1.2rem;font-family:var(--mono);font-size:.8rem}
+  footer{margin-top:2.6rem;padding-top:1.4rem;border-top:1px solid var(--border);color:var(--faint);font-size:.84rem;font-family:var(--mono)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="eyebrow">kton &middot; worked examples</div>
-  <h1>kton examples</h1>
-  <p class="lede">Small, self-contained examples for the kton substrate (plankton + nekton). Every
-  one both <b>creates</b> records and <b>uses</b> them, and renders the resulting graph in the viewer
-  so you see exactly what came out.</p>
+  <h1>Record how data was made, and who vouched for it, so anyone can check.</h1>
+  <p class="tagline"><b>kton</b> turns each step of an analysis, and each statement about it, into a small,
+  signed, content-addressed record. From those records you get lineage, reproduction, and review that a
+  reader can verify themselves, with no central server and no need to trust whoever produced them.</p>
+
+  <h2>What problem it solves</h2>
+  <p>When results move between people, scripts, and tools, you lose track of <b>where a file came from</b>,
+  <b>whether it can be reproduced</b>, and <b>who reviewed or approved it</b>. A shared database "solves"
+  this only if everyone trusts that one system. kton takes the opposite route: every step becomes a
+  portable record, identified by the <b>hash of its content</b>, <b>signed</b> by whoever made it, and
+  <b>copyable between tools</b>. Independent people and programs converge on one lineage graph that each
+  of them can re-check by re-hashing and re-running. Think of it as <b>git for data provenance and
+  sign-offs, across tools</b>.</p>
+
+  <h2>The three names, concretely</h2>
+  <ul class="defs">
+    <li>
+      <div class="term">plankton <span class="tag">the results layer</span></div>
+      <p>Records reproducible computations. Its record is a <b>foton</b>: <code>input files -&gt; a command
+      -&gt; output files</code>, where every file is named by its content hash. Machine-checkable, re-run or
+      re-hash and you know if it matches. plankton stores none of the bytes, only the hashes and the shape.</p>
+    </li>
+    <li>
+      <div class="term">nekton <span class="tag">the statements layer</span></div>
+      <p>Records signed opinions. Its record is a <b>claim</b>: a signed subject-predicate-object statement
+      <i>about</i> something, "this model was reviewed by X", "this output is derived from that input". A
+      machine can only check <i>who signed it</i>, not whether it is true, that is the point of a signature.</p>
+    </li>
+    <li>
+      <div class="term">kton <span class="tag">the whole thing</span></div>
+      <p>The substrate as a whole (plankton + nekton) plus a thin command that conducts both. "kton" is what
+      you say when you mean the system; plankton and nekton are its two kinds of record.</p>
+    </li>
+  </ul>
+
+  <h2>So what is a "record"?</h2>
+  <p class="sub">Two kinds, both are just a small signed file identified by the hash of its content:</p>
+  <ul class="defs">
+    <li><div class="term">a foton</div><p>a recorded computation: the hashes of its inputs, an opaque
+      command/protocol, and the hashes of its outputs. It is an edge in a lineage graph.</p></li>
+    <li><div class="term">a claim</div><p>a signed statement whose subject is usually a foton or a file
+      (by hash), so claims attach to exactly the thing they are about.</p></li>
+  </ul>
 
   <div class="note">
-    <b>An environment is just a directory.</b> A plankton registry lives in a folder; you point at it
-    with <code>PLANKTON_DIR=&lt;dir&gt;</code>. A different folder is a different, independent registry.
-    Records move between environments by content hash via <code>plankton mirror</code> - no server,
-    no shared folder. Each example makes this explicit in its <code>run.sh</code>.
+    <b>One term you will meet in every example: an environment is just a directory.</b> A registry lives in
+    a folder; you point at it with <code>PLANKTON_DIR=&lt;dir&gt;</code>. A different folder is a different,
+    independent registry. Records move between environments by content hash with <code>plankton mirror</code>,
+    no server, no shared folder.
   </div>
 
-  <div class="cards" id="cards"></div>
+  <h2>The examples</h2>
+  <p class="sub">Each one both <b>creates</b> records and <b>uses</b> them, and renders the resulting graph
+  in the viewer. Start at 01.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="n">01</div><h3>Hello foton</h3>
+      <p>The smallest create + use: record one computation as a signed foton, then show it, verify its
+      signature, and ask "who produced this file?" by output hash.</p>
+      <div class="links"><a href="viewer.html?union=data/01-hello-foton/union.json&keys=data/01-hello-foton/keys.json&names=data/01-hello-foton/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/01-hello-foton/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">02</div><h3>Environments + federation</h3>
+      <p>Two independent registries that never share a folder. They exchange records by hash via
+      <code>mirror</code>, then read as one lineage. This is the example for "how are environments used?".</p>
+      <div class="links"><a href="viewer.html?union=data/02-environments-federation/union.json&keys=data/02-environments-federation/keys.json&names=data/02-environments-federation/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/02-environments-federation/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">03</div><h3>Reproduce</h3>
+      <p>Record a computation, re-derive its output, and prove it matches: identical bytes give L0
+      reproduction; a tampered re-run gives none.</p>
+      <div class="links"><a href="viewer.html?union=data/03-reproduce/union.json&keys=data/03-reproduce/keys.json&names=data/03-reproduce/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/03-reproduce/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">04</div><h3>Claim (nekton)</h3>
+      <p>plankton records a reproducible foton; nekton records a signed opinion about it. The claim's
+      subject is the foton's id, so the two layers join by hash.</p>
+      <div class="links"><a href="viewer.html?union=data/04-claim/union.json&keys=data/04-claim/keys.json&names=data/04-claim/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/04-claim/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">05</div><h3>Review scope</h3>
+      <p>A chain of signed claims sealed by one head. Each id covers the previous, so publishing the head
+      makes the whole review tamper-evident; a dangling link is rejected.</p>
+      <div class="links"><a href="viewer.html?union=data/05-review-scope/union.json&keys=data/05-review-scope/keys.json&names=data/05-review-scope/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/05-review-scope/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">06</div><h3>Export as RDF</h3>
+      <p>The plankton lineage and the nekton claims export to RDF that merges at the same hash IRIs, so a
+      reasoner sees provenance and attestation as one graph.</p>
+      <div class="links"><a href="viewer.html?union=data/06-nanopub-rdf/union.json&keys=data/06-nanopub-rdf/keys.json&names=data/06-nanopub-rdf/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/06-nanopub-rdf/README.md">read &rarr;</a></div>
+    </div>
+  </div>
 
   <footer>
-    Run locally: build the kton binaries into <code>bin/</code> (see the repo README), then
-    <code>bash examples/&lt;name&gt;/run.sh</code>. The graphs below are pre-generated snapshots.
+    Run them yourself: build the kton binaries (see the
+    <a href="https://github.com/gitmick/kton-examples">repo README</a>), then
+    <code>bash examples/&lt;name&gt;/run.sh</code>. The graphs here are pre-generated snapshots; in the
+    viewer, Esc or the browser Back button returns to the overview.
   </footer>
 </div>
-
-<script>
-  // one entry per example; the viewer loads its pre-built union from docs/data/<dir>/
-  const EXAMPLES = [
-    { n:"01", dir:"01-hello-foton", title:"Hello foton",
-      teaches:"The smallest create + use: record one computation as a signed foton, then show / verify / query it by output hash.",
-      cmd:"bash examples/01-hello-foton/run.sh" },
-    { n:"02", dir:"02-environments-federation", title:"Environments + federation",
-      teaches:"Two independent registries (environments) that never share a folder - they exchange records by hash via mirror, then read as one lineage.",
-      cmd:"bash examples/02-environments-federation/run.sh" },
-    { n:"03", dir:"03-reproduce", title:"Reproduce",
-      teaches:"Record a computation, re-derive its output, and prove it matches: identical bytes give L0 reproduction; a tampered re-run gives none.",
-      cmd:"bash examples/03-reproduce/run.sh" },
-    { n:"04", dir:"04-claim", title:"Claim (nekton)",
-      teaches:"plankton records a reproducible foton; nekton records a signed opinion about it. The claim's subject is the foton's id, so the two layers join by hash.",
-      cmd:"bash examples/04-claim/run.sh" },
-    { n:"05", dir:"05-review-scope", title:"Review scope",
-      teaches:"A chain of signed claims sealed by one head. Each id covers the previous, so publishing the head makes the whole chain tamper-evident; a dangling link is rejected.",
-      cmd:"bash examples/05-review-scope/run.sh" },
-    { n:"06", dir:"06-nanopub-rdf", title:"Export as RDF",
-      teaches:"The plankton lineage and the nekton claims export to RDF that merges at the same pk:hash IRIs, so a reasoner sees provenance and attestation as one graph.",
-      cmd:"bash examples/06-nanopub-rdf/run.sh" },
-  ];
-  const q = d => `viewer.html?union=data/${d}/union.json&keys=data/${d}/keys.json&names=data/${d}/names.json`;
-  document.getElementById("cards").innerHTML = EXAMPLES.map(e => `
-    <a class="card" href="${q(e.dir)}">
-      <div class="n">${e.n}</div>
-      <h2>${e.title}</h2>
-      <p>${e.teaches}</p>
-      <div class="cmd">${e.cmd}</div>
-      <div class="open">open the graph &rarr;</div>
-    </a>`).join("");
-</script>
 </body>
 </html>
