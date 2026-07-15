@@ -4,10 +4,11 @@ set -euo pipefail
 cd "$(dirname "$0")"
 source ../../lib/common.sh
 
-# ---- ENVIRONMENT ------------------------------------------------------------
-# A plankton "environment" is nothing but a DIRECTORY that holds a registry. You point plankton at
-# it with the PLANKTON_DIR variable. A different directory is a different, independent registry.
-# Here we use a throwaway .work/ dir (gitignored) so the example is repeatable.
+# ---- REGISTRY ---------------------------------------------------------------
+# A plankton registry is nothing but a DIRECTORY where records are filed. You point plankton at it
+# with the PLANKTON_DIR variable. A different directory is a different, independent registry. (This
+# is a store, not an execution environment like a container or an OS.) We use a throwaway .work/ dir
+# (gitignored) so the example is repeatable.
 export PLANKTON_DIR="$PWD/.work/registry"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
 

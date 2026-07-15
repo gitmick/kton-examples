@@ -6,12 +6,16 @@ what came out. This repo also holds a curated set of example nekton **templates*
 
 Live viewer: **https://gitmick.github.io/kton-examples/**
 
-## The one thing to understand first: environments
+## The one thing to understand first: a registry
 
-A plankton **environment is just a directory** that holds a registry. You point plankton at it with
-`PLANKTON_DIR=<dir>` (and nekton with `NEKTON_DIR=<dir>`). A different directory is a different,
-independent registry. Records move between environments by content hash with `plankton mirror` -
-no server, no shared folder. Every example makes this explicit in its `run.sh`.
+A plankton **registry is just a directory** where records are filed, the *store*. You point plankton
+at it with `PLANKTON_DIR=<dir>` (and nekton with `NEKTON_DIR=<dir>`). A different directory is a
+different, independent registry. Records move between registries by content hash with `plankton
+mirror` - no server, no shared folder. Every example makes this explicit in its `run.sh`.
+
+(A registry is a store, not an *execution environment* like a container, an OS, or a tool call, which
+is what actually runs your code. That is a separate thing plankton can record; do not confuse the
+two.)
 
 ## Naming conventions used across the examples
 
@@ -27,7 +31,7 @@ no server, no shared folder. Every example makes this explicit in its `run.sh`.
 | # | example | teaches |
 |---|---|---|
 | 01 | `hello-foton` | the smallest create + use: record a foton, then show / verify / query it |
-| 02 | `environments-federation` | two environments exchanging records by hash (mirror), read as one lineage |
+| 02 | `federation` | two registries exchanging records by hash (mirror), read as one lineage |
 
 ## Run them yourself
 

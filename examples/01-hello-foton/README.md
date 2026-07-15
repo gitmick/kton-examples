@@ -1,11 +1,29 @@
 # 01 - hello foton
 
-The smallest complete example: **record** one computation, then **use** the record. Six commands.
+New here? This page reads best right after the
+[30-second intro](https://gitmick.github.io/kton-examples/), which defines the words used below. In
+one line to get you going:
 
-This assumes `plankton` and `nekton` are installed and on your PATH. One thing to hold onto from the
-start: **plankton records; it never runs your command.** It stores that *these input hashes*, through
-*this command*, produced *these output hashes*, and signs that statement. (Checking that a re-run
-actually reproduces the output is a separate step, see example 03.)
+> A **foton** is a small signed record that says *"these input files, run through this command,
+> produced these output files."* Making one, and reading it back, is all example 01 does.
+
+**The thing that surprises everyone first: plankton does not run anything.** You run your analysis
+however you like (a script, a notebook, a tool); plankton only *records* what went in, what came out,
+and who says so. It never executes your command. So in this example we will **write the result by
+hand** and then hand plankton the record. That is not cheating, it is the point: recording *that*
+something was produced, and *reproducing* it to check, are two different jobs. (Reproduction is
+example 03.)
+
+Two words you will meet below:
+
+- a **hash** (written `sha256:...`) is a fingerprint of a file's exact bytes: the same bytes give the
+  same fingerprint, change one byte and it is completely different. plankton identifies every file by
+  its hash, never by its name or location, and stores none of the bytes.
+- a **registry** is the directory where plankton files its records (set by `PLANKTON_DIR`, default
+  `./plankton-data`), a plain folder, a *store*. (Not an execution environment like a container or an
+  OS, that is a separate thing.)
+
+This assumes `plankton` is installed and on your PATH.
 
 ## Walk through it, one command at a time
 
@@ -17,14 +35,15 @@ plankton keygen me
 
 Writes `me.key` (your private key, keep it) and `me.pub` (your public key, share it).
 
-**2. Have some files.** A computation reads files and writes files. Here, by hand:
+**2. Stand in for the analysis.** Normally your script reads an input and writes an output; here we
+just type both by hand (plankton will *record* that the command produced the output, not run it):
 
 ```
 echo "3 7 2 8" > data.txt
 echo "mean=5"  > result.txt
 ```
 
-plankton stores none of these bytes, only their `sha256:` content hash.
+`3 7 2 8` really does have mean 5. plankton stores none of these bytes, only their hash.
 
 **3. Record the computation as a foton.**
 

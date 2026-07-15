@@ -66,7 +66,8 @@
       <div class="term">plankton <span class="tag">the results layer</span></div>
       <p>Records reproducible computations. Its record is a <b>foton</b>: <code>input files -&gt; a command
       -&gt; output files</code>, where every file is named by its content hash. Machine-checkable, re-run or
-      re-hash and you know if it matches. plankton stores none of the bytes, only the hashes and the shape.</p>
+      re-hash and you know if it matches. plankton stores none of the bytes, only the hashes and which
+      file went where.</p>
     </li>
     <li>
       <div class="term">nekton <span class="tag">the statements layer</span></div>
@@ -91,10 +92,12 @@
   </ul>
 
   <div class="note">
-    <b>One term you will meet in every example: an environment is just a directory.</b> A registry lives in
-    a folder; you point at it with <code>PLANKTON_DIR=&lt;dir&gt;</code>. A different folder is a different,
-    independent registry. Records move between environments by content hash with <code>plankton mirror</code>,
-    no server, no shared folder.
+    <b>One term you will meet in every example: a registry is just a directory.</b> A registry is the
+    <i>store</i> where plankton files its records; you point at it with <code>PLANKTON_DIR=&lt;dir&gt;</code>,
+    and a different folder is a different, independent registry. Records move between registries by
+    content hash with <code>plankton mirror</code>, no server, no shared folder. (A registry is a store,
+    not an <i>execution environment</i> like a container or an OS, that is a separate thing plankton
+    can record on its own.)
   </div>
 
   <h2>The examples</h2>
@@ -109,10 +112,10 @@
       <div class="links"><a href="viewer.html?union=data/01-hello-foton/union.json&keys=data/01-hello-foton/keys.json&names=data/01-hello-foton/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/01-hello-foton/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
-      <div class="n">02</div><h3>Environments + federation</h3>
+      <div class="n">02</div><h3>Federation</h3>
       <p>Two independent registries that never share a folder. They exchange records by hash via
-      <code>mirror</code>, then read as one lineage. This is the example for "how are environments used?".</p>
-      <div class="links"><a href="viewer.html?union=data/02-environments-federation/union.json&keys=data/02-environments-federation/keys.json&names=data/02-environments-federation/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/02-environments-federation/README.md">read &rarr;</a></div>
+      <code>mirror</code>, then read as one lineage. Shows how a registry is pointed at and named.</p>
+      <div class="links"><a href="viewer.html?union=data/02-federation/union.json&keys=data/02-federation/keys.json&names=data/02-federation/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/02-federation/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
       <div class="n">03</div><h3>Reproduce</h3>

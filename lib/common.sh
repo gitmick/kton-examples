@@ -1,4 +1,4 @@
-# Sourced by every example. Deliberately tiny: the environment handling stays VISIBLE in each
+# Sourced by every example. Deliberately tiny: the registry handling stays VISIBLE in each
 # example (that is the thing people found unclear), this only puts the binaries on PATH and turns a
 # finished registry into data the graph viewer can render.
 EXROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
