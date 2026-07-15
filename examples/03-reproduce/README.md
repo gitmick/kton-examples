@@ -1,32 +1,60 @@
 # 03 - reproduce
 
-Record a computation, then independently re-derive its output and prove it matches.
+Example 01 said plankton *records* a computation but never runs it. So how do you ever check that a
+result is real? You **re-derive it yourself and compare hashes.** Identical bytes reproduce at **L0**;
+anything else does not. plankton never re-runs your code; it just compares fingerprints.
 
-## What `run.sh` does
+Assumes `plankton` is on your PATH. (Start with [example 01](../01-hello-foton/) if `foton` is new.)
 
-- **Create:** record a foton whose output is a deterministic result.
-- **Use:** re-run the same computation (byte-identical output) and check with `plankton
-  reproduces <ref> <cand>`; then tamper the output as a negative control.
+## Walk through it, one command at a time
 
-## Key idea
+**1. Record a computation whose output is deterministic.**
 
-plankton compares by **hash**. Identical output bytes reproduce at **L0** (byte-identical). Different
-bytes reproduce at **none** here. (Outputs that differ only cosmetically - a timestamp, an R version -
-can still match at **L1** after a declared normalizer; that is a later example.) Reproduction is a
-pure hash query: plankton never re-runs anything.
+```
+plankton keygen me
+echo "1 2 3 4" > input.txt
+echo "sum=10"  > result.txt
+plankton author --cmd "sum input.txt result.txt" \
+    --in input.txt --out result.txt --sign me.key -o sum.foton.json
+plankton add sum.foton.json
+```
 
-## Run
+Remember the output's hash, that is what we will reproduce:
+
+```
+plankton hash result.txt
+# sha256:f0a78d0b...
+```
+
+**2. Re-derive the output and compare.** A real re-run would execute `sum` again; here, because it is
+deterministic, we just recreate the same bytes. Then ask plankton if they reproduce:
+
+```
+echo "sum=10" > result_rerun.txt
+plankton reproduces $(plankton hash result.txt) $(plankton hash result_rerun.txt)
+# reproduction: L0
+```
+
+**L0** means byte-identical. That is the strongest form: the re-run produced exactly the recorded
+output.
+
+**3. Prove it is not just always saying yes.** Tamper with the output and try again:
+
+```
+echo "sum=999" > result_tampered.txt
+plankton reproduces $(plankton hash result.txt) $(plankton hash result_tampered.txt)
+# reproduction: none (no L0/L1 match - an L2 comparator verdict is required)
+```
+
+Different bytes, no match. `reproduces` is a pure hash comparison, so it cannot be fooled.
+
+> Outputs that differ only cosmetically (a timestamp, a library version) can still match at **L1**
+> after a declared normalizer strips the noise. That is a later step; L0 is the plain case.
+
+## Or just run the whole thing
 
 ```
 bash run.sh
-```
-
-## Expected output
-
-```
-recorded result hash = sha256:f0a78d0b...
-reproduces (re-run):   reproduction: L0
-reproduces (tampered): reproduction: none (no L0/L1 match - an L2 comparator verdict is required)
 ```
 
 ## See it
