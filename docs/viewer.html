@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>plankton federation — data manipulation graph</title>
+<title>kton example · graph viewer</title>
 <link rel="icon" type="image/png" href="logo.png">
 <style>
   :root { --bg:#0f1420; --panel:#151b29; --ink:#e7ecf5; --dim:#8b97ad; --line:#2a3346;
@@ -37,7 +37,8 @@
   #explorer { position:absolute; inset:0; display:none; }
   canvas { display:block; width:100%; height:100%; cursor:grab; }
   #controls { position:absolute; top:12px; left:12px; background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; font-size:12.5px; width:220px; }
-  #controls .back{color:var(--accent);cursor:pointer;font-size:12.5px;margin-bottom:8px;display:inline-block}
+  #controls .back{color:var(--accent);cursor:pointer;font-size:12.5px;margin-bottom:10px;display:inline-block;border:1px solid var(--accent);border-radius:7px;padding:5px 10px;font-weight:600}
+  #controls .back:hover{background:var(--accent);color:#0b0f18}
   #controls .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin:8px 0 5px}
   .arrows{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
   .arrows button{background:#1c2434;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:6px 4px;cursor:pointer;font-size:11.5px}
@@ -63,8 +64,8 @@
 </head>
 <body>
 <header>
-  <div class="titlerow"><img src="logo.png" alt="plankton"><h1>plankton federation <small>· data manipulation graph</small></h1></div>
-  <div class="story">Independent researchers, separate repos, one dataset. <b class="aC">a</b> prepared the common ground; others built on it <b>by content hash</b> (<b class="bC">b</b> and <b class="cC">c</b> disagreed about the monocytes — one vs two). Everyone cross-reviewed everyone. Start from a dataset or record, then <b>walk its pedigree</b> — every node re-verified in your browser (WASM, Ed25519/DSSE).</div>
+  <div class="titlerow"><img src="logo.png" alt="plankton"><h1>kton example <small>· graph viewer</small></h1></div>
+  <div class="story">The graph for one kton example. Round nodes are <b>fotons</b> (recorded computations), squares are <b>claims</b> (signed statements); edges are lineage and attestation. Click a dataset or record, then walk its pedigree - every node is re-verified in your browser (WASM, Ed25519/DSSE). <b>Esc</b> or the browser <b>Back</b> button returns to the overview.</div>
   <div id="stats"></div>
 </header>
 <div id="main">
@@ -77,7 +78,7 @@
       <div class="row"><span class="sw" style="border-color:var(--dim)"></span>builds-on&nbsp;<span class="sw" style="border-color:var(--about);border-top-style:dashed"></span>about</div>
       <div class="row"><span style="color:var(--ok)">◎</span>bright ring = verified · colour = participant</div>
     </div>
-    <div class="hint">scroll to zoom · drag background to pan · click a node to re-centre</div>
+    <div class="hint">scroll to zoom · drag to pan · double-click a node to re-centre · Esc or browser Back to return</div>
     <div id="panel"></div>
   </div>
   <div id="err"></div>
@@ -100,7 +101,9 @@ async function load(){
     const keys =await fetch(qs.get("keys")||"keys.json").then(r=>r.text()).catch(()=>"{}");
     const names=await fetch(qs.get("names")||"names.json").then(r=>r.text()).catch(()=>"{}");
     G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
-    index(); showStats(); showOverview();
+    index(); showStats(); showOverview(false); history.replaceState({view:'overview'},"");
+    window.onpopstate=e=>{ const s=e.state||{view:'overview'}; if(s.view==='explorer'&&G.byId.has(s.center)) enterExplorer(s.center,s.mode,false); else showOverview(false); };
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$("#explorer").style.display!=='none') showOverview(); });
   }catch(e){ $("#err").style.display="grid"; $("#err").textContent="Could not build the graph: "+e.message; }
 }
 function index(){
@@ -115,7 +118,8 @@ function showStats(){ const t=G.summary.totals;
 }
 
 /* ===== OVERVIEW ===== */
-function showOverview(){
+function showOverview(push=true){
+  if(push) history.pushState({view:'overview'},"");
   $("#explorer").style.display="none"; $("#overview").style.display="block";
   const S=G.summary, rel={};
   for(const e of (S.edges||[])){ (rel[e.from]??=[]).push(`${e.kind==="about"?"reviews":"builds on"} ${e.to.replace('pfed-','')}×${e.count}`); }
@@ -127,9 +131,9 @@ function showOverview(){
   const dsCards=datasets.map(d=>{ const c=(G.in[d.id]||[]).length;
     return `<div class="card" data-src="${d.id}"><div class="nm"><span class="d" style="background:#cfd8e6"></span>${d.role}</div>
       <div class="mt">original dataset · external input</div><div class="rel">${c} step${c===1?"":"s"} build on it → start here</div></div>`;}).join("");
-  $("#overview").innerHTML=`<div class="searchrow"><div style="position:relative"><input id="q" placeholder="search a record — participant, role, hash, or text…" autocomplete="off"><div id="results"></div></div><span style="color:var(--dim);font-size:12.5px">or start from a dataset / participant below</span></div>
-    ${datasets.length?`<div class="h2">datasets — start a pedigree from the original data</div><div class="cards">${dsCards}</div>`:``}
-    <div class="h2" style="margin-top:18px">participants (grouped view — scales with the federation, not the record count)</div><div class="cards">${cards}</div>`;
+  $("#overview").innerHTML=`<div class="searchrow"><div style="position:relative"><input id="q" placeholder="search a record - participant, role, hash, or text…" autocomplete="off"><div id="results"></div></div><span style="color:var(--dim);font-size:12.5px">or start from a dataset / participant below</span></div>
+    ${datasets.length?`<div class="h2">datasets - start a pedigree from the original data</div><div class="cards">${dsCards}</div>`:``}
+    <div class="h2" style="margin-top:18px">participants (grouped view - scales with the federation, not the record count)</div><div class="cards">${cards}</div>`;
   $$("#overview .card[data-src]").forEach(el=>el.onclick=()=>enterExplorer(el.dataset.src,"desc"));
   $$("#overview .card[data-p]").forEach(el=>el.onclick=()=>enterExplorer(firstNodeOf(el.dataset.p),"both"));
   const q=$("#q"),res=$("#results");
@@ -151,10 +155,11 @@ function pedigree(id, mode){ const set=new Set([id]);
   if(mode==="chi") for(const e of (G.in[id]||[])) set.add(e.from);
   return set;
 }
-function enterExplorer(centerId, mode){ $("#overview").style.display="none"; $("#explorer").style.display="block";
-  ex={center:centerId, sel:centerId, mode, grouped:false, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId); }
+function enterExplorer(centerId, mode, push=true){ $("#overview").style.display="none"; $("#explorer").style.display="block";
+  ex={center:centerId, sel:centerId, mode, grouped:false, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
+  if(push) history.pushState({view:'explorer',center:centerId,mode},""); }
 function drawControls(){ const modes=[["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
-  $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview</span>
+  $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview&nbsp;&nbsp;<span style="opacity:.55;font-weight:400">Esc</span></span>
     <div class="lbl">centre</div><div style="font-size:12.5px;color:${c.type==='source'?'#cfd8e6':'var(--accent)'}">${c.type==='source'?c.role:c.participant.replace('pfed-','')+" · "+c.role}</div>
     <div class="lbl">pedigree (path explorer)</div><div class="arrows">${modes.map(m=>`<button data-m="${m[0]}" class="${ex.mode===m[0]?'on':''}">${m[1]}</button>`).join("")}</div>
     <div class="lbl">grouping</div><div class="fchips"><span class="fchip ${ex.grouped?'':'off'}" id="grpbtn">▣ group same-participant runs</span></div>
@@ -263,7 +268,8 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
   window.onmouseup=()=>{ if(drag&&!drag.moved){ ex.sel=drag.n.id; openNode(drag.n.id); redraw(); } if(pan)cv.style.cursor="grab"; drag=null;pan=null; };
   cv.ondblclick=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){recentre(n.id);} };
 }
-function recentre(id){ ex.center=id; ex.sel=id; drawControls(); layoutAndRun(); openNode(id); }
+function recentre(id, push=true){ ex.center=id; ex.sel=id; drawControls(); layoutAndRun(); openNode(id);
+  if(push) history.pushState({view:'explorer',center:id,mode:ex.mode},""); }
 function fileRow(f){ const uris=(G.locators||{})[f.hash]||[], isNode=G.byId.has(f.hash);
   return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${f.hash}"`:``}>${f.name||"(unnamed)"} <span class="m">${f.hash}</span>`+
     uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")+`</div>`; }
@@ -282,7 +288,7 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
     return `<div class="nav" data-id="${o.id}"><span class="d" style="background:${c}"></span>${o.type==="source"?o.role:o.participant.replace('pfed-','')+" · "+o.role} <span style="color:var(--dim)">(${kind})</span></div>`;};
   const link=(e)=>lk(G.byId.get(e.from),e.kind);
   const uris=(G.locators||{})[n.id]||[];
-  const meta=isSrc?`<div class="kv">external input — referenced by content hash; not a signed record.</div>`
+  const meta=isSrc?`<div class="kv">external input - referenced by content hash; not a signed record.</div>`
     :`<div class="kv">signer <code>${n.signer||"?"}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
   p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
     <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?n.role:n.participant}</div>
