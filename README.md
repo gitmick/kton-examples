@@ -8,10 +8,12 @@ Live viewer: **https://gitmick.github.io/kton-examples/**
 
 ## The one thing to understand first: a registry
 
-A plankton **registry is just a directory** where records are filed, the *store*. You point plankton
-at it with `PLANKTON_DIR=<dir>` (and nekton with `NEKTON_DIR=<dir>`). A different directory is a
-different, independent registry. Records move between registries by content hash with `plankton
-mirror` - no server, no shared folder. Every example makes this explicit in its `run.sh`.
+A plankton **registry is just a directory** where records are filed, the *store*. You name it two
+interchangeable ways: the `PLANKTON_DIR=<dir>` environment variable (`NEKTON_DIR` for nekton), or the
+`--registry <dir>` flag on commands that write to a store (`add`, and `author --add`). `--registry X`
+is simply `PLANKTON_DIR=X` for that one command. A different directory is a different, independent
+registry. Records move between registries by content hash with `plankton mirror` - no server, no
+shared folder. Every example makes this explicit in its `run.sh`.
 
 (A registry is a store, not an *execution environment* like a container, an OS, or a tool call, which
 is what actually runs your code. That is a separate thing plankton can record; do not confuse the

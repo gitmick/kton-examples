@@ -15,6 +15,11 @@ Three things could be "shared" here; keep them apart:
 
 Assumes `plankton` is on your PATH. (New to fotons? Do [example 01](../01-hello-foton/) first.)
 
+You will see a registry named two ways below, they are interchangeable: the **`PLANKTON_DIR=<dir>`**
+environment variable (prefix a single command), or the **`--registry <dir>`** flag (on the commands
+that write to a store: `add`, and `author --add`). `--registry X` is simply `PLANKTON_DIR=X` for that
+one command.
+
 ## Setup
 
 ```
