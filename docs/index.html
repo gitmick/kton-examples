@@ -67,6 +67,18 @@
     { n:"02", dir:"02-environments-federation", title:"Environments + federation",
       teaches:"Two independent registries (environments) that never share a folder - they exchange records by hash via mirror, then read as one lineage.",
       cmd:"bash examples/02-environments-federation/run.sh" },
+    { n:"03", dir:"03-reproduce", title:"Reproduce",
+      teaches:"Record a computation, re-derive its output, and prove it matches: identical bytes give L0 reproduction; a tampered re-run gives none.",
+      cmd:"bash examples/03-reproduce/run.sh" },
+    { n:"04", dir:"04-claim", title:"Claim (nekton)",
+      teaches:"plankton records a reproducible foton; nekton records a signed opinion about it. The claim's subject is the foton's id, so the two layers join by hash.",
+      cmd:"bash examples/04-claim/run.sh" },
+    { n:"05", dir:"05-review-scope", title:"Review scope",
+      teaches:"A chain of signed claims sealed by one head. Each id covers the previous, so publishing the head makes the whole chain tamper-evident; a dangling link is rejected.",
+      cmd:"bash examples/05-review-scope/run.sh" },
+    { n:"06", dir:"06-nanopub-rdf", title:"Export as RDF",
+      teaches:"The plankton lineage and the nekton claims export to RDF that merges at the same pk:hash IRIs, so a reasoner sees provenance and attestation as one graph.",
+      cmd:"bash examples/06-nanopub-rdf/run.sh" },
   ];
   const q = d => `viewer.html?union=data/${d}/union.json&keys=data/${d}/keys.json&names=data/${d}/names.json`;
   document.getElementById("cards").innerHTML = EXAMPLES.map(e => `
