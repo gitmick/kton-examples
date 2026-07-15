@@ -8,53 +8,73 @@ This example is about that: **a key is an identity**. It answers two different q
 2. *Who is that key, really?* - a separate, signed statement binds a key to a named principal. You
    believe it only if you trust whoever signed that binding.
 
-Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).)
+Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) **Parts 1 and
+2 below run today**; tier 3 (Sigstore, GitHub SSH) in the concept section is described but **not yet
+shipped**.
 
 ## Part 1 - a key is an identity (self-asserted)
 
-Give two models their own signing keys. The **keyid** is the fingerprint of the public key: it *is*
-the cryptographic identity. (The human `by` label is just text, anyone can type any name there.)
+**1. Give each model its own key, and capture its keyid.** The **keyid** is the fingerprint of the
+public key: it *is* the cryptographic identity.
 
 ```
-nekton keygen opus       # keypair opus    keyid=e9708de7...
-nekton keygen sonnet     # keypair sonnet  keyid=25ed220f...
+OPUS=$(nekton keygen opus     | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
+SONNET=$(nekton keygen sonnet | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
+echo "$OPUS $SONNET"          # e.g. <opus keyid> <sonnet keyid>
 ```
 
-Hand each key to the corresponding model; each model signs the claims it makes:
+**2. Each model signs a claim with its key.** A claim spec is a small JSON file. (`nk:` is kton's
+native namespace, `https://kton.dev/v/`; the kernel stores the predicate as an opaque term and never
+interprets it.) `--add` files each claim as it signs it.
 
 ```
-# opus signs (subject urn:result:auc, by-label "claude-opus-4-8"):
+cat > opus.spec.json <<'JSON'
+{ "subject":[{"uri":"urn:result:auc"}], "predicate":"nk:assessed",
+  "object":{"value":"AUC is within the expected range"},
+  "by":"claude-opus-4-8", "when":"2026-07-15T00:00:00Z" }
+JSON
+cat > sonnet.spec.json <<'JSON'
+{ "subject":[{"uri":"urn:result:auc"}], "predicate":"nk:assessed",
+  "object":{"value":"AUC looks plausible"},
+  "by":"claude-sonnet-5", "when":"2026-07-15T00:00:00Z" }
+JSON
 nekton claim opus.spec.json   opus.key   --add
 nekton claim sonnet.spec.json sonnet.key --add
 ```
 
-Now trace which claims came from which model, by keyid:
+**3. Trace which claims came from which model, by keyid.**
 
 ```
-nekton by signer <opus-keyid>
-# sha256:...  predicate=nk:assessed  by=claude-opus-4-8  keyid=e9708de7...
-nekton by signer <sonnet-keyid>
-# sha256:...  predicate=nk:assessed  by=claude-sonnet-5  keyid=25ed220f...
+nekton by signer "$OPUS"
+# sha256:...  predicate=nk:assessed  by=claude-opus-4-8  keyid=<opus keyid>
+nekton by signer "$SONNET"
+# sha256:...  predicate=nk:assessed  by=claude-sonnet-5  keyid=<sonnet keyid>
 ```
 
 That is the whole mechanism: **give a model a key, and every claim it makes is attributable to that
-key.** `by=claude-opus-4-8` is a self-asserted *label*; the keyid is the cryptographic fact.
+key.** `by=claude-opus-4-8` is a self-asserted *label*, anyone could type it; the keyid is the
+cryptographic fact.
 
 ## Part 2 - binding a key to a named model (attested)
 
-Part 1 shows *that* a key made a claim, not *who* the key is. Who says keyid `e9708de7...` really
-belongs to `claude-opus-4-8`? An **authority** signs an identity claim ABOUT the key:
+Part 1 shows *that* a key made a claim, not *who* the key is. Who says keyid `$OPUS` really belongs to
+`claude-opus-4-8`? An **authority** signs an identity claim ABOUT the key (we splice `$OPUS` into the
+subject):
 
 ```
 nekton keygen deployer
-# subject urn:kton:key:<opus-keyid>, predicate nk:actsAs, object "model:anthropic/claude-opus-4-8"
+cat > identity.spec.json <<JSON
+{ "subject":[{"uri":"urn:kton:key:$OPUS"}], "predicate":"nk:actsAs",
+  "object":{"value":"model:anthropic/claude-opus-4-8"},
+  "by":"CN=Deployment", "when":"2026-07-15T00:00:00Z" }
+JSON
 nekton claim identity.spec.json deployer.key --add
-nekton about "urn:kton:key:<opus-keyid>"
-# sha256:...  predicate=nk:actsAs  by=CN=Deployment  keyid=ad9f01ed...
+nekton about "urn:kton:key:$OPUS"
+# sha256:...  predicate=nk:actsAs  by=CN=Deployment  keyid=<deployer keyid>
 ```
 
 A consumer now resolves keyid -> model name via that claim - **and believes it only if they trust the
-deployer's key**. This binding is just another single-signed claim; no new machinery.
+deployer's key**. It is just another single-signed claim; no new machinery.
 
 ## How identity works in kton
 
@@ -67,11 +87,11 @@ deployer's key**. This binding is just another single-signed claim; no new machi
 - **Three assurance tiers**, weakest to strongest:
   - **self-asserted** - the `by` label (Part 1). Zero proof.
   - **attested** - a signed claim by someone you trust (Part 2).
-  - **authority-backed** - a certificate or an allow-list from a trusted issuer. This is where
-    **Sigstore** (keyless: an OIDC identity via Fulcio + Rekor transparency log) and **SSH signatures**
-    (a GitHub/`allowed_signers` principal) come in, for a person, and a model-CA for a model. Those
-    schemes need network and OS tooling, so they live in the cockpit (`kton`), not the kernels;
-    they are in development. `kton anchor` (Rekor) is the first piece already present.
+  - **authority-backed** *(not yet shipped)* - a certificate or an allow-list from a trusted issuer:
+    **Sigstore** (keyless: an OIDC identity via Fulcio + the Rekor transparency log) and **SSH
+    signatures** (a GitHub / `allowed_signers` principal) for a person, a model-CA for a model. Those
+    schemes need network and OS tooling, so they live in the cockpit (`kton`), not the kernels. Only
+    `kton anchor` (anchor a record in Rekor) exists so far.
 - **Trust policy** - which authorities and identities you accept - is a consumer decision, never the
   kernel's.
 
