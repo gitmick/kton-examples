@@ -1,78 +1,93 @@
 # 02 - federation
 
-Two people, two **registries**, no shared folder and no server, yet they end up with one lineage. This
-is the example for the two things people found unclear: how a registry is pointed at, and how records
-move between two of them.
+Two people build on each other's work. The natural first thought is "put both of them on one shared
+store", and that works. But often you *can't* share a store (different orgs, an air-gap, no server).
+The lesson of this example is the contrast: **two separate registries still converge to the same
+lineage**, by content hash, with no shared store. So we do it both ways and run the exact same query
+at the end.
 
-> A **registry** is the *store*: the directory where plankton files its records, set by `PLANKTON_DIR`.
-> It is **not** an execution environment (a container, an OS, a tool). This example is only about two
-> stores.
+Three things could be "shared" here; keep them apart:
+
+1. **the registry** (the records) - shared in Act 1, not in Act 2.
+2. **the file bytes** - on one machine they just sit in the working folder the whole time; that is
+   incidental. plankton stores no bytes, only hashes.
+3. **nothing but hashes**, moved by `mirror` - that is Act 2.
 
 Assumes `plankton` is on your PATH. (New to fotons? Do [example 01](../01-hello-foton/) first.)
 
-## Walk through it, one command at a time
-
-**1. Two people, two identities.**
+## Setup
 
 ```
 plankton keygen alice
 plankton keygen bob
+echo "raw,data"     > dataset.csv
+echo "cleaned,data" > cleaned.csv
+echo "model=fit"    > model.txt
+MODEL=$(plankton hash model.txt)     # the file we will query the lineage of, in both acts
 ```
 
-**2. Two registries.** A registry is just a directory. We keep two and never point at both at once;
-we pick one per command with an inline `PLANKTON_DIR=...`.
+## Act 1 - two people, one shared registry
+
+**What is shared: the registry.** alice and bob both `plankton add` into the *same* `PLANKTON_DIR`,
+like a shared database, or a git remote everyone pushes to.
+
+```
+mkdir shared
+# alice cleans the dataset, into the shared store:
+PLANKTON_DIR=shared plankton author --cmd "clean dataset.csv cleaned.csv" \
+    --in dataset.csv --out cleaned.csv --sign alice.key -o alice.foton.json
+PLANKTON_DIR=shared plankton add alice.foton.json
+# bob fits a model on alice's output, into the same store:
+PLANKTON_DIR=shared plankton author --cmd "fit cleaned.csv model.txt" \
+    --in cleaned.csv --out model.txt --sign bob.key -o bob.foton.json
+PLANKTON_DIR=shared plankton add bob.foton.json
+```
+
+The closing query - the full lineage of `model.txt`:
+
+```
+PLANKTON_DIR=shared plankton lineage "$MODEL"
+# sha256:...  kind=script   <- bob's fit
+# sha256:...  kind=script   <- alice's clean
+```
+
+## Act 2 - two separate registries, federated
+
+Now the same two records, but each person keeps their **own** registry. Nothing is shared between the
+two registries; bob's `reg-b` has never heard of alice's `reg-a`.
 
 ```
 mkdir reg-a reg-b
+PLANKTON_DIR=reg-a plankton add alice.foton.json    # alice's record -> registry A
+PLANKTON_DIR=reg-b plankton add bob.foton.json      # bob's record   -> registry B
 ```
 
-**3. Alice records a foton in registry A.** She cleans a dataset:
-
-```
-echo "raw,data"     > dataset.csv
-echo "cleaned,data" > cleaned.csv
-PLANKTON_DIR=reg-a plankton author --cmd "clean dataset.csv cleaned.csv" \
-    --in dataset.csv --out cleaned.csv --sign alice.key -o alice-clean.foton.json
-PLANKTON_DIR=reg-a plankton add alice-clean.foton.json
-```
-
-**4. Bob records a foton in registry B** that consumes alice's output (`cleaned.csv`). Note his
-registry B knows nothing about A yet.
-
-```
-echo "model=fit" > model.txt
-PLANKTON_DIR=reg-b plankton author --cmd "fit cleaned.csv model.txt" \
-    --in cleaned.csv --out model.txt --sign bob.key -o bob-fit.foton.json
-PLANKTON_DIR=reg-b plankton add bob-fit.foton.json
-```
-
-**5. Federate: registry B mirrors registry A.** This copies A's records into B by content hash, no
-network, no shared directory.
+**Federate:** registry B mirrors registry A. This moves **records (hashes)**, never the file bytes -
+plankton has no bytes to move. (On this machine `cleaned.csv` still just sits in the working folder;
+in reality bob would have obtained those bytes out-of-band. `mirror` did not carry them.)
 
 ```
 PLANKTON_DIR=reg-b plankton mirror reg-a
 # mirrored reg-a: 1 new; registry holds 2 fotons
 ```
 
-**6. Use it: from B, the two registries are now one lineage.** Ask who consumed alice's cleaned file,
-and walk bob's model back to its root:
+Now the **same** closing query, from registry B:
 
 ```
-PLANKTON_DIR=reg-b plankton uses    $(plankton hash cleaned.csv)   # -> bob's fit
-PLANKTON_DIR=reg-b plankton lineage $(plankton hash model.txt)     # -> bob's fit, then alice's clean
+PLANKTON_DIR=reg-b plankton lineage "$MODEL"
+# sha256:...  kind=script   <- bob's fit
+# sha256:...  kind=script   <- alice's clean   (arrived from A by hash)
 ```
 
-Bob's fit references a file only alice produced, and because both are named by the same hash, the two
-registries join into one graph the moment B mirrors A. That join is the whole point of federation: no
-central server, records converge by content.
+**Identical to Act 1** - one merged lineage, with no shared store. That is federation: because every
+record is named by the hash of its content, two independent registries converge the moment one mirrors
+the other. No central server, no shared folder.
 
 ## Or just run the whole thing
 
 ```
 bash run.sh
 ```
-
-The script uses throwaway `reg-a/` and `reg-b/` folders and builds the graph snapshot.
 
 ## See it
 

@@ -6,11 +6,13 @@ nanopublications. They use the **same hash-based IRIs**, so when you load both i
 foton's provenance and the claims about it land on **one node**, ready for a reasoner. plankton
 documents; it does not reason, the RDF is just a serialization you hand to something that does.
 
-Assumes `plankton` and `nekton` are on your PATH. (See [04](../04-claim/) for what a claim is.)
+This is the advanced finale and it leans on semantic-web vocabulary (RDF, PROV, Turtle, TriG,
+triplestore). Assumes `plankton` and `nekton` are on your PATH; you have seen fotons ([01](../01-hello-foton/))
+and claims ([04](../04-claim/)).
 
 ## Walk through it, one command at a time
 
-**1. Make a foton and a claim about it** (exactly as in example 04):
+**1. Make a foton and a claim about it** (this is example 04, condensed but fully runnable):
 
 ```
 plankton keygen analyst ; nekton keygen reviewer
@@ -18,8 +20,15 @@ export PLANKTON_DIR=./plankton-data NEKTON_DIR=./nekton-data
 echo raw > data.csv ; echo model > model.txt
 plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
     --sign analyst.key -o model.foton.json
-plankton add model.foton.json           # foton id e.g. sha256:fba2a8ae...
-# ... nekton claim pav:reviewedBy about that foton id, then nekton add (see example 04)
+plankton add model.foton.json
+FOTON=$(plankton show model.foton.json | awk '/^foton:/{print $2}')
+
+cat > review.spec.json <<JSON
+{ "subject":[{"hash":"$FOTON"}], "predicate":"pav:reviewedBy",
+  "object":{"value":"approved"}, "by":"CN=Reviewer", "when":"2026-07-15T00:00:00Z" }
+JSON
+nekton claim review.spec.json reviewer.key review.dsse.json
+nekton add review.dsse.json
 ```
 
 **2. Export the plankton lineage as RDF (Turtle / PROV).** Each foton becomes a `prov:Activity`,
@@ -27,28 +36,34 @@ inputs `prov:used`, outputs `prov:wasGeneratedBy`:
 
 ```
 plankton export --rdf -o lineage.ttl
-# pk:fba2a8ae... a prov:Activity ; ...
+grep prov:Activity lineage.ttl
+# pk:... a prov:Activity ;
 ```
 
 **3. Export the nekton claim as a nanopublication (Turtle / TriG):**
 
 ```
 nekton export --nanopub review.dsse.json -o claim.trig
-# pk:fba2a8ae... <pav:reviewedBy> ...
+grep pav:reviewedBy claim.trig
+# pk:... <pav:reviewedBy> ...
 ```
 
-**4. See the join.** Look at the two files: the foton and the claim name the **same** node,
-`pk:fba2a8ae...` (the object namespace `pk:` is `https://kton.dev/o/`, a content hash). Load both into
-any RDF store and they merge there:
+**4. See the join.** Both files name the **same** node, `pk:...` (the namespace `pk:` is
+`https://kton.dev/o/`, a content hash). Load both into any RDF store and they merge there:
 
 ```
-# with python + rdflib, for instance:
-#   g = rdflib.Dataset(); g.parse("lineage.ttl"); g.parse("claim.trig")
-# now one query can walk the model's provenance AND find the review on it.
+python3 - <<'PY'
+import rdflib
+g = rdflib.Dataset()
+g.parse("lineage.ttl", format="turtle")
+g.parse("claim.trig",  format="trig")
+print(len(g), "triples, one graph")   # the model's provenance AND the review on it
+PY
 ```
 
 The verifiable lineage (plankton) and the signed attestation (nekton) become one graph, joined at the
-hash, without either layer knowing about RDF beyond emitting it.
+hash, without either layer knowing about RDF beyond emitting it. A reasoner can now answer questions
+like "is there a review on the thing this model was derived from?".
 
 ## Or just run the whole thing
 

@@ -6,35 +6,36 @@ cannot be re-run and verified, only *vouched for*: "I reviewed this", "this is a
 *who signed it*, never whether it is true, that is the whole difference between the two layers.
 
 Assumes `plankton` and `nekton` are on your PATH. Do [01](../01-hello-foton/) first if `foton` is new.
+Every command below is runnable in order (ids are captured into shell variables, nothing to retype).
 
 ## Walk through it, one command at a time
 
-**1. Two identities and two registries.** plankton keeps its fotons; nekton keeps its claims. Both
-registries are just directories.
+**1. Two identities and two registries.** plankton keeps its fotons; nekton keeps its claims.
 
 ```
 plankton keygen analyst          # makes the foton
 nekton   keygen reviewer         # makes the claim
-export PLANKTON_DIR=./plankton-data
-export NEKTON_DIR=./nekton-data
+export PLANKTON_DIR=./plankton-data NEKTON_DIR=./nekton-data
 ```
 
-**2. The analyst records a foton** (as in example 01):
+**2. The analyst records a foton, and we capture its id.**
 
 ```
 echo raw > data.csv ; echo fit > model.txt
 plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
     --sign analyst.key -o model.foton.json
 plankton add model.foton.json
-plankton show model.foton.json          # note the foton id, e.g. sha256:4211c41f...
+FOTON=$(plankton show model.foton.json | awk '/^foton:/{print $2}')
+echo "$FOTON"                    # sha256:...
 ```
 
-**3. The reviewer makes a claim about that foton.** A claim spec is a small JSON file. The important
-part: its **subject is the foton's id**, so the claim attaches to exactly that record.
+**3. The reviewer makes a claim about that foton.** A claim spec is a small JSON file; its **subject
+is the foton's id**, so we splice in `$FOTON` (nothing to copy by hand). The subject is a *list*
+because a claim can be about several things at once, here just one.
 
 ```
-cat > review.spec.json <<'JSON'
-{ "subject":  [{"hash": "sha256:4211c41f..."}],
+cat > review.spec.json <<JSON
+{ "subject":  [{"hash": "$FOTON"}],
   "predicate": "pav:reviewedBy",
   "object":    {"value": "looks correct"},
   "by": "CN=Reviewer", "when": "2026-07-15T00:00:00Z" }
@@ -48,16 +49,20 @@ nekton add review.dsse.json
 **4. Use it: ask what has been said about the foton.**
 
 ```
-nekton about sha256:4211c41f...
-# sha256:248d1930...  predicate=pav:reviewedBy  by=CN=Reviewer  keyid=ac5ed192...
+nekton about "$FOTON"
+# sha256:...  predicate=pav:reviewedBy  by=CN=Reviewer  keyid=...
 nekton show   review.dsse.json      # the full claim
 nekton verify review.dsse.json reviewer.pub
-# signature: VALID - verified as keyid ac5ed192... (the authoritative signer)
+# signature: VALID - verified as keyid ... (the authoritative signer)
 ```
 
 Because the claim's subject is the foton's hash, plankton (what was computed) and nekton (what people
 say about it) **join at the same node**. The foton is machine-verifiable; the review is only as good
-as the key that signed it, and `verify` tells you exactly which key that was.
+as the key that signed it.
+
+> Note the `by: "CN=Reviewer"` is a **self-asserted label**, anyone can type any name there. What is
+> cryptographically real is the **keyid** that `verify` reports; mapping that key to a
+> real-world identity is a trust decision you make, not something the record proves.
 
 ## Or just run the whole thing
 

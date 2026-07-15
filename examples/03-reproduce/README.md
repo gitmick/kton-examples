@@ -23,7 +23,7 @@ Remember the output's hash, that is what we will reproduce:
 
 ```
 plankton hash result.txt
-# sha256:f0a78d0b...
+# sha256:...
 ```
 
 **2. Re-derive the output and compare.** A real re-run would execute `sum` again; here, because it is
@@ -48,8 +48,13 @@ plankton reproduces $(plankton hash result.txt) $(plankton hash result_tampered.
 
 Different bytes, no match. `reproduces` is a pure hash comparison, so it cannot be fooled.
 
-> Outputs that differ only cosmetically (a timestamp, a library version) can still match at **L1**
-> after a declared normalizer strips the noise. That is a later step; L0 is the plain case.
+The `none` line mentions two levels plankton does *not* decide by hashing alone:
+
+> **L1** is for outputs that differ only cosmetically (a timestamp, a library version): they match
+> after a declared normalizer strips the noise, still a hash check, just after normalizing. **L2** is
+> a human or tool judging two results "close enough" within a tolerance (say, numerically equal to 3
+> digits); plankton cannot compute that, so it reports `none` and names L2 as the next option. L0 is
+> the plain byte-identical case shown here.
 
 ## Or just run the whole thing
 

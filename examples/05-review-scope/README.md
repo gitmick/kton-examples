@@ -1,11 +1,13 @@
 # 05 - review scope
 
 A single signed claim (example 04) says one thing. A **review** is usually a *sequence* of decisions
-that must hang together, and be tamper-evident as a whole. A **scope** is that: a chain of claims
-where each one covers the previous, so one **head** id seals the entire history. Edit any earlier
-claim and the head no longer matches.
+that must hang together and be tamper-evident as a whole. A **scope** is that: a chain of claims where
+each one covers the previous, so one **head** id seals the entire history. Edit any earlier claim and
+the head no longer matches.
 
-Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).)
+Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) This is the
+fiddliest example, each claim points at the previous one by id. Every command below captures the id it
+needs into a shell variable, so you can still paste them straight through.
 
 ## Walk through it, one command at a time
 
@@ -16,55 +18,65 @@ nekton keygen chair
 export NEKTON_DIR=./nekton-data
 ```
 
-**2. Open a scope with a seed.** The seed's id *is* the scope id, remember it.
+**2. Open a scope with a seed, and capture the scope id.** The seed's id *is* the scope id.
 
 ```
-nekton seed drug-review --sign chair.key --by "CN=Chair" -o seed.dsse.json
+SCOPE=$(nekton seed drug-review --sign chair.key --by "CN=Chair" -o seed.dsse.json \
+        | grep -oE 'sha256:[0-9a-f]+' | head -1)
 nekton add seed.dsse.json
-# scope id = sha256:1ff2bb7c...
+echo "$SCOPE"                    # sha256:...
 ```
 
-**3. Chain the first claim under the scope.** Every claim in the scope names the scope, and a `prev`.
-For the first claim, `prev` is the scope id itself:
+**3. Chain the first claim under the scope.** Every scoped claim names the scope and a `prev`; for the
+first, `prev` is the scope id itself. We splice in `$SCOPE`, then capture the new claim's id as `$C1`.
 
 ```
-cat > c1.spec.json <<'JSON'
+cat > c1.spec.json <<JSON
 { "subject":[{"uri":"urn:doc:protocol"}], "predicate":"pav:reviewedBy",
   "object":{"value":"protocol approved"}, "by":"CN=Chair", "when":"2026-07-15T00:00:00Z",
-  "scope":"sha256:1ff2bb7c...", "prev":"sha256:1ff2bb7c..." }
+  "scope":"$SCOPE", "prev":"$SCOPE" }
 JSON
-nekton claim c1.spec.json chair.key c1.dsse.json    # -> sha256:849fdfd4...
+C1=$(nekton claim c1.spec.json chair.key c1.dsse.json | grep -oE 'sha256:[0-9a-f]+' | head -1)
 nekton add c1.dsse.json
+echo "$C1"                       # sha256:...
 ```
 
-**4. Chain the second claim onto the first.** Now `prev` is the *first claim's* id:
+**4. Chain the second claim onto the first.** Same shape, but now `prev` is `$C1`.
 
 ```
-# ...same shape, subject urn:doc:results, prev = sha256:849fdfd4...
-nekton claim c2.spec.json chair.key c2.dsse.json    # -> sha256:85e362c8...
+cat > c2.spec.json <<JSON
+{ "subject":[{"uri":"urn:doc:results"}], "predicate":"pav:reviewedBy",
+  "object":{"value":"results approved"}, "by":"CN=Chair", "when":"2026-07-15T00:01:00Z",
+  "scope":"$SCOPE", "prev":"$C1" }
+JSON
+C2=$(nekton claim c2.spec.json chair.key c2.dsse.json | grep -oE 'sha256:[0-9a-f]+' | head -1)
 nekton add c2.dsse.json
 ```
 
-**5. Seal it: read the head.** The head is the tip of the chain, the id you publish (or `kton anchor`)
-to make the whole review tamper-evident.
+**5. Seal it: read the head.**
 
 ```
-nekton head sha256:1ff2bb7c...
-# head:  sha256:85e362c8...   (2 claim(s) chained)
+nekton head "$SCOPE"
+# head:  sha256:...   (2 claim(s) chained)
 ```
 
-**6. See the tamper-evidence.** A claim whose `prev` points nowhere is refused, a gap in the chain is
-treated as tampering:
+The **head** is the tip of the chain. Publish that one id (paste it in a report, an email, anywhere)
+and the whole review is fixed: it transitively commits to every earlier link, because each claim's id
+is computed over its contents *including* its `prev`. Optionally, `kton anchor` posts the head to a
+public transparency log (Sigstore/Rekor) so that not even the chair can backdate it, `kton` is the
+cockpit tool that adds network features on top of the two kernels; you do not need it here.
+
+**6. See the tamper-evidence.** A claim whose `prev` points nowhere is refused, a gap is treated as
+tampering:
 
 ```
-# a forged claim with prev = sha256:deadbeef...
+# author a forged claim with prev = sha256:...deadbeef, then:
 nekton add bad.dsse.json
-# error: prev sha256:deadbeef... does not resolve in scope ... (chain gap / tamper)
+# error: prev sha256:... does not resolve in scope ... (chain gap / tamper)
 ```
 
-Each claim's id is computed over its contents *including* its `prev`, so the head transitively commits
-to every earlier link. Change one, and its id changes, which breaks the next `prev`, which changes the
-head. Anyone holding the published head can detect it.
+Change any earlier claim and its id changes, which breaks the next `prev`, which changes the head.
+Anyone holding the published head can detect it.
 
 ## Or just run the whole thing
 

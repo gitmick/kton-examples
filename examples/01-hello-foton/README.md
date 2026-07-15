@@ -60,7 +60,7 @@ command, with these input hashes, produced these output hashes.
 
 ```
 plankton add mean.foton.json
-# indexed foton sha256:3999af22...
+# indexed foton sha256:...
 ```
 
 The registry is just a directory (`PLANKTON_DIR`, default `./plankton-data`).
@@ -69,17 +69,17 @@ The registry is just a directory (`PLANKTON_DIR`, default `./plankton-data`).
 
 ```
 plankton show mean.foton.json
-# foton:   sha256:3999af22...
+# foton:   sha256:...
 # command: mean data.txt result.txt   (RECORDED, never run by plankton)
-# inputs:  data.txt    sha256:76f7ad21...
-# outputs: result.txt  sha256:69d22a6b...
+# inputs:  data.txt    sha256:...
+# outputs: result.txt  sha256:...
 ```
 
 **6. Verify the signature.**
 
 ```
 plankton verify mean.foton.json me.pub
-# signature: VALID - verified as keyid 94c121b1... (the authoritative signer)
+# signature: VALID - verified as keyid ... (the authoritative signer)
 ```
 
 `verify` checks the signature against the public key you give it.
@@ -88,7 +88,7 @@ plankton verify mean.foton.json me.pub
 
 ```
 plankton producer $(plankton hash result.txt)
-# sha256:3999af22...  kind=script  in=1 out=1
+# sha256:...  kind=script  in=1 out=1
 ```
 
 `plankton hash <file>` prints the `sha256:<hex>` form the queries expect.
