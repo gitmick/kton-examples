@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kton examples</title>
+<style>
+  :root{
+    --bg:#0e1216; --panel:#161d25; --ink:#ccd6df; --muted:#7d8c99; --border:#253039;
+    --accent:#3fbccb; --pass:#5cc27e;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:light){
+    :root{--bg:#eef2f5;--panel:#fff;--ink:#1b2530;--muted:#5a6b78;--border:#dbe3ea;--accent:#0d8898;}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
+  .wrap{max-width:820px;margin:0 auto;padding:clamp(1.2rem,4vw,3rem) 1.2rem 4rem}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem}
+  h1{font-size:clamp(1.8rem,5vw,2.6rem);letter-spacing:-.02em;margin:.2rem 0 .5rem}
+  .lede{color:var(--muted);max-width:60ch;margin:0 0 1rem}
+  .note{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;color:var(--muted);font-size:.92rem;margin:1.4rem 0}
+  .note b{color:var(--ink)}
+  .note code{font-family:var(--mono);font-size:.85em;color:var(--ink)}
+  .cards{display:flex;flex-direction:column;gap:1rem;margin-top:1.6rem}
+  .card{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.3rem;transition:border-color .15s}
+  .card:hover{border-color:var(--accent)}
+  .card .n{font-family:var(--mono);color:var(--accent);font-size:.8rem}
+  .card h2{font-size:1.1rem;margin:.3rem 0 .35rem;display:flex;align-items:center;gap:.6rem}
+  .card p{margin:0;color:var(--muted);font-size:.94rem}
+  .card .cmd{font-family:var(--mono);font-size:.8rem;color:var(--muted);margin-top:.6rem}
+  .card .open{color:var(--accent);font-family:var(--mono);font-size:.8rem}
+  footer{margin-top:2.5rem;padding-top:1.4rem;border-top:1px solid var(--border);color:var(--muted);font-size:.82rem;font-family:var(--mono)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">kton &middot; worked examples</div>
+  <h1>kton examples</h1>
+  <p class="lede">Small, self-contained examples for the kton substrate (plankton + nekton). Every
+  one both <b>creates</b> records and <b>uses</b> them, and renders the resulting graph in the viewer
+  so you see exactly what came out.</p>
+
+  <div class="note">
+    <b>An environment is just a directory.</b> A plankton registry lives in a folder; you point at it
+    with <code>PLANKTON_DIR=&lt;dir&gt;</code>. A different folder is a different, independent registry.
+    Records move between environments by content hash via <code>plankton mirror</code> - no server,
+    no shared folder. Each example makes this explicit in its <code>run.sh</code>.
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <footer>
+    Run locally: build the kton binaries into <code>bin/</code> (see the repo README), then
+    <code>bash examples/&lt;name&gt;/run.sh</code>. The graphs below are pre-generated snapshots.
+  </footer>
+</div>
+
+<script>
+  // one entry per example; the viewer loads its pre-built union from docs/data/<dir>/
+  const EXAMPLES = [
+    { n:"01", dir:"01-hello-foton", title:"Hello foton",
+      teaches:"The smallest create + use: record one computation as a signed foton, then show / verify / query it by output hash.",
+      cmd:"bash examples/01-hello-foton/run.sh" },
+    { n:"02", dir:"02-environments-federation", title:"Environments + federation",
+      teaches:"Two independent registries (environments) that never share a folder - they exchange records by hash via mirror, then read as one lineage.",
+      cmd:"bash examples/02-environments-federation/run.sh" },
+  ];
+  const q = d => `viewer.html?union=data/${d}/union.json&keys=data/${d}/keys.json&names=data/${d}/names.json`;
+  document.getElementById("cards").innerHTML = EXAMPLES.map(e => `
+    <a class="card" href="${q(e.dir)}">
+      <div class="n">${e.n}</div>
+      <h2>${e.title}</h2>
+      <p>${e.teaches}</p>
+      <div class="cmd">${e.cmd}</div>
+      <div class="open">open the graph &rarr;</div>
+    </a>`).join("");
+</script>
+</body>
+</html>

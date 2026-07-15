@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>plankton federation — data manipulation graph</title>
+<link rel="icon" type="image/png" href="logo.png">
+<style>
+  :root { --bg:#0f1420; --panel:#151b29; --ink:#e7ecf5; --dim:#8b97ad; --line:#2a3346;
+          --a:#38bdf8; --b:#f5b642; --c:#34d399; --d:#c084fc; --e:#fb7185; --f:#2dd4bf;
+          --ok:#34d399; --bad:#f87171; --edge:#3b465e; --about:#7c9cff; --accent:#7c9cff; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+              font:14px/1.55 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif; overflow:hidden; }
+  header { padding:11px 18px 9px; border-bottom:1px solid var(--line); }
+  .titlerow { display:flex; align-items:center; gap:11px; }
+  .titlerow img { height:30px; width:auto; filter:invert(1); }
+  header h1 { font-size:16px; margin:0; font-weight:650; } header h1 small{color:var(--dim);font-weight:400;font-size:12.5px}
+  .story { color:var(--dim); font-size:12.5px; max-width:1080px; margin-top:4px; }
+  .story b{color:var(--ink)} .aC{color:var(--a)} .bC{color:var(--b)} .cC{color:var(--c)}
+  #stats { margin-top:5px; display:flex; gap:14px; font-size:12.5px; color:var(--dim); }
+  #stats b{color:var(--ink)} .ok{color:var(--ok)} .bad{color:var(--bad)}
+  #main { position:relative; height:calc(100% - 92px); }
+  #overview { position:absolute; inset:0; overflow:auto; padding:20px 22px; }
+  .searchrow { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  #q { background:var(--panel); border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:8px 12px; width:360px; max-width:70vw; font-size:13px; }
+  #q::placeholder{color:var(--dim)}
+  #results { position:absolute; z-index:9; background:var(--panel); border:1px solid var(--line); border-radius:9px; margin-top:2px; max-height:340px; overflow:auto; width:360px; display:none; }
+  #results .r{padding:7px 11px;cursor:pointer;font-size:12.5px;border-bottom:1px solid var(--line)} #results .r:hover{background:#1c2434} #results .m{color:var(--dim)}
+  .h2 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); margin:6px 0 10px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; cursor:pointer; }
+  .card:hover{border-color:var(--accent)} .card .nm{font-weight:650;font-size:14px;display:flex;align-items:center;gap:8px}
+  .card .nm .d{width:11px;height:11px;border-radius:50%} .card .mt{color:var(--dim);font-size:12.5px;margin-top:5px}
+  .bar{height:5px;border-radius:3px;background:#20293b;margin-top:9px;overflow:hidden} .bar>i{display:block;height:100%;background:var(--ok)}
+  .rel{color:var(--dim);font-size:12px;margin-top:8px}
+  #explorer { position:absolute; inset:0; display:none; }
+  canvas { display:block; width:100%; height:100%; cursor:grab; }
+  #controls { position:absolute; top:12px; left:12px; background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; font-size:12.5px; width:220px; }
+  #controls .back{color:var(--accent);cursor:pointer;font-size:12.5px;margin-bottom:8px;display:inline-block}
+  #controls .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin:8px 0 5px}
+  .arrows{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .arrows button{background:#1c2434;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:6px 4px;cursor:pointer;font-size:11.5px}
+  .arrows button.on{background:var(--accent);color:#0b0f18;border-color:var(--accent)}
+  .fchips{display:flex;flex-wrap:wrap;gap:5px} .fchip{cursor:pointer;border:1px solid var(--line);border-radius:20px;padding:2px 8px;font-size:11.5px;display:inline-flex;align-items:center;gap:5px;user-select:none}
+  .fchip .d{width:8px;height:8px;border-radius:50%} .fchip.off{opacity:.35}
+  .hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:var(--dim);font-size:11.5px}
+  .legend{position:absolute;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-size:11.5px;color:var(--dim)}
+  .legend .row{display:flex;align-items:center;gap:7px;margin:2px 0} .dot{width:11px;height:11px;border-radius:50%} .sq{width:11px;height:11px;border-radius:3px} .sw{width:18px;border-top:2px solid}
+  #panel{position:absolute;top:0;right:0;width:360px;max-width:88vw;height:100%;background:var(--panel);border-left:1px solid var(--line);padding:16px 18px;overflow:auto;transform:translateX(100%);transition:transform .18s}
+  #panel.open{transform:none} #panel .x{float:right;color:var(--dim);cursor:pointer;font-size:18px}
+  #panel .who{font-size:15px;font-weight:650} #panel .role{color:var(--dim);margin-bottom:8px}
+  #panel .kv{font-size:12px;color:var(--dim);margin:5px 0} #panel .kv code{color:var(--ink);word-break:break-all}
+  #panel h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);margin:14px 0 6px}
+  #panel .nav{font-size:12.5px;color:var(--accent);cursor:pointer;padding:3px 0;display:flex;gap:7px;align-items:center} #panel .nav .d{width:9px;height:9px;border-radius:50%}
+  #panel .frow{font-size:12.5px;padding:3px 0} #panel .frow.nav{color:var(--accent);cursor:pointer} #panel .frow .m{color:var(--dim);font-family:ui-monospace,monospace;font-size:11px}
+  #panel .uri{display:block;margin:1px 0 3px 0;color:var(--ok);font-size:11.5px;text-decoration:none} #panel .uri:hover{text-decoration:underline}
+  #panel .rc{display:inline-block;margin:2px 0 8px;color:var(--accent);cursor:pointer;font-size:12px;border:1px solid var(--line);border-radius:7px;padding:3px 9px}
+  #panel .txt{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);white-space:pre-wrap;font-size:12.5px}
+  .badge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600} .vok{background:rgba(52,211,153,.15);color:var(--ok)} .vno{background:rgba(248,113,113,.15);color:var(--bad)}
+  #err{position:absolute;inset:0;display:none;place-items:center;color:var(--bad);text-align:center;padding:40px}
+</style>
+</head>
+<body>
+<header>
+  <div class="titlerow"><img src="logo.png" alt="plankton"><h1>plankton federation <small>· data manipulation graph</small></h1></div>
+  <div class="story">Independent researchers, separate repos, one dataset. <b class="aC">a</b> prepared the common ground; others built on it <b>by content hash</b> (<b class="bC">b</b> and <b class="cC">c</b> disagreed about the monocytes — one vs two). Everyone cross-reviewed everyone. Start from a dataset or record, then <b>walk its pedigree</b> — every node re-verified in your browser (WASM, Ed25519/DSSE).</div>
+  <div id="stats"></div>
+</header>
+<div id="main">
+  <div id="overview"></div>
+  <div id="explorer">
+    <canvas id="cv"></canvas>
+    <div id="controls"></div>
+    <div class="legend">
+      <div class="row"><span class="dot" style="background:#889"></span>foton&nbsp;<span class="sq" style="background:#889"></span>claim&nbsp;<span class="dot" style="background:#cfd8e6"></span>dataset</div>
+      <div class="row"><span class="sw" style="border-color:var(--dim)"></span>builds-on&nbsp;<span class="sw" style="border-color:var(--about);border-top-style:dashed"></span>about</div>
+      <div class="row"><span style="color:var(--ok)">◎</span>bright ring = verified · colour = participant</div>
+    </div>
+    <div class="hint">scroll to zoom · drag background to pan · click a node to re-centre</div>
+    <div id="panel"></div>
+  </div>
+  <div id="err"></div>
+</div>
+<script src="wasm_exec.js"></script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const PAL=["--a","--b","--c","--d","--e","--f"];
+const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+let G=null, partColor={}, ex=null, filt=null;
+const pcol=p=>css(partColor[p]||"--dim");
+const clip=(s,n)=>s&&s.length>n?s.slice(0,n)+"…":s;
+
+async function load(){
+  try{
+    const qs=new URLSearchParams(location.search);
+    const go=new Go(); const wbuf=await (await fetch("graph.wasm")).arrayBuffer();
+    const wasm=await WebAssembly.instantiate(wbuf,go.importObject); go.run(wasm.instance);
+    const union=await (await fetch(qs.get("union")||"union.json")).text();
+    const keys =await fetch(qs.get("keys")||"keys.json").then(r=>r.text()).catch(()=>"{}");
+    const names=await fetch(qs.get("names")||"names.json").then(r=>r.text()).catch(()=>"{}");
+    G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
+    index(); showStats(); showOverview();
+  }catch(e){ $("#err").style.display="grid"; $("#err").textContent="Could not build the graph: "+e.message; }
+}
+function index(){
+  G.byId=new Map(G.nodes.map(n=>[n.id,n])); G.out={}; G.in={};
+  for(const e of G.edges){ (G.out[e.from]??=[]).push(e); (G.in[e.to]??=[]).push(e); }
+  G._parts=[...new Set(G.nodes.map(n=>n.participant))].sort();
+  G._parts.forEach((p,i)=>partColor[p]=PAL[i%PAL.length]);
+  filt={parts:new Set(G._parts), types:new Set(["foton","claim","source","ref"])};
+}
+function showStats(){ const t=G.summary.totals;
+  $("#stats").innerHTML=`<span><b>${t.participants}</b> participants</span><span><b>${t.fotons}</b> fotons</span><span><b>${t.claims}</b> claims</span><span class="ok"><b>${t.verified}</b>/${t.fotons+t.claims} verified</span>`+(t.unverified?`<span class="bad"><b>${t.unverified}</b> unverified</span>`:``);
+}
+
+/* ===== OVERVIEW ===== */
+function showOverview(){
+  $("#explorer").style.display="none"; $("#overview").style.display="block";
+  const S=G.summary, rel={};
+  for(const e of (S.edges||[])){ (rel[e.from]??=[]).push(`${e.kind==="about"?"reviews":"builds on"} ${e.to.replace('pfed-','')}×${e.count}`); }
+  const cards=S.participants.map(p=>{ const pct=p.total?Math.round(100*p.verified/p.total):0;
+    return `<div class="card" data-p="${p.name}"><div class="nm"><span class="d" style="background:${pcol(p.name)}"></span>${p.name}</div>
+      <div class="mt">${p.fotons} fotons · ${p.claims} claims</div><div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="mt" style="margin-top:5px">${p.verified}/${p.total} verified (${pct}%)</div>${rel[p.name]?`<div class="rel">${rel[p.name].join(" · ")}</div>`:``}</div>`;}).join("");
+  const datasets=G.nodes.filter(n=>n.type==="source"&&n.kind==="dataset");
+  const dsCards=datasets.map(d=>{ const c=(G.in[d.id]||[]).length;
+    return `<div class="card" data-src="${d.id}"><div class="nm"><span class="d" style="background:#cfd8e6"></span>${d.role}</div>
+      <div class="mt">original dataset · external input</div><div class="rel">${c} step${c===1?"":"s"} build on it → start here</div></div>`;}).join("");
+  $("#overview").innerHTML=`<div class="searchrow"><div style="position:relative"><input id="q" placeholder="search a record — participant, role, hash, or text…" autocomplete="off"><div id="results"></div></div><span style="color:var(--dim);font-size:12.5px">or start from a dataset / participant below</span></div>
+    ${datasets.length?`<div class="h2">datasets — start a pedigree from the original data</div><div class="cards">${dsCards}</div>`:``}
+    <div class="h2" style="margin-top:18px">participants (grouped view — scales with the federation, not the record count)</div><div class="cards">${cards}</div>`;
+  $$("#overview .card[data-src]").forEach(el=>el.onclick=()=>enterExplorer(el.dataset.src,"desc"));
+  $$("#overview .card[data-p]").forEach(el=>el.onclick=()=>enterExplorer(firstNodeOf(el.dataset.p),"both"));
+  const q=$("#q"),res=$("#results");
+  q.oninput=()=>{ const s=q.value.trim().toLowerCase(); if(!s){res.style.display="none";return;}
+    const hits=G.nodes.filter(n=>`${n.id} ${n.role} ${n.text||""} ${n.participant} ${n.by||""}`.toLowerCase().includes(s)).slice(0,40);
+    res.innerHTML=hits.map(n=>`<div class="r" data-id="${n.id}"><span style="color:${pcol(n.participant)}">${n.participant.replace('pfed-','')}</span> · ${n.type} · ${n.role} <span class="m">${clip(n.headline||n.id,44)}</span></div>`).join("")||`<div class="r m">no match</div>`;
+    res.style.display="block"; res.querySelectorAll(".r[data-id]").forEach(r=>r.onclick=()=>enterExplorer(r.dataset.id,"both")); };
+  document.addEventListener("click",e=>{ if(e.target!==q) res.style.display="none"; },true);
+}
+function firstNodeOf(part){ const ns=G.nodes.filter(n=>n.participant===part&&n.type!=="source");
+  ns.sort((a,b)=>((G.in[b.id]||[]).length)-((G.in[a.id]||[]).length)); return (ns[0]||G.nodes.find(n=>n.participant===part)).id; }
+
+/* ===== EXPLORER (pedigree, layered DAG) ===== */
+function pedigree(id, mode){ const set=new Set([id]);
+  const walk=(start,adj,dir)=>{const st=[start];while(st.length){const x=st.pop();for(const e of (adj[x]||[])){const nb=dir==="out"?e.to:e.from;if(!set.has(nb)){set.add(nb);st.push(nb);}}}};
+  if(mode==="anc"||mode==="both") walk(id,G.out,"out");     // ancestors: what it builds on / is about
+  if(mode==="desc"||mode==="both") walk(id,G.in,"in");      // descendants: what builds on / reviews it
+  if(mode==="par") for(const e of (G.out[id]||[])) set.add(e.to);
+  if(mode==="chi") for(const e of (G.in[id]||[])) set.add(e.from);
+  return set;
+}
+function enterExplorer(centerId, mode){ $("#overview").style.display="none"; $("#explorer").style.display="block";
+  ex={center:centerId, sel:centerId, mode, grouped:false, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId); }
+function drawControls(){ const modes=[["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
+  $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview</span>
+    <div class="lbl">centre</div><div style="font-size:12.5px;color:${c.type==='source'?'#cfd8e6':'var(--accent)'}">${c.type==='source'?c.role:c.participant.replace('pfed-','')+" · "+c.role}</div>
+    <div class="lbl">pedigree (path explorer)</div><div class="arrows">${modes.map(m=>`<button data-m="${m[0]}" class="${ex.mode===m[0]?'on':''}">${m[1]}</button>`).join("")}</div>
+    <div class="lbl">grouping</div><div class="fchips"><span class="fchip ${ex.grouped?'':'off'}" id="grpbtn">▣ group same-participant runs</span></div>
+    <div class="lbl">filter · participant</div><div class="fchips">${G._parts.map(p=>`<span class="fchip ${filt.parts.has(p)?'':'off'}" data-fp="${p}"><span class="d" style="background:${pcol(p)}"></span>${p.replace('pfed-','')}</span>`).join("")}</div>
+    <div class="lbl">filter · type</div><div class="fchips">${["foton","claim","source"].map(t=>`<span class="fchip ${filt.types.has(t)?'':'off'}" data-ft="${t}">${t}</span>`).join("")}</div>
+    <div class="lbl" id="cnt"></div>`;
+  $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;drawControls();layoutAndRun();});
+  $("#grpbtn").onclick=()=>{ex.grouped=!ex.grouped;drawControls();layoutAndRun();};
+  $$("#controls [data-fp]").forEach(el=>el.onclick=()=>{const p=el.dataset.fp;filt.parts.has(p)?filt.parts.delete(p):filt.parts.add(p);drawControls();layoutAndRun();});
+  $$("#controls [data-ft]").forEach(el=>el.onclick=()=>{const t=el.dataset.ft;filt.types.has(t)?filt.types.delete(t):filt.types.add(t);drawControls();layoutAndRun();});
+}
+function layoutAndRun(){
+  const set=pedigree(ex.center, ex.mode);
+  let nodes=[...set].map(id=>G.byId.get(id)).filter(n=>n.id===ex.center||(filt.parts.has(n.participant)&&filt.types.has(n.type)));
+  const keep=new Set(nodes.map(n=>n.id));
+  let edges=G.edges.filter(e=>keep.has(e.from)&&keep.has(e.to));
+  if(ex.grouped){ const g=groupRuns(nodes,edges); nodes=g.nodes; edges=g.edges; }
+  ex.nodes=nodes; ex.edges=edges; ex._byId=new Map(nodes.map(n=>[n.id,n]));
+  layerLayout(ex.nodes, ex.edges, ex._byId);
+  $("#cnt").textContent=`${ex.nodes.length} nodes · ${ex.edges.length} links`;
+  fitView(); if(!ex.started) startRender(); redraw();
+}
+// groupRuns: contract each CONNECTED RUN of same-participant nodes into one group node, preserving
+// lineage. a-a-b-a-a-b-b -> a-b-a-b (two 'a' runs stay separate because a 'b' sits between them).
+// Sources (datasets/code) never group. Union-find over edges between same-participant non-source nodes.
+function groupRuns(nodes, edges){
+  const uf={}, find=x=>{while(uf[x]!==x)x=uf[x]=uf[uf[x]];return x;};
+  nodes.forEach(n=>uf[n.id]=n.id);
+  const byId=new Map(nodes.map(n=>[n.id,n]));
+  for(const e of edges){ const a=byId.get(e.from),b=byId.get(e.to);
+    if(a&&b&&a.type!=="source"&&b.type!=="source"&&a.participant===b.participant) uf[find(a.id)]=find(b.id); }
+  const groups=new Map();
+  for(const n of nodes){ const r=n.type==="source"?n.id:find(n.id); (groups.get(r)||groups.set(r,[]).get(r)).push(n); }
+  const gnodes=[], gid={};
+  for(const [r,m] of groups){
+    if(m.length===1){ gnodes.push(m[0]); gid[m[0].id]=m[0].id; }
+    else { const id="grp:"+r; m.forEach(x=>gid[x.id]=id);
+      gnodes.push({id, type:"group", participant:m[0].participant, role:m.length+" records",
+        count:m.length, verified:m.every(x=>x.verified), members:m}); } }
+  const seen=new Set(), gedges=[];
+  for(const e of edges){ const f=gid[e.from], t=gid[e.to]; if(f===t)continue; const k=f+">"+t+">"+e.kind;
+    if(!seen.has(k)){ seen.add(k); gedges.push({from:f,to:t,kind:e.kind}); } }
+  return {nodes:gnodes, edges:gedges};
+}
+function layerLayout(nodes, edges, byId){
+  const has=new Set(nodes.map(n=>n.id)), anc={};
+  for(const e of edges){ if(has.has(e.from)&&has.has(e.to)) (anc[e.from]??=[]).push(e.to); } // e.from builds-on/about e.to (earlier)
+  const depth={}, seen={};
+  const d=id=>{ if(id in depth)return depth[id]; if(seen[id])return depth[id]=0; seen[id]=1;
+    let m=0; for(const t of (anc[id]||[])) if(has.has(t)) m=Math.max(m,d(t)+1); return depth[id]=m; };
+  nodes.forEach(n=>n._d=d(n.id));
+  const layers={}, maxD=Math.max(0,...nodes.map(n=>n._d));
+  nodes.forEach(n=>(layers[n._d]??=[]).push(n)); nodes.forEach(n=>n._y=0);
+  for(let pass=0;pass<5;pass++) for(let L=0;L<=maxD;L++){ const lay=layers[L]||[];
+    lay.forEach(n=>{ const ps=(anc[n.id]||[]).map(id=>byId.get(id)).filter(p=>p&&has.has(p.id)&&p._d<L);
+      n._b = ps.length? ps.reduce((s,p)=>s+p._y,0)/ps.length : n._y; });
+    lay.sort((a,b)=>(a._b-b._b)||a.participant.localeCompare(b.participant)); lay.forEach((n,i)=>n._y=i); }
+  const DX=210, DY=60;
+  for(let L=0;L<=maxD;L++){ const lay=layers[L]||[], off=(lay.length-1)/2; lay.forEach((n,i)=>{ n.x=L*DX; n.y=(i-off)*DY; }); }
+}
+function fitView(){ const cv=$("#cv"),DPR=devicePixelRatio||1; cv.width=cv.clientWidth*DPR; cv.height=cv.clientHeight*DPR;
+  if(!ex.nodes.length){ex.view={scale:DPR,tx:cv.width/2,ty:cv.height/2};return;}
+  let a=1e9,b=1e9,c=-1e9,d=-1e9; for(const n of ex.nodes){a=Math.min(a,n.x);c=Math.max(c,n.x);b=Math.min(b,n.y);d=Math.max(d,n.y);}
+  const pad=90*DPR, gw=(c-a)||1, gh=(d-b)||1, sc=Math.min((cv.width-2*pad)/gw,(cv.height-2*pad)/gh,1.7*DPR);
+  ex.view={scale:sc, tx:cv.width/2-sc*(a+c)/2, ty:cv.height/2-sc*(b+d)/2};
+}
+const RW=8;
+function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height); ctx.setTransform(v.scale,0,0,v.scale,v.tx,v.ty);
+  for(const e of ex.edges){ const f=ex._byId.get(e.from),t=ex._byId.get(e.to); if(!f||!t)continue;
+    const [L,R]= f._d>=t._d?[t,f]:[f,t]; const rel=e.kind!=="builds-on";
+    edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
+  for(const n of ex.nodes) nodeDraw(ctx,n);
+}
+function edgeArrow(ctx,a,b,color,dash,lbl){ const x1=a.x+RW,y1=a.y,x2=b.x-RW-4,y2=b.y,mx=(x1+x2)/2;
+  ctx.strokeStyle=color;ctx.lineWidth=1.3;ctx.setLineDash(dash?[5,4]:[]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2);ctx.stroke();ctx.setLineDash([]);
+  const ang=Math.atan2(y2-y1,x2-mx),h=7;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-h*Math.cos(ang-.4),y2-h*Math.sin(ang-.4));ctx.lineTo(x2-h*Math.cos(ang+.4),y2-h*Math.sin(ang+.4));ctx.fill();
+  if(lbl){ ctx.fillStyle=color; ctx.font="italic 9px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(lbl,mx,(y1+y2)/2-6); } }
+function label(ctx,n,txt,r){ ctx.fillStyle=css("--ink");ctx.font="11px ui-sans-serif,system-ui";ctx.textAlign="left";ctx.textBaseline="middle";ctx.fillText(clip(txt,22),n.x+r+5,n.y); }
+function nodeDraw(ctx,n){ const sel=n.id===ex.center;
+  if(n.id===ex.sel){ ctx.strokeStyle=css("--accent"); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(n.x,n.y,RW*2.1,0,7); ctx.stroke(); }
+  if(n.type==="group"){ ctx.fillStyle=pcol(n.participant); ctx.strokeStyle=n.verified?css("--ok"):css("--bad"); ctx.lineWidth=sel?3:2.2;
+    const w=RW*2.7,h=RW*1.9; rrect(ctx,n.x-w/2-3,n.y-h/2-3,w,h,5); ctx.stroke(); rrect(ctx,n.x-w/2,n.y-h/2,w,h,5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#0b0f18"; ctx.font="700 11px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(n.count,n.x,n.y);
+    label(ctx,n,`${n.participant.replace('pfed-','')} · ${n.role}`,w/2+3); return; }
+  if(n.type==="ref"){ ctx.strokeStyle="#8b97ad"; ctx.lineWidth=sel?3:1.4; ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.arc(n.x,n.y,RW*0.9,0,7);ctx.stroke();ctx.setLineDash([]);
+    label(ctx,n,n.role,RW*0.9); return; }
+  if(n.type==="source"){ const data=n.kind==="dataset"; ctx.fillStyle=data?"#cfd8e6":"#455066";ctx.strokeStyle="#6b7688";ctx.lineWidth=sel?3:1.4;
+    const r=data?RW*1.15:RW*0.7;ctx.beginPath();ctx.arc(n.x,n.y,r,0,7);ctx.fill();ctx.stroke(); if(data||sel)label(ctx,n,n.role,r); return; }
+  ctx.fillStyle=pcol(n.participant);ctx.strokeStyle=n.verified?css("--ok"):css("--bad");ctx.lineWidth=sel?3:2;
+  if(n.type==="foton"){ctx.beginPath();ctx.arc(n.x,n.y,RW,0,7);ctx.fill();ctx.stroke();}else{const w=RW*1.7;rrect(ctx,n.x-w/2,n.y-w/2,w,w,3);ctx.fill();ctx.stroke();}
+  label(ctx,n,`${n.participant.replace('pfed-','')} · ${n.role}`,RW);
+}
+function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio||1;
+  const s2w=(sx,sy)=>[(sx*DPR-ex.view.tx)/ex.view.scale,(sy*DPR-ex.view.ty)/ex.view.scale];
+  const hit=(sx,sy)=>{const [wx,wy]=s2w(sx,sy);return ex.nodes.find(n=>Math.hypot(n.x-wx,n.y-wy)<RW*1.7);};
+  let drag=null,pan=null;
+  cv.onwheel=e=>{ e.preventDefault(); const f=e.deltaY<0?1.12:1/1.12,mx=e.offsetX*DPR,my=e.offsetY*DPR;
+    const wx=(mx-ex.view.tx)/ex.view.scale,wy=(my-ex.view.ty)/ex.view.scale; ex.view.scale*=f; ex.view.tx=mx-wx*ex.view.scale; ex.view.ty=my-wy*ex.view.scale; redraw(); };
+  cv.onmousedown=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){drag={n,moved:false};} else {pan={x:e.offsetX*DPR,y:e.offsetY*DPR,tx:ex.view.tx,ty:ex.view.ty};cv.style.cursor="grabbing";} };
+  cv.onmousemove=e=>{ if(drag){const [wx,wy]=s2w(e.offsetX,e.offsetY);drag.n.x=wx;drag.n.y=wy;drag.moved=true;redraw();}
+    else if(pan){ex.view.tx=pan.tx+(e.offsetX*DPR-pan.x);ex.view.ty=pan.ty+(e.offsetY*DPR-pan.y);redraw();}
+    else{cv.style.cursor=hit(e.offsetX,e.offsetY)?"pointer":"grab";} };
+  window.onmouseup=()=>{ if(drag&&!drag.moved){ ex.sel=drag.n.id; openNode(drag.n.id); redraw(); } if(pan)cv.style.cursor="grab"; drag=null;pan=null; };
+  cv.ondblclick=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){recentre(n.id);} };
+}
+function recentre(id){ ex.center=id; ex.sel=id; drawControls(); layoutAndRun(); openNode(id); }
+function fileRow(f){ const uris=(G.locators||{})[f.hash]||[], isNode=G.byId.has(f.hash);
+  return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${f.hash}"`:``}>${f.name||"(unnamed)"} <span class="m">${f.hash}</span>`+
+    uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")+`</div>`; }
+function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(id);
+  if(gn&&gn.type==="group"){
+    p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
+      <div class="who" style="color:${pcol(gn.participant)}">${gn.participant}</div>
+      <div class="role">group · ${gn.count} same-participant records in a run</div>
+      <span class="rc" onclick="ex.grouped=false;drawControls();layoutAndRun();">▣ ungroup</span>
+      <h4>records (${gn.count})</h4>${gn.members.map(m=>`<div class="nav" data-id="${m.id}"><span class="d" style="background:${pcol(m.participant)}"></span>${m.type} · ${m.role} <span style="color:var(--dim)">${m.verified?'✓':''}</span></div>`).join("")}`;
+    p.querySelectorAll(".nav[data-id]").forEach(el=>el.onclick=()=>{ex.grouped=false;ex.sel=el.dataset.id;drawControls();layoutAndRun();openNode(el.dataset.id);});
+    p.classList.add("open"); return;
+  }
+  const n=G.byId.get(id),ins=(G.in[id]||[]),outs=(G.out[id]||[]),isSrc=n.type==="source"||n.type==="ref";
+  const lk=(o,kind)=>{const c=o.type==="source"?"#cfd8e6":pcol(o.participant);
+    return `<div class="nav" data-id="${o.id}"><span class="d" style="background:${c}"></span>${o.type==="source"?o.role:o.participant.replace('pfed-','')+" · "+o.role} <span style="color:var(--dim)">(${kind})</span></div>`;};
+  const link=(e)=>lk(G.byId.get(e.from),e.kind);
+  const uris=(G.locators||{})[n.id]||[];
+  const meta=isSrc?`<div class="kv">external input — referenced by content hash; not a signed record.</div>`
+    :`<div class="kv">signer <code>${n.signer||"?"}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
+  p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
+    <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?n.role:n.participant}</div>
+    <div class="role">${isSrc?("source · "+n.kind):(n.type+" · "+n.role)}</div>
+    ${n.id!==ex.center?`<span class="rc" onclick="recentre('${n.id}')">⌖ re-centre pedigree here</span>`:``}
+    <div class="kv">id <code>${n.id}</code></div>${(n.by&&!isSrc)?`<div class="kv">by <code>${n.by}</code></div>`:``}${meta}
+    ${uris.length?`<h4>located at</h4>${uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")}`:``}
+    ${(n.inputs&&n.inputs.length)?`<h4>inputs (${n.inputs.length})</h4>${n.inputs.map(fileRow).join("")}`:``}
+    ${(n.outputs&&n.outputs.length)?`<h4>outputs (${n.outputs.length})</h4>${n.outputs.map(fileRow).join("")}`:``}
+    ${ins.length?`<h4>${isSrc?"used by":"built on / reviewed by"} (${ins.length})</h4>${ins.map(link).join("")}`:``}
+    ${n.text?`<div class="txt">${n.text.replace(/</g,"&lt;")}</div>`:``}`;
+  p.querySelectorAll(".nav[data-id],.frow.nav[data-id]").forEach(el=>el.onclick=()=>{ ex.sel=el.dataset.id; openNode(el.dataset.id); redraw(); });
+  p.classList.add("open");
+}
+load();
+</script>
+</body>
+</html>

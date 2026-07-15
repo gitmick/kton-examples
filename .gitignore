@@ -1,0 +1,8 @@
+# kton binaries are not published here - build them from the plankton repo (see README)
+bin/plankton
+bin/nekton
+bin/kton
+# private keys must NEVER be committed to a public repo
+*.key
+# per-example working state (registries, inputs, envelopes) is regenerable
+**/.work/
