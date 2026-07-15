@@ -34,6 +34,11 @@ two.)
 |---|---|---|
 | 01 | `hello-foton` | the smallest create + use: record a foton, then show / verify / query it |
 | 02 | `federation` | two registries exchanging records by hash (mirror), read as one lineage |
+| 03 | `reproduce` | re-derive an output and prove it matches (L0), tampered gives none |
+| 04 | `claim` | nekton records a signed opinion about a foton; the two layers join by hash |
+| 05 | `review-scope` | a chain of signed claims sealed by one head, tamper-evident as a whole |
+| 06 | `nanopub-rdf` | both layers export to RDF that merges at shared hash IRIs |
+| 07 | `identity` | a key is an identity: trace a model's claims, then bind a key to a name |
 
 ## Run them yourself
 
