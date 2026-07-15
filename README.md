@@ -39,6 +39,7 @@ two.)
 | 05 | `review-scope` | a chain of signed claims sealed by one head, tamper-evident as a whole |
 | 06 | `nanopub-rdf` | both layers export to RDF that merges at shared hash IRIs |
 | 07 | `identity` | a key is an identity: trace a model's claims, then bind a key to a name |
+| 08 | `sigstore-github` | sign a record with your GitHub identity (Sigstore keyless: Fulcio + Rekor) |
 
 ## Run them yourself
 
