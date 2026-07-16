@@ -172,7 +172,7 @@ echo; echo "########## ACT 7 - the regulator re-verifies everything, trusting no
 export PLANKTON_DIR="$W/agency/plankton" NEKTON_DIR="$W/agency/nekton"
 echo -n "  1. reproduction re-check (L1):      "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
 echo -n "  2. environment fulfils spectrum:    "; if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1; then echo "3/3 fulfilled"; else echo "NOT fulfilled"; fi
-echo -n "  3. analyst signature on the FIT:    "; nekton verify "$F/fit.dsse.json" "$(key analyst).pub" >/dev/null 2>&1 && echo "VALID" || plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -o VALID || echo "VALID"
+echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -q '\bVALID\b'; then echo "VALID"; else echo "INVALID"; fi
 echo    "  4. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
 
@@ -183,6 +183,7 @@ for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub "$
 echo "  exported submission.ttl + attestations.trig - the corpus the decision is made over"
 if python3 -c "import rdflib" 2>/dev/null; then
   python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$F/fit.dsse.json" "$FIT" "$HEAD" | tee "$F/verdict.txt"
+  [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "  !! GATE REGRESSION: the capstone gate did NOT return COMPLETE (release.py exited non-zero)"; exit 1; }
   # The decision is NOT a free-floating query: the agency records it as a FOTON. Its inputs are the
   # exact corpus it consumed (submission.ttl + attestations.trig, by hash) and the gate logic
   # (release.rq); its output is the verdict. So the decision is content-addressed and REPRODUCIBLE -

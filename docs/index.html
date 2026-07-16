@@ -93,8 +93,9 @@
 
   <div class="note">
     <b>One term you will meet in every example: a registry is just a directory.</b> A registry is the
-    <i>store</i> where plankton files its records; you point at it with <code>PLANKTON_DIR=&lt;dir&gt;</code>,
-    and a different folder is a different, independent registry. Records move between registries by
+    <i>store</i> where plankton files its records; you point at it with <code>PLANKTON_DIR=&lt;dir&gt;</code>
+    (and <code>NEKTON_DIR</code> for the nekton claim store the same way), and a different folder is a
+    different, independent registry. Records move between registries by
     content hash with <code>plankton mirror</code>, no server, no shared folder. (A registry is a store,
     not an <i>execution environment</i> like a container or an OS, that is a separate thing plankton
     can record on its own.)

@@ -85,6 +85,13 @@ REVIEW COMPLETE: True  (approvals=3/3, rejects=0)
 A missing approval or any single reject flips it to incomplete - the query is the gate. (The SPARQL
 step needs `rdflib`: `pip install rdflib`.)
 
+**Boundary (honest):** this counts *distinct signing keys*, not verified enrolled reviewers - three
+sock-puppet keys would satisfy "3/3". Turning a threshold count into a real required-set check needs a
+sealed enrolment (who the required reviewers are) plus their `sec:controller` identities, vouched by an
+authority - the enrolment boundary named in [example 12](../12-submission/) and the protocol's Trust
+chapter. This example shows the *mechanism* (typed reviews + a re-derivable completeness query); the
+enrolment authority on top is a separate step.
+
 ## Run it yourself
 
 ```

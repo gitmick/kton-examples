@@ -76,6 +76,12 @@ nekton claim bad.spec.json chair.key --add
 Change any earlier claim and its id changes, which breaks the next `prev`, which changes the head.
 Anyone holding the published head can detect it.
 
+**This fatality is a property of the *sealed scope*, a deliberately closed world.** It is NOT a general
+rule: outside a sealed scope, on the open substrate, an unresolved reference is merely *incomplete*, not
+invalid (a record referencing something you cannot yet see is still valid on its own hash and
+signature). The scope buys a closed world on purpose - do not read "a dangling link is rejected" as
+holding everywhere, or federation breaks.
+
 ## Or just run the whole thing
 
 ```

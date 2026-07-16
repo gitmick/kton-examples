@@ -11,6 +11,10 @@ import rdflib
 ttl, trig, query_path, fit_env_path, fit_hash, head_hash = sys.argv[1:7]
 
 # derive the environment the fit declares, from the fit envelope itself (COVERED in its descriptor)
+# NOTE (soundness boundary): the env is read from the fit envelope's own descriptor. This gate does
+# NOT itself re-verify that this envelope IS the attested fit; that is the regulator's obligation,
+# done in Act 7 (verify the analyst signature and that its foton id == the bound fit_hash) before the
+# gate is trusted. A gate handed a doctored envelope would bind whatever env it claims.
 env = json.loads(base64.b64decode(json.load(open(fit_env_path))["payload"]))["predicate"]["protocol"]["descriptor"]["environment"]
 PK = "https://kton.dev/o/"
 def iri(h): return rdflib.URIRef(PK + h.replace("sha256:", ""))
@@ -45,3 +49,7 @@ print(f"  RELEASE: {'COMPLETE - the submission may be accepted' if ok else 'BLOC
 bogus = "0" * 64
 n = len(satisfied(bogus, bogus, bogus))
 print(f"  (same gate bound to an unrelated hash: {n}/7 conditions -> BLOCKED; conditions are not free-floating)")
+
+# Exit non-zero if the gate did not return COMPLETE, so run.sh (and any CI) fails loudly on a
+# regression instead of printing a stale narrative - the check the last review round was missing.
+sys.exit(0 if ok else 1)

@@ -122,6 +122,10 @@ bash run.sh
 The viewer colours records by their signer. Crucially, a signer's **label is the principal from its
 signed `sec:controller` claim where one exists** - so the opus key shows as `claude-opus-4-8` (what the
 deployer *signed*), not a site-operator keyfile name. A key with no such binding falls back to its
-keyfile label, which is a site label, not attested - the difference the whole example is about.
+keyfile label, which is a site label, not attested - the difference the whole example is about. One
+caveat the viewer cannot show in a single label: it renders the *claimed* principal from the signed
+binding, not a trust decision. As Part 2 insists, you believe that binding only if you trust the key
+that signed it - and which authority vouched, and whether you trust it, is exactly what the viewer does
+not display. The label is "who this key claims to be, per a signature," never "verified identity."
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/07-identity/union.json&keys=data/07-identity/keys.json&names=data/07-identity/names.json)

@@ -95,6 +95,28 @@ verdict (L0) - and it **names its own evidence set** (its input list). A regulat
 sponsor's verdict; it re-derives its *own* verdict-foton over the sources it chose. (A verdict without
 its corpus would be a configuration, not a statement.)
 
+## What the gate proves, and what it assumes
+
+The gate is deliberately honest about its boundaries (this is the substrate's whole stance; see the
+protocol's [Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/trust.md)). It proves the
+seven conditions hold **over the corpus it was handed** - no more:
+
+- **"two distinct reviewers" is two distinct signing keys, not two verified enrolled reviewers.** The
+  gate counts distinct keys under `gxp:reviewed=pass`; it does not (in this example) join them to their
+  `sec:controller` identities or to a sealed enrolment, so one actor holding two keys would pass. Real
+  assurance needs the **enrolment authority** boundary: a sealed review that enrolls named participants,
+  vouched for by a signed authority. That is the honest form, and it is not implemented here.
+- **"no reject" is corpus-relative.** The one non-monotone condition (`FILTER NOT EXISTS` a fail review)
+  means "no fail *in the corpus loaded*". A withheld failing review makes the gate pass. The gate names
+  its corpus (its inputs) but cannot itself establish that the corpus is complete - that is the
+  **completeness** boundary, and it is a property of the source list, not of the hash.
+- **the environment is read from the fit envelope,** which the regulator must first confirm is the
+  attested fit (Act 7's signature + foton-id check) - the gate trusts the `fit_hash` it was handed.
+
+None of these are hidden: the verdict carries its corpus, so a smaller-corpus rerun is a *different*,
+comparable verdict, and the missing checks are named. Making them mechanical (sealed enrolment +
+authority join + a freshness/anchor check) is the roadmap the Trust chapter lays out.
+
 ## Fetchable evidence (the bytes, not just the hashes)
 
 Every sign-off carries its document by **hash** (`nk:evidence`), and every such file also gets a signed
