@@ -35,8 +35,10 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
    environment" is **COVERED** - baked into the foton's identity.
 3. **The model tree** (pmx). `pmx:model-role` tags each model file `base -> covariate -> final` with a
    parent ref, so the graph shows *why* run12 is the final model - a signed tree, not a filename.
-4. **Independent reproduction** (03). QC re-runs the fit in the qualified image; raw outputs differ (the
-   banner), so `plankton reproduces --via <normalizer>` returns **L1**. QC signs an `nk:reproduces`
+4. **Independent reproduction** (03). QC **re-authors the fit as its own foton** (same inputs + protocol
+   as the analyst's, so the same action key, but an independent signer and its own output) - so the
+   re-run is a visible *parallel branch* from `analysis.csv`, not a dangling file. Raw outputs differ
+   (the banner), so `plankton reproduces --via <normalizer>` returns **L1**; QC signs an `nk:reproduces`
    claim. A tampered `.ext` would return none - the check is pure hashing.
 5. **The review scope** (04/05/11). `nekton seed` opens a scope; two independent reviewers each sign a
    `gxp:reviewed=pass` (with report PDF evidence), chained `prev -> prev` and sealed by one **head**.
@@ -90,6 +92,17 @@ Every sign-off carries its document by **hash** (`nk:evidence`), and every such 
 for and verify `sha256 == hash` on arrival. Location is a signed, plural, post-hoc claim - the kernels
 never dereference it; resolving it is kton's job. In the viewer these fold into the per-file locators
 rather than cluttering the graph.
+
+## Complete trails: nothing changed outside kton
+
+The point of the substrate is a **complete** trail: every file in the graph is either a hand-authored
+root (raw data, a model file, a reviewer's PDF) or the recorded output of a foton. There is a subtle way
+to break that - run a real command that transforms data (a QC re-run, a candidate test run) and only
+**hash** its output to feed a `reproduces` / `spectrum check`, without authoring the computation. The
+output then dangles as a rootless node: data was changed *outside* the trail. This example is careful to
+author *every* such computation - QC's re-run and the candidate test run are fotons, not just hashes -
+so open the graph and the only rootless nodes are genuine inputs. Reproduction and qualification are
+visible as parallel branches, not asserted in prose.
 
 ## What is real today
 

@@ -48,8 +48,11 @@ for t in test-onecomp test-twocomp test-covariate; do
   plankton author --cmd "Rscript tools/$t.R" --in "$F/$t.csv" --out "$F/$t.ref" --sign "$(key analyst).key" --add >/dev/null
   REF[$t]=$(plankton hash "$F/$t.ref")
 done
-# the covariate test carries a volatile banner -> its candidate run differs -> normalizer gives L1
+# the covariate test carries a volatile banner -> its candidate run differs -> normalizer gives L1.
+# The candidate (docker) run is AUTHORED as its own foton too - it is a real computation, so recording
+# only its hash for the spectrum check would leave a rootless file (a trail gap).
 Rscript "$T/pmxtest.R" "$F/test-covariate.csv" banner > "$F/test-covariate.cand"
+plankton author --cmd "Rscript tools/test-covariate.R" --in "$F/test-covariate.csv" --out "$F/test-covariate.cand" --sign "$(key qc).key" --add >/dev/null
 sh "$T/strip-banner.sh" "$F/test-covariate.ref"  > "$F/cov.ref.canon"
 sh "$T/strip-banner.sh" "$F/test-covariate.cand" > "$F/cov.cand.canon"
 plankton author --cmd "$NORMCMD" --kind normalize --in "$F/test-covariate.ref"  --out "$F/cov.ref.canon"  --sign "$(key analyst).key" --add >/dev/null
@@ -103,8 +106,13 @@ nekton annotate "$(plankton hash "$F/run7.mod")"  --template pmx/model-role --se
 nekton annotate "$(plankton hash "$F/run12.mod")" --template pmx/model-role --set role=final --set parent="$(plankton hash "$F/run7.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
 echo "  signed model tree: run1=base -> run7=covariate -> run12=final (the FIT ran run12)"
 
-echo; echo "########## ACT 3 - independent reproduction by QC (real re-run, L1 via the normalizer) ######"
-Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1-qc.ext"     # QC re-runs in the qualified image
+echo; echo "########## ACT 3 - independent reproduction by QC (real re-run, authored as a foton) ########"
+# QC RE-AUTHORS the fit as its own foton (same inputs + protocol -> same action key as the analyst's
+# run, but a distinct signer and its own output), so the re-run is a visible parallel branch from
+# analysis.csv - not a dangling file. This is what makes reproduction show up in the lineage.
+Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1-qc.ext"
+QCFIT=$(plankton author --cmd "nmfe75 run12.mod (NONMEM stand-in: Rscript tools/fit.R)" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+echo "  QC re-ran the fit -> $QCFIT (same action key as the analyst's, independent signer + output)"
 sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"
 plankton author --cmd "$NORMCMD" --kind normalize --in "$F/run1.ext"    --out "$F/fit.ref.canon" --sign "$(key qc).key" --add >/dev/null
