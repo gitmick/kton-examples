@@ -62,9 +62,11 @@ the graphs are already live.
 
 <details><summary>Not installed yet? Build once from source (contributors)</summary>
 
-The binaries are Go, no dependencies. Build them from the
-[plankton repo](https://github.com/gitmick/plankton) onto your PATH (or into this repo's `bin/`,
-which the run scripts also add to PATH):
+**The reference implementation is not public yet.** Until it is, you can follow every example through
+its README and the [live graphs](https://gitmick.github.io/kton-examples/) without running anything; the
+runnable binaries ship with the public release. Contributors with access build the binaries (Go, no
+dependencies) from the plankton repo onto their PATH (or into this repo's `bin/`, which the run scripts
+also add to PATH):
 
 ```
 ( cd reference        && go build -o ~/.local/bin/plankton ./cmd/plankton )

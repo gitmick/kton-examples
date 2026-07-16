@@ -63,6 +63,13 @@ is computed over its contents *including* its `prev`. Optionally, `kton anchor` 
 public transparency log (Sigstore/Rekor) so that not even the chair can backdate it, `kton` is the
 cockpit tool that adds network features on top of the two kernels; you do not need it here.
 
+**Boundary - the head proves integrity, not currency.** A published head is tamper-evident, but by
+itself it does not prove it is the *latest* head: an earlier, shorter chain (a **rewind**) verifies just
+as cleanly. Knowing you hold the current head is a separate step - anchoring the head in a transparency
+log (above) plus a consumer freshness check, laid out in the protocol's
+[Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/trust.md) (section 3, "freshness")
+and made real in [example 08](../08-sigstore-github/).
+
 **6. See the tamper-evidence.** A claim whose `prev` points nowhere is refused, a gap is treated as
 tampering:
 

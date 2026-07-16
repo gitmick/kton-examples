@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>kton examples</title>
 <meta name="description" content="kton records how data was produced and what has been said about it, as small signed content-addressed units anyone can verify. Worked examples with a graph viewer.">
+<meta property="og:title" content="kton - worked examples">
+<meta property="og:description" content="kton records how data was produced (plankton) and what has been said about it (nekton), as small signed content-addressed records anyone can verify. Thirteen worked examples with a live graph viewer.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gitmick.github.io/kton-examples/">
 <style>
   :root{
     --bg:#0e1216; --panel:#161d25; --panel2:#1b232c; --ink:#ccd6df; --muted:#7d8c99; --faint:#566573;
@@ -78,7 +82,9 @@
     <li>
       <div class="term">kton <span class="tag">the whole thing</span></div>
       <p>The substrate as a whole (plankton + nekton) plus a thin command that conducts both. "kton" is what
-      you say when you mean the system; plankton and nekton are its two kinds of record.</p>
+      you say when you mean the system; plankton and nekton are its two kinds of record. The examples call
+      <code>plankton</code> and <code>nekton</code> directly - the <code>kton</code> command is optional,
+      needed only for the network features in <a href="https://github.com/gitmick/kton-examples/blob/main/examples/08-sigstore-github/README.md">example 08</a> (anchoring to a transparency log).</p>
     </li>
   </ul>
 
@@ -155,9 +161,9 @@
     </div>
     <div class="card">
       <div class="n">08</div><h3>Sign with your GitHub identity (Sigstore)</h3>
-      <p>Tier 3 made real: sign a kton record with your GitHub identity via Sigstore keyless (Fulcio
-      certificate + Rekor transparency log), verifiable with no long-lived key and no trust in you.
-      Hands-on and interactive, so no live graph.</p>
+      <p>The strongest identity tier - authority-backed, defined in <a href="https://github.com/gitmick/kton-examples/blob/main/examples/07-identity/README.md">example 07</a> - made real: sign a kton record
+      with your GitHub identity via Sigstore keyless (Fulcio certificate + Rekor transparency log),
+      verifiable with no long-lived key and no trust in you. Hands-on and interactive, so no live graph.</p>
       <div class="links"><a href="https://github.com/gitmick/kton-examples/blob/main/examples/08-sigstore-github/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
@@ -230,10 +236,12 @@
   <a href="https://github.com/gitmick/plankton/blob/main/docs/trust.md">Trust chapter</a>.</p>
 
   <footer>
-    Run them yourself: build the kton binaries (see the
-    <a href="https://github.com/gitmick/kton-examples">repo README</a>), then
-    <code>bash examples/&lt;name&gt;/run.sh</code>. The graphs here are pre-generated snapshots; in the
-    viewer, Esc or the browser Back button returns to the overview.
+    Run them yourself once the reference binaries are available (see the
+    <a href="https://github.com/gitmick/kton-examples">repo README</a>): <code>plankton</code> and
+    <code>nekton</code> on your PATH, then <code>bash examples/&lt;name&gt;/run.sh</code>. Until the
+    reference implementation is public you can still follow every example through its README and the live
+    graphs here - pre-generated snapshots; in the viewer, Esc or the browser Back button returns to the
+    overview.
   </footer>
 </div>
 </body>
