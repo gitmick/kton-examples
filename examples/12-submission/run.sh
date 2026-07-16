@@ -91,7 +91,12 @@ echo "  fulfilment recorded as a reproducible spectrum-check foton (commits to t
 # and a gxp tool-validation claim
 printf "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef\n" > "$F/image.txt"
 OCI=$(plankton hash "$F/image.txt")
-printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s"},"why":"image fulfils pmxtools-1.2.0 (3/3 re-derivable in the spectrum-check foton)","by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$OCI" "${ENV#sha256:}" "${CHECK#sha256:}" > "$F/qual.json"
+# A4/B1: parse the REAL tally (N/M) from the fulfilment - a reproducible fact - and CARRY it typed on
+# the qualification, so the gate can require a FULL pass (N==M), not merely that a check foton was used.
+# A partial pass (e.g. a 2/3 environment) authored honestly then fails the gate; a FORGED N==M is caught
+# by the regulator's own re-run (Act 8a, a hard gate). "Used the spectrum" is not "passed the spectrum".
+TALLY=$(grep -oE '[0-9]+/[0-9]+ member' "$F/fulfilment.txt" | head -1 | grep -oE '[0-9]+/[0-9]+'); NFUL=${TALLY%/*}; NTOT=${TALLY#*/}
+printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s","membersFulfilled":"%s","membersTotal":"%s"},"why":"image fulfils pmxtools-1.2.0 (%s members, re-derivable in the spectrum-check foton)","by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$OCI" "${ENV#sha256:}" "${CHECK#sha256:}" "$NFUL" "$NTOT" "$TALLY" > "$F/qual.json"
 nekton claim "$F/qual.json" "$(key qc).key" --add >/dev/null
 printf "%%PDF tool validation protocol\n" > "$F/toolval.pdf"
 nekton annotate "$ENV" --template gxp/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --sign "$(key qc).key" --add >/dev/null
@@ -181,7 +186,10 @@ NEKTON_DIR="$W/agency/nekton"      nekton  mirror "$W/sponsor/nekton"    | sed '
 echo; echo "########## ACT 8a - the regulator re-verifies everything, trusting no one ##########"
 export PLANKTON_DIR="$W/agency/plankton" NEKTON_DIR="$W/agency/nekton"
 echo -n "  1. reproduction re-check (L1):      "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
-echo -n "  2. environment fulfils spectrum:    "; if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1; then echo "3/3 fulfilled"; else echo "NOT fulfilled"; fi
+# zero-trust re-derivation of the tally: the regulator RE-RUNS the check itself; a partial pass exits
+# non-zero and ABORTS. This is what makes a forged N==M on the qualification harmless - the regulator
+# never takes the sponsor's word for "3/3", it recomputes it. (spectrum check exits 0 only on N==M.)
+echo -n "  2. environment fulfils spectrum:    "; if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1; then echo "fully fulfilled"; else echo "NOT fully fulfilled -> abort"; exit 1; fi
 echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -q '\bVALID\b'; then echo "VALID"; else echo "INVALID -> abort"; exit 1; fi
 # BIND the envelope to the id the gate uses: re-derive fit.dsse.json's foton id with the kernel (a
 # fresh throwaway registry recomputes it from the bytes) and assert it EQUALS $FIT. Without this, the

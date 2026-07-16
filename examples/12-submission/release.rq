@@ -24,6 +24,12 @@ SELECT DISTINCT ?condition WHERE {
     ?bag lab:id ?env .
     ?bag lab:fulfilment ?chk .
     ?chk prov:used ?env .
+    # ...and the cited check must be a FULL pass, not just "used": a 2/3 environment carries
+    # membersFulfilled=2, membersTotal=3 and fails here. (A forged N==M is caught by the regulator's own
+    # spectrum re-run, Act 8a, which aborts on a partial pass - "used" is not "passed".)
+    ?bag lab:membersFulfilled ?nful .
+    ?bag lab:membersTotal ?ntot .
+    FILTER(?nful = ?ntot)
     BIND("env-qualified" AS ?condition)
   } UNION {
     ?fit prov:used ?m . ?m pmx:model-role ?o . ?o nk:role "final" .

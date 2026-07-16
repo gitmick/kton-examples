@@ -38,7 +38,7 @@ def satisfied(fit, head, envh):
 
 REQUIRED = [
     ("tool-validated",          "toolchain validated (gxp:validation-performed = pass)"),
-    ("env-qualified",           "the fit's environment is qualified (qualifies-as citing a re-derivable spectrum-check foton, not a bare binding)"),
+    ("env-qualified",           "the fit's environment is qualified (qualifies-as citing a check foton that FULLY passed: membersFulfilled == membersTotal)"),
     ("final-model",             "the fit ran the designated final model (pmx:model-role = final)"),
     ("reproduces",              "the fit's output reproduces (nk:reproduces at L0/L1)"),
     ("two-independent-reviews", "two distinct PRINCIPALS passed (each vouched by a trusted authority), no fail (gxp:reviewed)"),

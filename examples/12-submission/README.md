@@ -72,7 +72,7 @@ federated store holds many submissions' records at once.
 ```
 release checklist (SPARQL bound to this submission):
   [x] toolchain validated (gxp:validation-performed = pass)
-  [x] the fit's environment is qualified (qualifies-as citing a re-derivable spectrum-check foton)
+  [x] the fit's environment is qualified (qualifies-as citing a check foton that FULLY passed, N==M)
   [x] the fit ran the designated final model (pmx:model-role = final)
   [x] the fit's output reproduces (nk:reproduces at L0/L1)
   [x] two distinct PRINCIPALS passed (each vouched by a trusted authority), no fail (gxp:reviewed)
@@ -121,11 +121,16 @@ seven conditions hold **over the corpus it was handed** - no more:
   envelope's own descriptor; Act 7 first **hard-gates** that this envelope's foton id equals the bound
   `fit_hash` (it re-derives the id with the kernel and aborts on mismatch), so the env is read from the
   *attested* fit, not an unchecked file. The check runs; it is not a promise.
-- **the qualification is *not* a bare "3/3" assertion.** The `qualifies-as` claim cites a **spectrum-check
-  foton** (its inputs are the spectrum plus the checked results), and the gate requires that foton to
-  have `prov:used` the very env-spectrum the fit declares - so "qualified" is backed by a re-derivable
-  check, not a signed adjective. Strip the fulfilment and the `env-qualified` condition fails (verified).
-  This is example 10's pattern; the two examples now author `qualifies-as` the same way.
+- **"used the spectrum" is not "passed the spectrum".** The `qualifies-as` claim cites a **spectrum-check
+  foton** (its inputs are the spectrum plus the checked results), the gate requires that foton to have
+  `prov:used` the env-spectrum the fit declares, **and** it requires the carried tally to be a *full*
+  pass - `membersFulfilled == membersTotal`. A `2/3` environment carries `membersFulfilled=2` and fails
+  the branch (verified: tamper the tally to 2/3 and `env-qualified` goes dark). A *forged* `3/3` on a
+  failing check is caught by the regulator's own re-run (Act 8a re-runs `spectrum check` and **aborts**
+  on a partial pass) - the regulator never takes "3/3" on the sponsor's word, it recomputes it. Strip
+  the fulfilment entirely and the branch also fails. (The deeper fix - a kernel-emitted, signature-bound
+  outcome triple so the SPARQL alone rejects a forged tally without the re-run - is a plankton roadmap
+  item; today the re-run is the zero-trust half.)
 
 ### Carry your closure - the one principle behind three of these
 
