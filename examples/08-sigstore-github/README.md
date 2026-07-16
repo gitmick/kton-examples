@@ -1,6 +1,6 @@
 # 08 - sign with your GitHub identity (Sigstore keyless)
 
-Example 07 ended at a wall: tier 3, *authority-backed* identity, "not yet shipped". This example
+Example 07 ended at a wall: tier 3, *authority-backed* identity, framed but not yet demonstrated for a person. This example
 crosses it for a **person**: sign a kton record with your **GitHub identity** via **Sigstore keyless**,
 so anyone can verify *who* signed it, through a certificate authority and a public transparency log,
 **with no long-lived key and no trust in you**.

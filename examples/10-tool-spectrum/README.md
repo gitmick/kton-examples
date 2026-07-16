@@ -54,9 +54,9 @@ Open the graph and every node is re-verified in your browser (Ed25519/DSSE, gree
 
 ## Why two runs are two nodes
 
-The candidate run is authored with `--environment <candidate image>` (a COVERED field, see
-[example 09](../09-environment/)), so it has a different foton id from the reference run even when the
-output bytes are identical. That is the point of a tool spectrum: the *same result from a different
+The candidate run is authored with `--environment <candidate env-spectrum>` - a COVERED *qualification*
+(not the concrete image, which is CARRIED; see [example 09](../09-environment/)) - so it has a different
+foton id from the reference run even when the output bytes are identical. That is the point of a tool spectrum: the *same result from a different
 environment* is a distinct computation that nonetheless **reproduces** the reference - which is
 exactly what qualifies the environment.
 

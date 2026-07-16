@@ -18,7 +18,7 @@ commands that produce the bytes we hash.
 |---|---|---|
 | `analyst`, `qc` | CRO | builds the model / independent quality control |
 | `lead`, `submitter` | sponsor | modeling lead (owns the review scope) / regulatory affairs |
-| `reviewer` | agency | the regulator - **signs nothing, re-verifies everything** |
+| `reviewer` | agency | the regulator - **re-verifies everything, vouches for nothing of the sponsor's; signs only its own verdict** |
 
 Each org vouches for its own staff with a `sec:controller` Verifiable Credential
 ([example 07](../07-identity/)): `<key> sec:controller did:web:<org>.example/people/<name>`.
@@ -145,4 +145,5 @@ bash run.sh
 ```
 
 Open the graph to see the whole thing in one frame: the lineage, the model tree, every signed
-attestation, and the six participants - across three organizations that never shared a server.
+attestation, and every signer - the five people plus the two org authorities - across three
+organizations that never shared a server.

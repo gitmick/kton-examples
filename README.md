@@ -86,7 +86,9 @@ authoring them, are *federated data*, deliberately kept out of the protocol repo
 - **`aliases.json`** - CURIE/term sugar that resolves to canonical IRIs *before* a claim is built, so
   the signed wire form always carries the full IRI. Vocabulary policy: reuse a published ontology
   wherever one fits - **PROV** (lineage), **PAV** (`pav:reviewedBy` for general review), **DCAT**
-  (`dcat:downloadURL` for location), **OWL/SKOS** (equivalence/hierarchy). The regulated **`gxp:*`**
+  (`dcat:downloadURL` for location), **schema.org** (`AcceptAction`/`RejectAction` for a review verdict),
+  the **W3C Security Vocabulary** (`sec:controller` for a key -> principal binding), **OWL/SKOS**
+  (equivalence/hierarchy). The regulated **`gxp:*`**
   terms are reserved for actual GxP-validated processes; ordinary review uses `pav:reviewedBy`.
 - **`templates/`** - example authoring templates (`kton.dev/template/v0`) consumed by `nekton
   annotate`: `prov-derived-from.json` (a plain PROV lineage claim, the minimal mechanism demo);

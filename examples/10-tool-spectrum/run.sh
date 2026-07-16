@@ -31,8 +31,11 @@ for t in $TESTS; do
 done
 
 echo; echo "############ STAGE B: run the SAME suite in a CANDIDATE environment (a different docker) ####"
-printf "oci://rocker/r-ver:4.3.2@sha256:d34db33fcaf000000000000000000000000000000000000000000000beef\n" > "$W/candidate-image.txt"
-CANDENV=$(plankton hash "$W/candidate-image.txt")           # a real content address for the candidate stack
+# The candidate environment is identified by its QUALIFICATION (an env-spectrum id) - that is what
+# --environment COVERS (example 09). The concrete image (its OCI digest) is CARRIED, not covered; it
+# rides as the located uri on the qualifies-as subject below, never as --environment.
+printf "candidate env: R 4.3.2 + mypkg 1.2.0 pinned stack (a qualification)\n" > "$W/candidate-env.txt"
+CANDENV=$(plankton hash "$W/candidate-env.txt")            # the candidate environment's qualification id (COVERED)
 for t in $TESTS; do
   Rscript "tests/$t.R" "$W/pk.csv" > "$W/$t.cand.out"      # <-- runs again, independently
   CANDID[$t]=$(plankton author --cmd "Rscript tests/$t.R pk.csv" \

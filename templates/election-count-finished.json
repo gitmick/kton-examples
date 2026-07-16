@@ -3,7 +3,7 @@
   "name": "election/count-finished",
   "kind": "scope-seal",
   "target": "scope",
-  "predicate": "gxp:count-finished",
+  "predicate": "nk:count-finished",
   "note": "The seal: a chained statement carrying the result, signed by ALL responsible counters named in the scope Seed. Closes the chain. The aggregator gate verifies chain-from-seed AND all-responsible-signed before counting this scope.",
   "requiresAllResponsible": true,
   "closesChain": true,

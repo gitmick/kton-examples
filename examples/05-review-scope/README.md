@@ -67,7 +67,8 @@ cockpit tool that adds network features on top of the two kernels; you do not ne
 tampering:
 
 ```
-# a forged claim naming this scope but a prev that does not exist (e.g. "prev":"sha256:deadbeef...")
+# a forged claim naming this scope but a prev that does not exist
+printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-15T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$SCOPE" > bad.spec.json
 nekton claim bad.spec.json chair.key --add
 # error: prev sha256:deadbeef... does not resolve in scope ... (chain gap / tamper)
 ```
