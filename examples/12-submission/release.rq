@@ -8,6 +8,7 @@ PREFIX gxp:  <https://kton.dev/v/gxp/>
 PREFIX pmx:  <https://kton.dev/v/pmx/>
 PREFIX nk:   <https://kton.dev/v/>
 PREFIX lab:  <https://kton.dev/v/lab/>
+PREFIX sec:  <https://w3id.org/security#>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 
 SELECT DISTINCT ?condition WHERE {
@@ -37,9 +38,23 @@ SELECT DISTINCT ?condition WHERE {
     ?head nk:submitted ?who .
     BIND("submission-signed" AS ?condition)
   } UNION {
+    # NOT two distinct KEYS (three sock-puppet keys would pass), but two distinct PRINCIPALS, each
+    # bound to its signing key by a sec:controller binding that is ITSELF signed by an authority in the
+    # verifier's OWN trust root (#TRUSTED#, injected by release.py and a COVERED input of the verdict).
+    # A self-issued binding - or a ring of mutual attestations (K2 vouches K3, K3 vouches K2) - is not
+    # signed by a trusted authority, so it never counts. This is example 07's rule applied: a binding is
+    # only worth the authority that signed it.
     GRAPH ?g1 { ?fit gxp:reviewed ?o1 . ?o1 nk:outcome "pass" . } ?g1 prov:wasAttributedTo ?r1 .
+    BIND(STRAFTER(STR(?r1), "kton.dev/agent/") AS ?kid1)
+    GRAPH ?gb1 { ?k1 sec:controller ?cb1 . ?cb1 ?cbp1 ?p1 . } ?gb1 prov:wasAttributedTo ?a1 .
+    FILTER(STRSTARTS(STRAFTER(STR(?k1), "kton.dev/o/"), ?kid1))
+    FILTER(?a1 IN (#TRUSTED#))
     GRAPH ?g2 { ?fit gxp:reviewed ?o2 . ?o2 nk:outcome "pass" . } ?g2 prov:wasAttributedTo ?r2 .
-    FILTER(?r1 != ?r2)
+    BIND(STRAFTER(STR(?r2), "kton.dev/agent/") AS ?kid2)
+    GRAPH ?gb2 { ?k2 sec:controller ?cb2 . ?cb2 ?cbp2 ?p2 . } ?gb2 prov:wasAttributedTo ?a2 .
+    FILTER(STRSTARTS(STRAFTER(STR(?k2), "kton.dev/o/"), ?kid2))
+    FILTER(?a2 IN (#TRUSTED#))
+    FILTER(?p1 != ?p2)
     FILTER NOT EXISTS { ?fit gxp:reviewed ?of . ?of nk:outcome "fail" . }
     BIND("two-independent-reviews" AS ?condition)
   }

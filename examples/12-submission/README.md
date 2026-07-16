@@ -75,7 +75,7 @@ release checklist (SPARQL bound to this submission):
   [x] the fit's environment is qualified (qualifies-as citing a re-derivable spectrum-check foton)
   [x] the fit ran the designated final model (pmx:model-role = final)
   [x] the fit's output reproduces (nk:reproduces at L0/L1)
-  [x] two distinct reviewers passed, no fail (gxp:reviewed)
+  [x] two distinct PRINCIPALS passed (each vouched by a trusted authority), no fail (gxp:reviewed)
   [x] residual risk explicitly accepted (gxp:risk-accepted)
   [x] the submission head is signed by a verifiable identity (nk:submitted)
 RELEASE: COMPLETE - the submission may be accepted
@@ -101,26 +101,50 @@ The gate is deliberately honest about its boundaries (this is the substrate's wh
 protocol's [Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/trust.md)). It proves the
 seven conditions hold **over the corpus it was handed** - no more:
 
-- **"two distinct reviewers" is two distinct signing keys, not two verified enrolled reviewers.** The
-  gate counts distinct keys under `gxp:reviewed=pass`; it does not (in this example) join them to their
-  `sec:controller` identities or to a sealed enrolment, so one actor holding two keys would pass. Real
-  assurance needs the **enrolment authority** boundary: a sealed review that enrolls named participants,
-  vouched for by a signed authority. That is the honest form, and it is not implemented here.
+- **"two reviewers" means two distinct PRINCIPALS, each vouched by a trusted authority - not two
+  distinct keys.** This is the one that has to be a *join*, not a count, or the "zero-trust" gate is a
+  forgery machine: one actor generates three keys, self-issues (or ring-signs: K1 vouches K2, K2 vouches
+  K3, K3 vouches K1 - no self-loop) three `sec:controller` bindings, and each key genuinely approves.
+  A key-count gate reads 3/3; the viewer would render three named reviewers. So the gate does **not**
+  count keys. It requires each approving key to chain, through a `sec:controller` binding **signed by an
+  authority the verifier itself names** (the `#TRUSTED#` root - here the two org authorities), to a
+  distinct principal. A binding the trusted authorities did not sign never counts. *Executed:* a naive
+  key-count reads the ring as 3/3; this gate rejects it (0 authority-vouched), and the viewer marks the
+  self/ring-signed bindings unattested. It passes only if the *verifier* trusts those keys - which is a
+  different trust root, hence (see below) a different verdict.
 - **"no reject" is corpus-relative.** The one non-monotone condition (`FILTER NOT EXISTS` a fail review)
   means "no fail *in the corpus loaded*". A withheld failing review makes the gate pass. The gate names
   its corpus (its inputs) but cannot itself establish that the corpus is complete - that is the
-  **completeness** boundary, and it is a property of the source list, not of the hash.
-- **the environment is read from the fit envelope,** which the regulator must first confirm is the
-  attested fit (Act 7's signature + foton-id check) - the gate trusts the `fit_hash` it was handed.
+  **completeness** boundary, and it is a property of the source list, not of the hash. *This one is
+  irreducible*: you cannot prove a negative over a partial union. It is labeled, not closed.
+- **the environment is bound to the fit before it is read.** The gate reads the env from the fit
+  envelope's own descriptor; Act 7 first **hard-gates** that this envelope's foton id equals the bound
+  `fit_hash` (it re-derives the id with the kernel and aborts on mismatch), so the env is read from the
+  *attested* fit, not an unchecked file. The check runs; it is not a promise.
 - **the qualification is *not* a bare "3/3" assertion.** The `qualifies-as` claim cites a **spectrum-check
   foton** (its inputs are the spectrum plus the checked results), and the gate requires that foton to
   have `prov:used` the very env-spectrum the fit declares - so "qualified" is backed by a re-derivable
   check, not a signed adjective. Strip the fulfilment and the `env-qualified` condition fails (verified).
   This is example 10's pattern; the two examples now author `qualifies-as` the same way.
 
-None of these are hidden: the verdict carries its corpus, so a smaller-corpus rerun is a *different*,
-comparable verdict, and the missing checks are named. Making the first three mechanical (sealed
-enrolment + authority join + a freshness/anchor check) is the roadmap the Trust chapter lays out.
+### Carry your closure - the one principle behind three of these
+
+A closed-world judgment must commit, **inside its own signed payload, to every parameter that defines
+its closure** - or it is re-runnable with a friendlier parameter for a friendlier answer:
+
+- **corpus** - else run over a subset that omits the reject;
+- **latest anchored head** (freshness) - else present an older, cleaner prefix;
+- **trust root** (identity) - else run with an authority who vouches for the clique.
+
+The verdict-foton already carries its corpus. The identity fix is the *same* move on the trust root:
+`trust-root.txt` is a **COVERED input** of the verdict-foton, so a run with a different set of trusted
+authorities is a different foton id and cannot be passed off as this one. Not three patches - one
+principle, three instances. (The anchored-head/freshness instance is the roadmap item; see the Trust
+chapter.)
+
+None of the residual limits are hidden: the verdict carries its corpus *and its trust root*, so a
+smaller-corpus or friendlier-authority rerun is a *different*, comparable verdict. The only irreducible
+caveat is corpus-relative "no reject"; the freshness/anchor instance is the remaining roadmap item.
 
 > **Why qualification is safe under federation (and the gate is not a "third closed world").** Reading
 > more sources can only *complete* a qualification, never revoke one: the spectrum's member set is

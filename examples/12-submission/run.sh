@@ -23,6 +23,7 @@ F="$W/files"; T="$EXDIR/tools"
 key(){ echo "$W/keys/$1"; }
 for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" >/dev/null; done
 keyiri(){ echo "https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest())")"; }
+keyid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest()[:16])"; }
 pauthor(){ plankton author "$@" --add | awk '/indexed foton/{print $3}'; }
 # locate <file> <url> <signer>: record a signed dcat:downloadURL so the regulator can FETCH the bytes
 # it holds a content hash for (verifying sha256 == hash on arrival). Location is a signed claim, plural
@@ -181,8 +182,15 @@ echo; echo "########## ACT 8a - the regulator re-verifies everything, trusting n
 export PLANKTON_DIR="$W/agency/plankton" NEKTON_DIR="$W/agency/nekton"
 echo -n "  1. reproduction re-check (L1):      "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
 echo -n "  2. environment fulfils spectrum:    "; if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1; then echo "3/3 fulfilled"; else echo "NOT fulfilled"; fi
-echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -q '\bVALID\b'; then echo "VALID"; else echo "INVALID"; fi
-echo    "  4. scope head unbroken:             $HEAD"
+echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -q '\bVALID\b'; then echo "VALID"; else echo "INVALID -> abort"; exit 1; fi
+# BIND the envelope to the id the gate uses: re-derive fit.dsse.json's foton id with the kernel (a
+# fresh throwaway registry recomputes it from the bytes) and assert it EQUALS $FIT. Without this, the
+# gate would read the environment from an envelope nobody checked was the attested fit. This is a pure
+# hash re-derivation - no trust, no signature needed - and it is a HARD gate (abort on mismatch).
+echo -n "  4. fit envelope binds to fit id:    "
+REID=$(plankton add "$F/fit.dsse.json" --registry "$W/verify-tmp" 2>/dev/null | awk '/indexed foton/{print $3}')
+if [ "$REID" = "$FIT" ]; then echo "BOUND ($FIT)"; else echo "MISMATCH ($REID != $FIT) -> abort"; exit 1; fi
+echo    "  5. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
 
 echo; echo "########## ACT 8b - the release decision, recorded as a reproducible attested foton ########"
@@ -190,8 +198,15 @@ plankton export --rdf -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export 
 : > "$F/attestations.trig"
 for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
 echo "  exported submission.ttl + attestations.trig - the corpus the decision is made over"
+# The verifier's OWN trust root: the authorities whose sec:controller vouchers it accepts (here the two
+# org authorities). This is what stops the sock-puppet forgery - three self-issued (or ring-signed) keys
+# are not vouched by a trusted authority, so they never count as reviewers. The trust root is written to
+# a file and made a COVERED INPUT of the verdict-foton below: a run with a friendlier trust root is a
+# different verdict id and cannot be passed off as this one (carry-your-closure, like the corpus).
+AUTH_CRO=$(keyid16 cro-org); AUTH_SPONSOR=$(keyid16 sponsor-org)
+printf 'trusted-authority %s  (CN=cro-org)\ntrusted-authority %s  (CN=sponsor-org)\n' "$AUTH_CRO" "$AUTH_SPONSOR" > "$F/trust-root.txt"
 if python3 -c "import rdflib" 2>/dev/null; then
-  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$F/fit.dsse.json" "$FIT" "$HEAD" | tee "$F/verdict.txt"
+  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$F/fit.dsse.json" "$FIT" "$HEAD" "$AUTH_CRO" "$AUTH_SPONSOR" | tee "$F/verdict.txt"
   [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "  !! GATE REGRESSION: the capstone gate did NOT return COMPLETE (release.py exited non-zero)"; exit 1; }
   # The decision is NOT a free-floating query: the agency records it as a FOTON. Its inputs are the
   # exact corpus it consumed (submission.ttl + attestations.trig, by hash) and the gate logic
@@ -199,8 +214,8 @@ if python3 -c "import rdflib" 2>/dev/null; then
   # re-run the gate over the same inputs and you get the same verdict (L0) - and it NAMES its own
   # evidence set (its input list). The regulator signs its OWN verdict over the sources it chose.
   export PLANKTON_DIR="$W/agency/plankton"
-  VERDICT=$(plankton author --cmd "release gate: release.rq over the submission graph" \
-    --in "$F/submission.ttl" --in "$F/attestations.trig" --in "release.rq" --out "$F/verdict.txt" \
+  VERDICT=$(plankton author --cmd "release gate: release.rq over the submission graph under trust-root.txt" \
+    --in "$F/submission.ttl" --in "$F/attestations.trig" --in "release.rq" --in "$F/trust-root.txt" --out "$F/verdict.txt" \
     --sign "$(key reviewer).key" --add | awk '/indexed foton/{print $3}')
   echo "  release decision recorded as foton $VERDICT"
   echo "    signed by the agency; its inputs ARE its corpus; re-run over them -> same verdict (L0)"
@@ -209,4 +224,7 @@ else
 fi
 
 echo
-snapshot 12-submission "$W/keys" --reg "$W/agency/plankton" --reg "$W/agency/nekton"
+# the viewer relabels a signer to its attested principal ONLY for bindings vouched by a trusted
+# authority (the two org authorities) - a sock-puppet's self/ring-signed binding is never shown attested.
+snapshot 12-submission "$W/keys" --reg "$W/agency/plankton" --reg "$W/agency/nekton" \
+  --authority "$(keyid16 cro-org)" --authority "$(keyid16 sponsor-org)"

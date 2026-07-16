@@ -9,20 +9,28 @@ import sys, json, base64
 import rdflib
 
 ttl, trig, query_path, fit_env_path, fit_hash, head_hash = sys.argv[1:7]
+# the verifier's OWN trust root: the authorities (by keyid) whose sec:controller vouchers it accepts.
+# These are a COVERED input of the verdict-foton (run.sh writes trust-root.txt and --in's it), so a run
+# with a friendlier trust root is a DIFFERENT verdict id and cannot be passed off as this one.
+trusted_keyids = sys.argv[7:]
 
-# derive the environment the fit declares, from the fit envelope itself (COVERED in its descriptor)
-# NOTE (soundness boundary): the env is read from the fit envelope's own descriptor. This gate does
-# NOT itself re-verify that this envelope IS the attested fit; that is the regulator's obligation,
-# done in Act 7 (verify the analyst signature and that its foton id == the bound fit_hash) before the
-# gate is trusted. A gate handed a doctored envelope would bind whatever env it claims.
+# derive the environment the fit declares, from the fit envelope's own descriptor (COVERED in it).
+# Act 7 has already HARD-GATED that this envelope's foton id == fit_hash (run.sh re-derives the id with
+# the kernel and exits on mismatch), so reading env from this envelope is reading it from the attested
+# fit - not the sponsor's word, and not an unverified file. (Without that binding a doctored envelope
+# could inject any env; that binding runs, and the gate refuses to proceed if it fails.)
 env = json.loads(base64.b64decode(json.load(open(fit_env_path))["payload"]))["predicate"]["protocol"]["descriptor"]["environment"]
 PK = "https://kton.dev/o/"
+AG = "https://kton.dev/agent/"
 def iri(h): return rdflib.URIRef(PK + h.replace("sha256:", ""))
 
 ds = rdflib.Dataset(default_union=True)
 ds.parse(ttl, format="turtle")
 ds.parse(trig, format="trig")
-query = open(query_path).read()
+# inject the trust root as the IN-list the reviews branch filters on (an empty root -> no reviewer is
+# authority-vouched -> the two-independent-reviews condition cannot be satisfied by any key count).
+trusted_iris = ", ".join("<%s%s>" % (AG, k) for k in trusted_keyids)
+query = open(query_path).read().replace("#TRUSTED#", trusted_iris or "<urn:kton:no-trusted-authority>")
 
 def satisfied(fit, head, envh):
     b = {"fit": iri(fit), "env": iri(envh), "head": iri(head)}
@@ -33,7 +41,7 @@ REQUIRED = [
     ("env-qualified",           "the fit's environment is qualified (qualifies-as citing a re-derivable spectrum-check foton, not a bare binding)"),
     ("final-model",             "the fit ran the designated final model (pmx:model-role = final)"),
     ("reproduces",              "the fit's output reproduces (nk:reproduces at L0/L1)"),
-    ("two-independent-reviews", "two distinct reviewers passed, no fail (gxp:reviewed)"),
+    ("two-independent-reviews", "two distinct PRINCIPALS passed (each vouched by a trusted authority), no fail (gxp:reviewed)"),
     ("risk-accepted",           "residual risk explicitly accepted (gxp:risk-accepted)"),
     ("submission-signed",       "the submission head is signed by a verifiable identity (nk:submitted)"),
 ]

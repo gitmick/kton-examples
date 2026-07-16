@@ -51,5 +51,9 @@ echo "    sec:controller the principal model:anthropic/claude-opus-4-8, vouched 
 echo "    keyid $OPUS is that hash's first 16 hex; the object is an IRI, so it merges in the RDF (ex 06)."
 
 echo ""
-# the viewer colours records by their signer, so each model's claims show in its own colour
-snapshot 07-identity "$PWD/.work/keys" --reg "$NEKTON_DIR"
+# the viewer colours records by their signer, so each model's claims show in its own colour. The
+# attested label (opus -> claude-opus-4-8) is shown ONLY because we name the DEPLOYER as a trusted
+# authority here: the viewer marks a sec:controller binding attested only if its signer is trusted, so
+# a self- or ring-signed binding would NOT relabel a key. Trust who vouched, not that someone did.
+DEPLOYER_KID=$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/deployer.pub').read().strip())).hexdigest()[:16])")
+snapshot 07-identity "$PWD/.work/keys" --reg "$NEKTON_DIR" --authority "$DEPLOYER_KID"

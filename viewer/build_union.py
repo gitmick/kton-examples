@@ -3,17 +3,22 @@
 #   union.json  - every foton/claim record (deduped by id)
 #   keys.json   - keyid -> public-key hex (drives the "verified" ring)
 #   names.json  - keyid -> a human label (drives colour / grouping)
-# The label is ATTESTED where possible: if a signed sec:controller claim binds a key to a principal
-# (the identity binding of example 07), that principal is the label - what was SIGNED, not a
-# site-operator keyfile name. A key with no such binding falls back to its .pub filename, a site label
-# (unattested). Usage: build_union.py --out <dir> --keydir <dir> --reg <registry-dir> [--reg ...]
+# The label is ATTESTED only when a signed sec:controller claim binds a key to a principal AND that
+# claim was signed by an AUTHORITY the caller trusts (--authority <keyid>, repeatable). A binding is
+# only worth the authority that signed it (example 07): a self-issued binding, or a ring of mutual
+# attestations (K2 vouches K3, K3 vouches K2), is NOT signed by a trusted authority and therefore is
+# NOT shown as attested - it falls back to the .pub site label. With no --authority given, nothing is
+# attested (you trust no voucher). Usage:
+#   build_union.py --out <dir> --keydir <dir> --reg <registry-dir> [--reg ...] [--authority <keyid> ...]
 import argparse, base64, glob, hashlib, json, os
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--out", required=True)
 ap.add_argument("--keydir", required=True)
 ap.add_argument("--reg", action="append", default=[])
+ap.add_argument("--authority", action="append", default=[])  # trusted authority keyids (16 hex)
 a = ap.parse_args()
+TRUSTED = set(a.authority)
 os.makedirs(a.out, exist_ok=True)
 
 def keyid(pubhex):
@@ -32,16 +37,21 @@ for reg in a.reg:
             seen.add(rid)
             union.append(rec)
 
-# 2. attested identity bindings from signed sec:controller claims (subject = a key's content IRI).
+# 2. attested identity bindings: signed sec:controller claims (subject = a key's content IRI) whose
+# OWN signer is a trusted authority. The signer keyid comes from the DSSE envelope, so a self-issued or
+# ring-signed binding (signer not in TRUSTED) never becomes an attested label.
 CONTROLLER = "https://w3id.org/security#controller"
-bindings = {}  # key content IRI -> principal
+bindings = {}  # key content IRI -> principal (only if vouched by a trusted authority)
 for rec in union:
     try:
         p = json.loads(base64.b64decode(rec["envelope"]["payload"]))
+        signer = rec["envelope"]["signatures"][0]["keyid"]
     except Exception:
         continue
     body = p.get("predicate", {})
     if isinstance(body.get("predicate"), dict) and body["predicate"].get("uri") == CONTROLLER:
+        if signer not in TRUSTED:
+            continue                       # a binding is only worth the authority that signed it
         obj = body.get("object", {}) or {}
         principal = obj.get("id") or obj.get("value")
         for s in p.get("subject", []):
