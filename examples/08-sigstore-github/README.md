@@ -6,17 +6,23 @@ so anyone can verify *who* signed it, through a certificate authority and a publ
 **with no long-lived key and no trust in you**.
 
 Unlike examples 01-07, this one is **not headless**: keyless signing needs an interactive OIDC login,
-so exactly one step is run by you. It needs [`cosign`](https://github.com/sigstore/cosign) on your
-PATH, and it has **no live graph snapshot** (the identity is yours and personal; run it yourself).
+so exactly one step is run by you. It needs [`cosign`](https://github.com/sigstore/cosign) **v2.x** on
+your PATH (the `--new-bundle-format` and `--certificate-identity-regexp` flags below are 2.x), and it
+has **no live graph snapshot** (the identity is yours and personal; run it yourself).
 
 ## Walk through it
 
 **1. (automatic) Make a kton record to sign.** Any signed foton or claim envelope works:
 
 ```
-plankton author --cmd "assess result.csv" --in result.csv --out result.csv \
+plankton author --cmd "assess result.csv" --in result.csv --out assessment.txt \
     --sign author.key --add -o foton.dsse.json
 ```
+
+That record is already signed once, on the **inside**, by the foton's own author (`author.key`). The
+GitHub signature you add next is a second, **outer** attestation over the whole record's hash: a
+different party vouching for the record, independent of whoever authored it. Inner signature = who made
+the record; outer signature = who is willing to stand behind it under their real-world identity.
 
 **2. (you run this) Sign it with your GitHub identity.** This opens an OIDC login, choose GitHub:
 

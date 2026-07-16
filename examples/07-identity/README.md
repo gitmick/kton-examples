@@ -9,8 +9,9 @@ This example is about that: **a key is an identity**. It answers two different q
    believe it only if you trust whoever signed that binding.
 
 Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) **Parts 1 and
-2 below run today**; tier 3 (Sigstore, GitHub SSH) in the concept section is described but **not yet
-shipped**.
+2 below run today.** Tier 3 (authority-backed identity) is described in the concept section and is now
+real for a person in [example 08](../08-sigstore-github/) - signing with a GitHub identity via
+Sigstore; SSH `allowed_signers` and a model-CA are still pending.
 
 ## Part 1 - a key is an identity (self-asserted)
 
@@ -87,11 +88,11 @@ deployer's key**. It is just another single-signed claim; no new machinery.
 - **Three assurance tiers**, weakest to strongest:
   - **self-asserted** - the `by` label (Part 1). Zero proof.
   - **attested** - a signed claim by someone you trust (Part 2).
-  - **authority-backed** *(not yet shipped)* - a certificate or an allow-list from a trusted issuer:
-    **Sigstore** (keyless: an OIDC identity via Fulcio + the Rekor transparency log) and **SSH
-    signatures** (a GitHub / `allowed_signers` principal) for a person, a model-CA for a model. Those
-    schemes need network and OS tooling, so they live in the cockpit (`kton`), not the kernels. Only
-    `kton anchor` (anchor a record in Rekor) exists so far.
+  - **authority-backed** *(partially shipped)* - a certificate or an allow-list from a trusted issuer.
+    For a **person** this is now real in [example 08](../08-sigstore-github/): **Sigstore** keyless (an
+    OIDC/GitHub identity bound by a Fulcio certificate + the Rekor transparency log). Still pending:
+    **SSH signatures** (a GitHub / `allowed_signers` principal) and a **model-CA** for a model. These
+    schemes need network and OS tooling, so they live in the cockpit (`kton`), not the kernels.
 - **Trust policy** - which authorities and identities you accept - is a consumer decision, never the
   kernel's.
 
