@@ -40,6 +40,7 @@ two.)
 | 06 | `nanopub-rdf` | both layers export to RDF that merges at shared hash IRIs |
 | 07 | `identity` | a key is an identity: trace a model's claims, then bind a key to a name |
 | 08 | `sigstore-github` | sign a record with your GitHub identity (Sigstore keyless: Fulcio + Rekor) |
+| 09 | `environment` | the whole arc: local run -> pinned docker -> a spectrum (one foton per R test) -> verify the image qualifies |
 
 ## Run them yourself
 

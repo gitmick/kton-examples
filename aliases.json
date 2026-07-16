@@ -1,6 +1,6 @@
 {
   "schema": "https://kton.dev/aliases/v0",
-  "note": "Aliases are pure sugar: they resolve to canonical IRIs BEFORE a claim is built, so the signed wire form always carries the full IRI. This file is content-addressed and federates like any record; a consumer may remap it. An alias binding is itself expressible as a signed owl:sameAs claim. Vocabulary policy (DECISIONS §20): reuse a PUBLISHED ontology wherever one fits (PROV, PAV, DCAT, OWL, SKOS); mint kton-native IRIs (nk:) only for concepts no standard covers; and RESERVE the regulated gxp: terms for actual GxP-validated processes — ordinary review uses the general pav: terms, never gxp:.",
+  "note": "Aliases are pure sugar: they resolve to canonical IRIs BEFORE a claim is built, so the signed wire form always carries the full IRI. This file is content-addressed and federates like any record; a consumer may remap it. An alias binding is itself expressible as a signed owl:sameAs claim. Vocabulary policy (DECISIONS §20): reuse a PUBLISHED ontology wherever one fits (PROV, PAV, DCAT, OWL, SKOS); mint kton-native IRIs (nk:) only for concepts no standard covers; and RESERVE the regulated gxp: terms for actual GxP-validated processes - ordinary review uses the general pav: terms, never gxp:.",
   "prefixes": {
     "prov": "http://www.w3.org/ns/prov#",
     "pav": "http://purl.org/pav/",
@@ -22,6 +22,7 @@
     "reviewed": "pav:reviewedBy",
     "locatedAt": "dcat:downloadURL",
     "sameAs": "owl:sameAs",
+    "qualifiesAs": "nk:qualifies-as",
     "broaderThan": "skos:broader",
     "confirmed": "nk:confirmed",
     "gxpReviewed": "gxp:reviewed",
