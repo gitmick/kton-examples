@@ -49,8 +49,12 @@ Open the graph and every node is re-verified in your browser (Ed25519/DSSE, gree
   drawn on the edge.
 - for `test-predict`, two **`normalize.sh` fotons** sit between the raw runs and the canonical form -
   the normalization is a real recorded step, not a hand-wave.
-- a **`qualifies-as` claim** carries a **`spectrum`** edge to the tool-spectrum node: the candidate
-  environment reproduced the whole suite (2 x L0, 1 x L1 = 3/3), so it is accepted as `mypkg-1.2.0`.
+- a **`qualifies-as` claim** carries a **`spectrum`** edge to the tool-spectrum node and a
+  **`fulfilment`** edge to a reproducible **spectrum-check foton** whose inputs are the exact candidate
+  result hashes: so "2 x L0, 1 x L1 = 3/3" is **re-derivable** (re-run the check over those inputs and
+  you get the same tally), not asserted in a free-text note. The candidate environment is accepted as
+  `mypkg-1.2.0`. (Same pattern as the release gate and the enrolled review scope: a closed-world set
+  plus a reproducible check, so completeness is re-derivable.)
 
 ## Why two runs are two nodes
 

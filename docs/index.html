@@ -132,7 +132,9 @@
     <div class="card">
       <div class="n">05</div><h3>Review scope</h3>
       <p>A chain of signed claims sealed by one head. Each id covers the previous, so publishing the head
-      makes the whole review tamper-evident; a dangling link is rejected.</p>
+      makes the whole review tamper-evident; <b>within this sealed scope</b> a dangling link is rejected -
+      a deliberately closed world. (On the open substrate, an unresolved reference is merely
+      <i>incomplete</i>, never invalid.)</p>
       <div class="links"><a href="viewer.html?union=data/05-review-scope/union.json&keys=data/05-review-scope/keys.json&names=data/05-review-scope/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/05-review-scope/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
@@ -185,7 +187,43 @@
       SPARQL <b>release gate</b> that decides whether the submission may be accepted. Real R throughout.</p>
       <div class="links"><a href="viewer.html?union=data/12-submission/union.json&keys=data/12-submission/keys.json&names=data/12-submission/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/12-submission/README.md">read &rarr;</a></div>
     </div>
+    <div class="card">
+      <div class="n">13</div><h3>Verified by a tool that isn't kton</h3>
+      <p>A kton record is an in-toto Statement in a DSSE envelope - the language of SLSA, sigstore, and
+      in-toto - so any DSSE-aware tool reads it. Here a twenty-line verifier using only standard
+      crypto (no kton code) checks a foton's signature and rejects a tampered one. "Verify it yourself"
+      means with <i>any</i> tool, not only ours.</p>
+      <div class="links"><a href="https://github.com/gitmick/kton-examples/blob/main/examples/13-foreign-verify/README.md">read &rarr;</a></div>
+    </div>
   </div>
+
+  <h2>What kton does not guarantee</h2>
+  <p>The point of a substrate that says "trust no one" is that it is honest about the few things it
+  <b>cannot</b> settle with a hash, a signature, or a chain. Everything else - lineage, reproduction,
+  who signed what, whether a review is complete - is mechanical. These are the boundaries, surfaced
+  rather than hidden:</p>
+  <ul class="defs">
+    <li><div class="term">whose keys you believe <span class="tag">trust policy</span></div>
+      <p>A signature proves <i>which key</i> signed, never that you should trust that key. Which
+      identities and authorities you accept is your decision, never the substrate's. The identity
+      examples (07/08) give you verifiable bindings; they do not tell you whom to trust.</p></li>
+    <li><div class="term">who may open a review <span class="tag">enrolment authority</span></div>
+      <p>A sealed review is complete when every <i>enrolled</i> participant delivered. Who is authorised
+      to open the review and name its participants is a signed authority claim, not a hash or a chain -
+      an assumption the decision names rather than buries.</p></li>
+    <li><div class="term">that you looked at the latest decision <span class="tag">freshness</span></div>
+      <p>A chain proves a head's integrity, not that it is the current one. Anchoring makes a superseding
+      round undeniable and time-ordered, but confirming you hold the latest anchored head before you
+      rely on it is a consumer obligation. A missed reopen is negligence, not ignorance.</p></li>
+    <li><div class="term">that the bytes still exist <span class="tag">retention</span></div>
+      <p>Records are kept forever and cheaply; the file <i>bytes</i> are kept per a retention policy and
+      located, not stored. Availability is never a trust problem - content addressing self-checks on
+      arrival, so a location is a hint, not an authority - but whether the bytes still exist somewhere
+      is a retention obligation, stated, not assumed.</p></li>
+  </ul>
+  <p class="sub">The full argument - honesty, completeness, freshness, finality, and graded
+  verification, each with its boundary - is in the protocol's
+  <a href="https://github.com/gitmick/plankton/blob/main/docs/trust.md">Trust chapter</a>.</p>
 
   <footer>
     Run them yourself: build the kton binaries (see the

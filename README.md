@@ -44,6 +44,7 @@ two.)
 | 10 | `tool-spectrum` | really run an R test suite twice, and see in the graph which tests reproduce identically (L0) vs only after a normalizer (L1) |
 | 11 | `review-template` | author reviews from a template (approve/reject + file comment), federate the template, and test review completeness with SPARQL |
 | 12 | `submission` | capstone: a regulated popPK submission across three orgs, verified by the agency with zero trust, gated by a SPARQL release query |
+| 13 | `foreign-verify` | a kton record verified by a non-kton tool (standard DSSE + Ed25519, no kton code) - records are copyable between tools |
 
 ## Run them yourself
 

@@ -75,7 +75,15 @@ echo "  tool-spectrum id: $SPECID"
 plankton spectrum check "$W/mypkg.spectrum.json" \
   --candidate "test-glm=${CANDOUT[test-glm]}" \
   --candidate "test-summary=${CANDOUT[test-summary]}" \
-  --candidate "test-predict=${CANDOUT[test-predict]}" | sed 's/^/  /' || true
+  --candidate "test-predict=${CANDOUT[test-predict]}" | tee "$W/fulfilment.txt" | sed 's/^/  /' || true
+# F2 / D6: back the "3/3 fulfilled" with a reproducible spectrum-check FOTON that commits to the exact
+# candidate result hashes (its inputs) - so the tally is RE-DERIVABLE, not asserted in a free-text why.
+# Same pattern as the release gate (D6) and the enrolled review scope: a closed-world set + a
+# reproducible check, so completeness is re-derivable.
+CHECK=$(plankton author --cmd "plankton spectrum check mypkg-1.2.0-suite" \
+  --in "$W/mypkg.spectrum.json" --in "$W/test-glm.cand.out" --in "$W/test-summary.cand.out" --in "$W/test-predict.cand.out" \
+  --out "$W/fulfilment.txt" --sign "$W/keys/author.key" --add | awk '/indexed foton/{print $3}')
+echo "  fulfilment recorded as a reproducible foton (commits to the candidate result hashes): $CHECK"
 
 echo; echo "############ STAGE E: record the fulfilment so the GRAPH shows it ############"
 # per test: a reproduces claim from the candidate foton to the reference foton, LABELLED by level.
@@ -87,8 +95,8 @@ for t in $TESTS; do
   printf "  %-13s candidate reproduces reference at %s\n" "$t" "${LEVEL[$t]}"
 done
 # the candidate environment qualifies-as the tool spectrum (all members fulfilled) - signed acceptance.
-printf '{"subject":[{"hash":"%s","uri":"oci://rocker/r-ver:4.3.2"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"spectrum":{"hash":"%s"}},"why":"reproduced the mypkg 1.2.0 suite 3/3 (2 L0, 1 L1)","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
-  "$CANDENV" "$SPECID" > "$W/qualifies.spec.json"
+printf '{"subject":[{"hash":"%s","uri":"oci://rocker/r-ver:4.3.2"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"spectrum":{"hash":"%s"},"fulfilment":{"hash":"%s"}},"why":"3/3 fulfilled, re-derivable in the spectrum-check foton (2 L0, 1 via potential)","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
+  "$CANDENV" "$SPECID" "$CHECK" > "$W/qualifies.spec.json"
 nekton claim "$W/qualifies.spec.json" "$W/keys/lab.key" "$W/qualifies.dsse.json" --add >/dev/null
 echo "  candidate environment --qualifies-as--> the tool spectrum (signed)"
 
