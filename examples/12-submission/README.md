@@ -39,7 +39,9 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
    as the analyst's, so the same action key, but an independent signer and its own output) - so the
    re-run is a visible *parallel branch* from `analysis.csv`, not a dangling file. Raw outputs differ
    (the banner), so `plankton reproduces --via <normalizer>` returns **L1**; QC signs an `nk:reproduces`
-   claim. A tampered `.ext` would return none - the check is pure hashing.
+   claim that **links the two runs** (the analyst's output, `reproducedBy` QC's re-run foton), so the
+   reproduction is a visible edge between the two fotons - not two unlinked runs. A tampered `.ext`
+   would return none - the check is pure hashing.
 5. **The review scope** (04/05/11). `nekton seed` opens a scope; two independent reviewers each sign a
    `gxp:reviewed=pass` (with report PDF evidence), chained `prev -> prev` and sealed by one **head**.
    Editing any earlier claim breaks the chain. A general approval reuses schema.org

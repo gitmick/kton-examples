@@ -129,8 +129,11 @@ plankton author --cmd "$NORMCMD" --kind normalize --in "$F/run1.ext"    --out "$
 plankton author --cmd "$NORMCMD" --kind normalize --in "$F/run1-qc.ext" --out "$F/fit.qc.canon" --sign "$(key qc).key" --add >/dev/null
 echo -n "  plankton reproduces (raw): "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" || true
 echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
-printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reproduces","object":{"level":"L1"},"by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$(plankton hash "$F/run1.ext")" > "$F/repro.json"
-nekton claim "$F/repro.json" "$(key qc).key" --add >/dev/null; echo "  QC signed a reproduction claim (nk:reproduces, level L1)"
+# QC signs the reproduction as a claim that CONNECTS the two runs: subject = the analyst's output,
+# level = L1 (what the gate checks), and reproducedBy = QC's re-run foton - so the graph draws the
+# edge "the analyst's fit is reproduced by QC's fit", not two unlinked fotons.
+printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reproduces","object":{"level":"L1","reproducedBy":{"hash":"%s"}},"by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$(plankton hash "$F/run1.ext")" "$QCFIT" > "$F/repro.json"
+nekton claim "$F/repro.json" "$(key qc).key" --add >/dev/null; echo "  QC signed a reproduction claim: analyst FIT <-reproducedBy- QC re-run (nk:reproduces, level L1)"
 
 echo; echo "########## ACT 4 - review scope: typed sign-offs with evidence, chained + sealed (04/05/11) #"
 export NEKTON_DIR="$W/sponsor/nekton"
