@@ -91,6 +91,18 @@ that - it pins *which* normalizer was used (a content-addressed foton, auditable
 reviewer can see exactly what was normalized away and reject an over-normalizing recipe. The guarantee
 is "these exact bytes agree after this exact, named transformation", not "the results are equivalent".
 
+**The `qualifies-as` claim carries its corpus.** "3/3 fulfilled" does not ride as a bare adjective on
+the claim: its object cites the **spectrum-check foton** (whose inputs are the spectrum plus the
+candidate results), so a reader re-derives the tally instead of trusting it. [Example 12](../12-submission/)
+makes a release gate *require* exactly this - a qualification with no such foton does not pass.
+
+**Qualification is monotone, not a closed world.** A spectrum defines a *set*, and qualification asks
+for completeness over it - which sounds closed-world, but is not. The member set is pinned by the
+spectrum's hash (it travels, it is not discovered per source), and each member check is a *positive*
+existence ("a fulfilling foton exists"). So reading more sources can only turn *incomplete* into
+*complete*, never revoke a qualification - the same monotonicity the [federation example](../02-federation/)
+relies on. "Not yet 3/3" means *not yet established*, not *failed*.
+
 ## Run it yourself
 
 ```

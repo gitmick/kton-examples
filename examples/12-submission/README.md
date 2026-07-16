@@ -72,7 +72,7 @@ federated store holds many submissions' records at once.
 ```
 release checklist (SPARQL bound to this submission):
   [x] toolchain validated (gxp:validation-performed = pass)
-  [x] the fit's environment is qualified (a signed qualifies-as binding)
+  [x] the fit's environment is qualified (qualifies-as citing a re-derivable spectrum-check foton)
   [x] the fit ran the designated final model (pmx:model-role = final)
   [x] the fit's output reproduces (nk:reproduces at L0/L1)
   [x] two distinct reviewers passed, no fail (gxp:reviewed)
@@ -112,10 +112,25 @@ seven conditions hold **over the corpus it was handed** - no more:
   **completeness** boundary, and it is a property of the source list, not of the hash.
 - **the environment is read from the fit envelope,** which the regulator must first confirm is the
   attested fit (Act 7's signature + foton-id check) - the gate trusts the `fit_hash` it was handed.
+- **the qualification is *not* a bare "3/3" assertion.** The `qualifies-as` claim cites a **spectrum-check
+  foton** (its inputs are the spectrum plus the checked results), and the gate requires that foton to
+  have `prov:used` the very env-spectrum the fit declares - so "qualified" is backed by a re-derivable
+  check, not a signed adjective. Strip the fulfilment and the `env-qualified` condition fails (verified).
+  This is example 10's pattern; the two examples now author `qualifies-as` the same way.
 
 None of these are hidden: the verdict carries its corpus, so a smaller-corpus rerun is a *different*,
-comparable verdict, and the missing checks are named. Making them mechanical (sealed enrolment +
-authority join + a freshness/anchor check) is the roadmap the Trust chapter lays out.
+comparable verdict, and the missing checks are named. Making the first three mechanical (sealed
+enrolment + authority join + a freshness/anchor check) is the roadmap the Trust chapter lays out.
+
+> **Why qualification is safe under federation (and the gate is not a "third closed world").** Reading
+> more sources can only *complete* a qualification, never revoke one: the spectrum's member set is
+> pinned by its hash (a defined set that travels, not one discovered per source), and each member check
+> is a *positive* existence ("a fulfilling foton exists"). So qualification is **monotone** - unlike the
+> release gate's one non-monotone condition ("no reject *exists*", a negative existential). The only way
+> to read qualification as closed-world is to treat "not yet 3/3" as *failed* rather than *not yet
+> established*; kton takes the latter, open-world reading. That is why the substrate keeps exactly two
+> deliberate closed worlds (the sealed review scope and the gate/verdict), and qualification is not a
+> third.
 
 ## Fetchable evidence (the bytes, not just the hashes)
 

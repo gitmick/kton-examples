@@ -7,6 +7,7 @@
 PREFIX gxp:  <https://kton.dev/v/gxp/>
 PREFIX pmx:  <https://kton.dev/v/pmx/>
 PREFIX nk:   <https://kton.dev/v/>
+PREFIX lab:  <https://kton.dev/v/lab/>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 
 SELECT DISTINCT ?condition WHERE {
@@ -14,7 +15,14 @@ SELECT DISTINCT ?condition WHERE {
     ?env gxp:validation-performed ?o . ?o nk:outcome "pass" .
     BIND("tool-validated" AS ?condition)
   } UNION {
-    ?x nk:qualifies-as ?bag . ?bag ?anyp ?env .
+    # not a NAKED binding: the qualification must (1) bind to THIS fit's env, and (2) cite a
+    # fulfilment foton that actually consumed that env-spectrum - a re-derivable spectrum check,
+    # not a bare "3/3" assertion. A qualifies-as with no fulfilment, or one whose fulfilment foton
+    # never took this spectrum as input, does not satisfy the gate.
+    ?x nk:qualifies-as ?bag .
+    ?bag lab:id ?env .
+    ?bag lab:fulfilment ?chk .
+    ?chk prov:used ?env .
     BIND("env-qualified" AS ?condition)
   } UNION {
     ?fit prov:used ?m . ?m pmx:model-role ?o . ?o nk:role "final" .

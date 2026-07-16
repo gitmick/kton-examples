@@ -77,11 +77,20 @@ echo "  env-spectrum id (ENV) = $ENV"
 echo "  the pinned docker image is checked against the spectrum:"
 plankton spectrum check "$F/pmxtools.spectrum.json" \
   --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" \
-  --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" | sed 's/^/    /' || true
-# the exact OCI image (CARRIED) qualifies-as the env-spectrum (signed), and a gxp tool-validation claim
+  --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" | tee "$F/fulfilment.txt" | sed 's/^/    /' || true
+# B1/D6: do not let "3/3 fulfilled" ride as a bare prose assertion on the qualifies-as claim. Back it
+# with a reproducible spectrum-check FOTON that commits to the exact spectrum + candidate result files,
+# so the qualification CARRIES ITS CORPUS (re-derivable), and the release gate can REQUIRE that foton
+# rather than trust a naked binding. (This is example 10's pattern, adopted here.)
+CHECK=$(plankton author --cmd "plankton spectrum check pmxtools-1.2.0" \
+  --in "$F/pmxtools.spectrum.json" --in "$F/test-onecomp.ref" --in "$F/test-twocomp.ref" --in "$F/test-covariate.cand" \
+  --out "$F/fulfilment.txt" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+echo "  fulfilment recorded as a reproducible spectrum-check foton (commits to the checked results): $CHECK"
+# the exact OCI image (CARRIED) qualifies-as the env-spectrum (signed), carrying the fulfilment foton;
+# and a gxp tool-validation claim
 printf "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef\n" > "$F/image.txt"
 OCI=$(plankton hash "$F/image.txt")
-printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s"},"why":"image fulfils pmxtools-1.2.0 3/3","by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$OCI" "${ENV#sha256:}" > "$F/qual.json"
+printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s"},"why":"image fulfils pmxtools-1.2.0 (3/3 re-derivable in the spectrum-check foton)","by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$OCI" "${ENV#sha256:}" "${CHECK#sha256:}" > "$F/qual.json"
 nekton claim "$F/qual.json" "$(key qc).key" --add >/dev/null
 printf "%%PDF tool validation protocol\n" > "$F/toolval.pdf"
 nekton annotate "$ENV" --template gxp/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --sign "$(key qc).key" --add >/dev/null
