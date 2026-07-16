@@ -29,7 +29,7 @@ pauthor(){ plankton author "$@" --add | awk '/indexed foton/{print $3}'; }
 # and post-hoc; the kernels never dereference it (that is kton's job).
 locate(){ printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/dcat#downloadURL","object":{"uri":"%s"},"by":"CN=%s","when":"2026-07-16T00:00:00Z"}' "$(plankton hash "$1")" "$2" "$3" > "$F/loc.json"; nekton claim "$F/loc.json" "$(key $3).key" --add >/dev/null; }
 
-echo "########## ACT 0 - identities: each org vouches for its staff (sec:controller VCs, example 07) ####"
+echo "########## SETUP - identities: each org vouches for its staff (sec:controller VCs, example 07) #####"
 export NEKTON_DIR="$W/cro/nekton"
 for p in analyst qc; do
   printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"did:web:cro.example/people/%s"},"by":"CN=cro-org","when":"2026-07-16T00:00:00Z"}' "$(keyiri $p)" "$p" > "$F/$p-id.json"
@@ -109,14 +109,14 @@ GOF=$(pauthor --cmd "Rscript tools/gof.R run1.ext" --in "$F/run1.ext" --in "tool
 locate "tools/fit.R" "https://raw.githubusercontent.com/gitmick/kton-examples/76a44ef8314ddb028812aab732de8f561b9e5cb6/examples/12-submission/tools/fit.R" analyst
 echo "  clean -> FIT (runs run12.mod, --environment ENV COVERED, code recorded + fit.R located) -> gof; FIT=$FIT"
 
-echo; echo "########## ACT 2b - the model-development tree (pmx/model-role: base -> covariate -> final) ##"
+echo; echo "########## ACT 3 - the model-development tree (pmx/model-role: base -> covariate -> final) ###"
 export NEKTON_DIR="$W/cro/nekton"
 nekton annotate "$(plankton hash "$F/run1.mod")"  --template pmx/model-role --set role=base --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
 nekton annotate "$(plankton hash "$F/run7.mod")"  --template pmx/model-role --set role=covariate --set parent="$(plankton hash "$F/run1.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
 nekton annotate "$(plankton hash "$F/run12.mod")" --template pmx/model-role --set role=final --set parent="$(plankton hash "$F/run7.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
 echo "  signed model tree: run1=base -> run7=covariate -> run12=final (the FIT ran run12)"
 
-echo; echo "########## ACT 3 - independent reproduction by QC (real re-run, authored as a foton) ########"
+echo; echo "########## ACT 4 - independent reproduction by QC (real re-run, authored as a foton) ########"
 # QC RE-AUTHORS the fit as its own foton (same inputs + protocol -> same action key as the analyst's
 # run, but a distinct signer and its own output), so the re-run is a visible parallel branch from
 # analysis.csv - not a dangling file. This is what makes reproduction show up in the lineage.
@@ -135,7 +135,7 @@ echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plank
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reproduces","object":{"level":"L1","reproducedBy":{"hash":"%s"}},"by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$(plankton hash "$F/run1.ext")" "$QCFIT" > "$F/repro.json"
 nekton claim "$F/repro.json" "$(key qc).key" --add >/dev/null; echo "  QC signed a reproduction claim: analyst FIT <-reproducedBy- QC re-run (nk:reproduces, level L1)"
 
-echo; echo "########## ACT 4 - review scope: typed sign-offs with evidence, chained + sealed (04/05/11) #"
+echo; echo "########## ACT 5 - review scope: typed sign-offs with evidence, chained + sealed (04/05/11) #"
 export NEKTON_DIR="$W/sponsor/nekton"
 SCOPE=$(nekton seed popPK-mABC --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
 printf "%%PDF qc review\n" > "$F/qc-rep.pdf"; printf "%%PDF lead review\n" > "$F/lead-rep.pdf"
@@ -149,26 +149,26 @@ nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set deci
 HEAD=$(nekton head "$SCOPE" | awk '/head:/{print $2}')
 echo "  seed -> gxp:reviewed(qc,pass) -> gxp:reviewed(lead,pass) sealed; HEAD=$HEAD"
 
-echo; echo "########## ACT 4b - explicit residual-risk acceptance (risk/accept) ##########"
+echo; echo "########## ACT 5b - explicit residual-risk acceptance (risk/accept) ##########"
 printf "%%PDF shrinkage sensitivity\n" > "$F/shrinkage.pdf"
 nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity=medium --set rationale="eta-shrinkage on CL 28pct; addressed by sensitivity analysis" --set mitigation="$F/shrinkage.pdf" --by "CN=lead" --sign "$(key lead).key" --add >/dev/null
 locate "$F/shrinkage.pdf" "https://sponsor.example/risk/shrinkage-sensitivity.pdf" lead
 echo "  gxp:risk-accepted (medium, mitigation.pdf located) recorded"
 
-echo; echo "########## ACT 5 - authoritative submission signature (Sigstore keyless stand-in, example 08)"
+echo; echo "########## ACT 6 - authoritative submission signature (Sigstore keyless stand-in, example 08)"
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/submitted","object":{"id":"did:web:sponsor.example/people/submitter"},"why":"submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08","by":"did:web:sponsor.example/people/submitter","when":"2026-07-16T00:00:00Z"}' "${HEAD#sha256:}" > "$F/submit.json"
 # subject is the scope HEAD (a claim id); reference it by hash
 python3 -c "import json;d=json.load(open('$F/submit.json'));d['subject'][0]['hash']='$HEAD';json.dump(d,open('$F/submit.json','w'))"
 nekton claim "$F/submit.json" "$(key submitter).key" --add >/dev/null
 echo "  submission of HEAD attributed to the submitter's verifiable identity (nk:submitted)"
 
-echo; echo "########## ACT 6 - federate across the three orgs by hash (no server, example 02) ##########"
+echo; echo "########## ACT 7 - federate across the three orgs by hash (no server, example 02) ##########"
 PLANKTON_DIR="$W/sponsor/plankton" plankton mirror "$W/cro/plankton" | sed 's/^/  sponsor<-cro  /'
 NEKTON_DIR="$W/sponsor/nekton"     nekton  mirror "$W/cro/nekton"    | sed 's/^/  sponsor<-cro  /'
 PLANKTON_DIR="$W/agency/plankton"  plankton mirror "$W/sponsor/plankton" | sed 's/^/  agency<-sponsor  /'
 NEKTON_DIR="$W/agency/nekton"      nekton  mirror "$W/sponsor/nekton"    | sed 's/^/  agency<-sponsor  /'
 
-echo; echo "########## ACT 7 - the regulator re-verifies everything, trusting no one ##########"
+echo; echo "########## ACT 8a - the regulator re-verifies everything, trusting no one ##########"
 export PLANKTON_DIR="$W/agency/plankton" NEKTON_DIR="$W/agency/nekton"
 echo -n "  1. reproduction re-check (L1):      "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
 echo -n "  2. environment fulfils spectrum:    "; if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1; then echo "3/3 fulfilled"; else echo "NOT fulfilled"; fi
@@ -176,7 +176,7 @@ echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dss
 echo    "  4. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
 
-echo; echo "########## ACT 8 - the release decision, recorded as a reproducible attested foton #########"
+echo; echo "########## ACT 8b - the release decision, recorded as a reproducible attested foton ########"
 plankton export --rdf -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf > "$F/submission.ttl"
 : > "$F/attestations.trig"
 for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done

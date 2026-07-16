@@ -85,6 +85,12 @@ are reproducible facts about hashes. Naming that "validated at L0/L1" and *accep
 qualified is a signed nekton claim on top - here the `reproduces` and `qualifies-as` claims. plankton
 compares; it never ran the tests and never ran the normalizer. An executor (your R, your docker) did.
 
+**L1 is only as honest as the normalizer.** A normalizer that strips too much (say, blanks the whole
+result, not just the volatile `session:` line) would make anything "reproduce". kton does not judge
+that - it pins *which* normalizer was used (a content-addressed foton, auditable byte-for-byte) so a
+reviewer can see exactly what was normalized away and reject an over-normalizing recipe. The guarantee
+is "these exact bytes agree after this exact, named transformation", not "the results are equivalent".
+
 ## Run it yourself
 
 ```
