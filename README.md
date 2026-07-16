@@ -47,6 +47,7 @@ two.)
 | 11 | `review-template` | author reviews from a template (approve/reject + file comment), federate the template, and test review completeness with SPARQL |
 | 12 | `submission` | capstone: a regulated popPK submission across three orgs, verified by the agency with zero trust, gated by a SPARQL release query |
 | 13 | `foreign-verify` | a kton record verified by a non-kton tool (standard DSSE + Ed25519, no kton code) - records are copyable between tools |
+| 14 | `fetch` | resolve a content hash to its bytes via a signed `dcat:downloadURL`, re-hash on arrival, reject a forged mirror - the content-present verification tier |
 
 ## Run them yourself
 

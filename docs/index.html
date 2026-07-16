@@ -6,7 +6,7 @@
 <title>kton examples</title>
 <meta name="description" content="kton records how data was produced and what has been said about it, as small signed content-addressed units anyone can verify. Worked examples with a graph viewer.">
 <meta property="og:title" content="kton - worked examples">
-<meta property="og:description" content="kton records how data was produced (plankton) and what has been said about it (nekton), as small signed content-addressed records anyone can verify. Thirteen worked examples with a live graph viewer.">
+<meta property="og:description" content="kton records how data was produced (plankton) and what has been said about it (nekton), as small signed content-addressed records anyone can verify. Fourteen worked examples with a live graph viewer.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gitmick.github.io/kton-examples/">
 <style>
@@ -204,6 +204,14 @@
       crypto (no kton code) checks a foton's signature and rejects a tampered one. "Verify it yourself"
       means with <i>any</i> tool, not only ours.</p>
       <div class="links"><a href="https://github.com/gitmick/kton-examples/blob/main/examples/13-foreign-verify/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">14</div><h3>Fetch: getting the bytes back</h3>
+      <p>plankton stores no bytes, only hashes - so "verify by re-hashing" needs the bytes from
+      somewhere. A signed <code>dcat:downloadURL</code> says where; <code>kton fetch</code> dereferences
+      it and checks <code>sha256 == hash</code> before trusting a byte. A forged mirror is rejected on
+      arrival: the hash is the authority, the URI only a hint.</p>
+      <div class="links"><a href="viewer.html?union=data/14-fetch/union.json&keys=data/14-fetch/keys.json&names=data/14-fetch/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/14-fetch/README.md">read &rarr;</a></div>
     </div>
   </div>
 
