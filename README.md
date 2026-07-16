@@ -43,6 +43,7 @@ two.)
 | 09 | `environment` | the whole arc: local run -> pinned docker -> a spectrum (one foton per R test) -> verify the image qualifies |
 | 10 | `tool-spectrum` | really run an R test suite twice, and see in the graph which tests reproduce identically (L0) vs only after a normalizer (L1) |
 | 11 | `review-template` | author reviews from a template (approve/reject + file comment), federate the template, and test review completeness with SPARQL |
+| 12 | `submission` | capstone: a regulated popPK submission across three orgs, verified by the agency with zero trust, gated by a SPARQL release query |
 
 ## Run them yourself
 

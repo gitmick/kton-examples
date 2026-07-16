@@ -1,0 +1,41 @@
+# The release gate as ONE query over the merged submission graph (foton PROV lineage + every
+# attestation as a nanopublication). Each UNION branch yields the label of a satisfied release
+# condition; the harness passes the submission only if every required condition appears. Vocabulary is
+# all reused/canonical - gxp:, pmx:, schema:, pav:, prov:, sec: - so the gate reads the same IRIs the
+# examples emit on the wire.
+PREFIX gxp:    <https://kton.dev/v/gxp/>
+PREFIX pmx:    <https://kton.dev/v/pmx/>
+PREFIX nk:     <https://kton.dev/v/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+
+SELECT DISTINCT ?condition WHERE {
+  {
+    ?tv gxp:validation-performed ?o . ?o nk:outcome "pass" .
+    BIND("tool-validated" AS ?condition)
+  } UNION {
+    ?q nk:qualifies-as ?e .
+    BIND("env-qualified" AS ?condition)
+  } UNION {
+    ?m pmx:model-role ?o . ?o nk:role "final" .
+    BIND("final-model" AS ?condition)
+  } UNION {
+    ?r nk:reproduces ?o . ?o nk:level-reached ?lvl . FILTER(?lvl IN ("L0", "L1"))
+    BIND("reproduces" AS ?condition)
+  } UNION {
+    ?rk gxp:risk-accepted ?o .
+    BIND("risk-accepted" AS ?condition)
+  } UNION {
+    ?s nk:submitted ?who .
+    BIND("submission-signed" AS ?condition)
+  } UNION {
+    {
+      SELECT (COUNT(DISTINCT ?rev) AS ?n) WHERE {
+        GRAPH ?g { ?f gxp:reviewed ?ro . ?ro nk:outcome "pass" . }
+        ?g prov:wasAttributedTo ?rev .
+      }
+    }
+    FILTER(?n >= 2)
+    FILTER NOT EXISTS { ?ff gxp:reviewed ?fo . ?fo nk:outcome "fail" . }
+    BIND("two-independent-reviews" AS ?condition)
+  }
+}
