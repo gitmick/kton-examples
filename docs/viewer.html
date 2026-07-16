@@ -65,7 +65,7 @@
 <body>
 <header>
   <div class="titlerow"><img src="logo.png" alt="plankton"><h1>kton example <small>· graph viewer</small></h1></div>
-  <div class="story">The graph for one kton example. Round nodes are <b>fotons</b> (recorded computations), squares are <b>claims</b> (signed statements); edges are lineage and attestation. Click a dataset or record, then walk its pedigree - every node is re-verified in your browser (WASM, Ed25519/DSSE). <b>Esc</b> or the browser <b>Back</b> button returns to the overview.</div>
+  <div class="story">The graph for one kton example. Round nodes are <b>fotons</b> (recorded computations), squares are <b>claims</b> (signed statements); edges are lineage and attestation. Click a dataset or record, then walk its pedigree - every node's <b>signature is re-verified in your browser</b> (WASM, Ed25519/DSSE) against this example's published keys: that is the <i>record-authentic</i> tier. To verify a record with a tool that is not kton, see <a href="https://github.com/gitmick/kton-examples/blob/main/examples/13-foreign-verify/README.md">example 13</a>; to re-derive the bytes (reproduce), <a href="https://github.com/gitmick/kton-examples/blob/main/examples/03-reproduce/README.md">example 03</a>. <b>Esc</b> or the browser <b>Back</b> button returns to the overview.</div>
   <div id="stats"></div>
 </header>
 <div id="main">

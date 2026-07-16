@@ -119,7 +119,9 @@ bash run.sh
 
 ## See it
 
-The viewer colours records by their signer, so each model's claims appear in its own colour, and the
-deployer's identity claim is a distinct node.
+The viewer colours records by their signer. Crucially, a signer's **label is the principal from its
+signed `sec:controller` claim where one exists** - so the opus key shows as `claude-opus-4-8` (what the
+deployer *signed*), not a site-operator keyfile name. A key with no such binding falls back to its
+keyfile label, which is a site label, not attested - the difference the whole example is about.
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/07-identity/union.json&keys=data/07-identity/keys.json&names=data/07-identity/names.json)
