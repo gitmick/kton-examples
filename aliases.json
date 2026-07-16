@@ -1,6 +1,6 @@
 {
   "schema": "https://kton.dev/aliases/v0",
-  "note": "Aliases are pure sugar: they resolve to canonical IRIs BEFORE a claim is built, so the signed wire form always carries the full IRI. This file is content-addressed and federates like any record; a consumer may remap it. An alias binding is itself expressible as a signed owl:sameAs claim. Vocabulary policy (DECISIONS §20, §21): reuse a PUBLISHED ontology wherever one fits (PROV, PAV, DCAT, OWL, SKOS, and the W3C Security Vocabulary sec: for key->principal control - a signed key binding is a lightweight Verifiable Credential); mint kton-native IRIs (nk:) only for concepts no standard covers; and RESERVE the regulated gxp: terms for actual GxP-validated processes - ordinary review uses the general pav: terms, never gxp:.",
+  "note": "Aliases are pure sugar: they resolve to canonical IRIs BEFORE a claim is built, so the signed wire form always carries the full IRI. This file is content-addressed and federates like any record; a consumer may remap it. An alias binding is itself expressible as a signed owl:sameAs claim. Vocabulary policy (DECISIONS §20, §21): reuse a PUBLISHED ontology wherever one fits (PROV, PAV, DCAT, OWL, SKOS, schema.org - e.g. schema:AcceptAction/RejectAction for a review verdict - and the W3C Security Vocabulary sec: for key->principal control, a signed key binding being a lightweight Verifiable Credential); mint kton-native IRIs (nk:) only for concepts no standard covers; and RESERVE the regulated gxp: terms for actual GxP-validated processes - ordinary review uses the general pav: terms, never gxp:.",
   "prefixes": {
     "prov": "http://www.w3.org/ns/prov#",
     "pav": "http://purl.org/pav/",
@@ -12,7 +12,9 @@
     "pmx": "https://kton.dev/v/pmx/",
     "ctx": "https://kton.dev/ctx/",
     "sec": "https://w3id.org/security#",
-    "pk": "https://kton.dev/o/"
+    "pk": "https://kton.dev/o/",
+    "schema": "https://schema.org/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   },
   "terms": {
     "derived": "prov:wasDerivedFrom",
@@ -30,6 +32,7 @@
     "multikey": "sec:Multikey",
     "broaderThan": "skos:broader",
     "confirmed": "nk:confirmed",
+    "decision": "rdf:type",
     "gxpReviewed": "gxp:reviewed",
     "validationPerformed": "gxp:validation-performed",
     "envQualified": "gxp:env-qualified",

@@ -1,0 +1,18 @@
+# Review completeness, over the merged RDF (plankton foton lineage + nekton review nanopubs).
+# For a bound ?foton, count the DISTINCT reviewers (provenance agents) under each verdict.
+# The verdict reuses schema.org: approve = schema:AcceptAction, reject = schema:RejectAction.
+# Each review is its own nanopub (named graph), so the reviewer is joined from that graph's provenance.
+PREFIX pav:    <http://purl.org/pav/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX schema: <https://schema.org/>
+PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?verdict (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
+  GRAPH ?review {
+    ?foton pav:reviewedBy ?r .
+    ?r rdf:type ?verdict .
+  }
+  ?review prov:wasAttributedTo ?reviewer .
+  FILTER(?verdict IN (schema:AcceptAction, schema:RejectAction))
+}
+GROUP BY ?verdict

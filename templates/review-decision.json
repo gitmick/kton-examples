@@ -1,0 +1,22 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "review/decision",
+  "target": "foton",
+  "predicate": "reviewed",
+  "fields": {
+    "decision": {
+      "type": "enum",
+      "values": ["https://schema.org/AcceptAction", "https://schema.org/RejectAction"],
+      "required": true,
+      "role": "object",
+      "widget": "enum"
+    },
+    "comment": {
+      "type": "file",
+      "mediaType": "text/markdown",
+      "required": false,
+      "role": "evidence",
+      "widget": "file"
+    }
+  }
+}

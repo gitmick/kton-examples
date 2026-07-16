@@ -42,6 +42,7 @@ two.)
 | 08 | `sigstore-github` | sign a record with your GitHub identity (Sigstore keyless: Fulcio + Rekor) |
 | 09 | `environment` | the whole arc: local run -> pinned docker -> a spectrum (one foton per R test) -> verify the image qualifies |
 | 10 | `tool-spectrum` | really run an R test suite twice, and see in the graph which tests reproduce identically (L0) vs only after a normalizer (L1) |
+| 11 | `review-template` | author reviews from a template (approve/reject + file comment), federate the template, and test review completeness with SPARQL |
 
 ## Run them yourself
 
@@ -88,6 +89,8 @@ authoring them, are *federated data*, deliberately kept out of the protocol repo
   terms are reserved for actual GxP-validated processes; ordinary review uses `pav:reviewedBy`.
 - **`templates/`** - example authoring templates (`kton.dev/template/v0`) consumed by `nekton
   annotate`: `prov-derived-from.json` (a plain PROV lineage claim, the minimal mechanism demo);
+  `review-decision.json` (a general review: approve/reject a foton with `pav:reviewedBy` +
+  `schema:AcceptAction`/`RejectAction` and a file comment - see [example 11](examples/11-review-template/));
   `gxp-review.json`, `gxp-tool-validation.json`, `risk-accept.json` (regulated GxP examples);
   `election-vote-initialised.json`, `election-count-finished.json` (a liquid-democracy governance
   example); `pmx-model-role.json` (a pharmacometrics domain example).
