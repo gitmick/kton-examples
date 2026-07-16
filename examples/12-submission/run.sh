@@ -21,6 +21,10 @@ key(){ echo "$W/keys/$1"; }
 for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" >/dev/null; done
 keyiri(){ echo "https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest())")"; }
 pauthor(){ plankton author "$@" --add | awk '/indexed foton/{print $3}'; }
+# locate <file> <url> <signer>: record a signed dcat:downloadURL so the regulator can FETCH the bytes
+# it holds a content hash for (verifying sha256 == hash on arrival). Location is a signed claim, plural
+# and post-hoc; the kernels never dereference it (that is kton's job).
+locate(){ printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/dcat#downloadURL","object":{"uri":"%s"},"by":"CN=%s","when":"2026-07-16T00:00:00Z"}' "$(plankton hash "$1")" "$2" "$3" > "$F/loc.json"; nekton claim "$F/loc.json" "$(key $3).key" --add >/dev/null; }
 
 echo "########## ACT 0 - identities: each org vouches for its staff (sec:controller VCs, example 07) ####"
 export NEKTON_DIR="$W/cro/nekton"
@@ -75,26 +79,29 @@ printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"pre
 nekton claim "$F/qual.json" "$(key qc).key" --add >/dev/null
 printf "%%PDF tool validation protocol\n" > "$F/toolval.pdf"
 nekton annotate "$ENV" --template gxp/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --sign "$(key qc).key" --add >/dev/null
-echo "  qualifies-as (image -> ENV) + gxp:validation-performed=pass recorded"
+locate "$F/toolval.pdf" "https://cro.example/qms/SOP-CV-014/tool-validation.pdf" qc
+echo "  qualifies-as (image -> ENV) + gxp:validation-performed=pass recorded (protocol.pdf located)"
 
-echo; echo "########## ACT 2 - the analysis, FIT authored under the qualified environment (COVERED) #####"
+echo; echo "########## ACT 2 - the analysis; the FIT runs the FINAL model, under the qualified env #######"
 printf "ID,TIME,DV\n1,0,0\n1,1,5.2\n1,2,3.1\n" > "$F/raw.csv"
 Rscript "$T/clean.R" "$F/raw.csv" "$F/analysis.csv"
-printf '$PROB base one-comp\n$THETA (0,5)\n' > "$F/run1.mod"
+# the model-development tree (files); the FIT below actually runs the FINAL model
+printf '$PROB base one-comp\n' > "$F/run1.mod"
+printf '$PROB +WT on CL\n' > "$F/run7.mod"
+printf '$PROB final: WT on CL, allometric\n' > "$F/run12.mod"
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1.ext"
 Rscript "$T/gof.R" "$F/run1.ext" > "$F/diagnostics.txt"
 CLEAN=$(pauthor --cmd "Rscript tools/clean.R raw.csv analysis.csv" --in "$F/raw.csv" --out "$F/analysis.csv" --sign "$(key analyst).key")
-FIT=$(plankton author --cmd "nmfe75 run1.mod (NONMEM stand-in: Rscript tools/fit.R)" --in "$F/analysis.csv" --in "$F/run1.mod" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
+FIT=$(plankton author --cmd "nmfe75 run12.mod (NONMEM stand-in: Rscript tools/fit.R)" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
 GOF=$(pauthor --cmd "Rscript tools/gof.R run1.ext" --in "$F/run1.ext" --out "$F/diagnostics.txt" --sign "$(key analyst).key")
-echo "  clean -> FIT (--environment ENV, COVERED) -> gof; FIT=$FIT"
+echo "  clean -> FIT (runs run12.mod, --environment ENV COVERED) -> gof; FIT=$FIT"
 
 echo; echo "########## ACT 2b - the model-development tree (pmx/model-role: base -> covariate -> final) ##"
 export NEKTON_DIR="$W/cro/nekton"
-printf '$PROB base\n' > "$F/run1.mod"; printf '$PROB +WT on CL\n' > "$F/run7.mod"; printf '$PROB final\n' > "$F/run12.mod"
 nekton annotate "$(plankton hash "$F/run1.mod")"  --template pmx/model-role --set role=base --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
 nekton annotate "$(plankton hash "$F/run7.mod")"  --template pmx/model-role --set role=covariate --set parent="$(plankton hash "$F/run1.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
 nekton annotate "$(plankton hash "$F/run12.mod")" --template pmx/model-role --set role=final --set parent="$(plankton hash "$F/run7.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
-echo "  signed model tree: run1=base -> run7=covariate -> run12=final"
+echo "  signed model tree: run1=base -> run7=covariate -> run12=final (the FIT ran run12)"
 
 echo; echo "########## ACT 3 - independent reproduction by QC (real re-run, L1 via the normalizer) ######"
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1-qc.ext"     # QC re-runs in the qualified image
@@ -114,6 +121,8 @@ printf "%%PDF qc review\n" > "$F/qc-rep.pdf"; printf "%%PDF lead review\n" > "$F
 nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
 C1=$(nekton by predicate "https://kton.dev/v/gxp/reviewed" | head -1 | awk '{print $1}')
 nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
+locate "$F/qc-rep.pdf" "https://sponsor.example/reviews/qc-report.pdf" qc
+locate "$F/lead-rep.pdf" "https://sponsor.example/reviews/lead-report.pdf" lead
 # a general (non-GxP) approval reuses schema.org (example 11)
 nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set decision=https://schema.org/AcceptAction --set comment="$F/lead-rep.pdf" --by "CN=lead" --sign "$(key lead).key" --add >/dev/null
 HEAD=$(nekton head "$SCOPE" | awk '/head:/{print $2}')
@@ -122,7 +131,8 @@ echo "  seed -> gxp:reviewed(qc,pass) -> gxp:reviewed(lead,pass) sealed; HEAD=$H
 echo; echo "########## ACT 4b - explicit residual-risk acceptance (risk/accept) ##########"
 printf "%%PDF shrinkage sensitivity\n" > "$F/shrinkage.pdf"
 nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity=medium --set rationale="eta-shrinkage on CL 28pct; addressed by sensitivity analysis" --set mitigation="$F/shrinkage.pdf" --by "CN=lead" --sign "$(key lead).key" --add >/dev/null
-echo "  gxp:risk-accepted (medium, mitigation.pdf) recorded"
+locate "$F/shrinkage.pdf" "https://sponsor.example/risk/shrinkage-sensitivity.pdf" lead
+echo "  gxp:risk-accepted (medium, mitigation.pdf located) recorded"
 
 echo; echo "########## ACT 6 - authoritative submission signature (Sigstore keyless stand-in, example 08)"
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/submitted","object":{"id":"did:web:sponsor.example/people/submitter"},"why":"submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08","by":"did:web:sponsor.example/people/submitter","when":"2026-07-16T00:00:00Z"}' "${HEAD#sha256:}" > "$F/submit.json"
@@ -151,7 +161,7 @@ plankton export --rdf -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export 
 for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
 echo "  exported submission.ttl (PROV lineage) + attestations.trig (every claim as a nanopublication)"
 if python3 -c "import rdflib" 2>/dev/null; then
-  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq"
+  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$F/fit.dsse.json" "$FIT" "$HEAD"
 else
   echo "  (the release gate needs rdflib: 'pip install rdflib' - skipping)"
 fi

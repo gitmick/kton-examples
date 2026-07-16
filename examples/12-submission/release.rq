@@ -1,41 +1,38 @@
 # The release gate as ONE query over the merged submission graph (foton PROV lineage + every
-# attestation as a nanopublication). Each UNION branch yields the label of a satisfied release
-# condition; the harness passes the submission only if every required condition appears. Vocabulary is
-# all reused/canonical - gxp:, pmx:, schema:, pav:, prov:, sec: - so the gate reads the same IRIs the
-# examples emit on the wire.
-PREFIX gxp:    <https://kton.dev/v/gxp/>
-PREFIX pmx:    <https://kton.dev/v/pmx/>
-PREFIX nk:     <https://kton.dev/v/>
-PREFIX prov:   <http://www.w3.org/ns/prov#>
+# attestation as a nanopublication). It is bound to THIS submission: ?fit (the estimation activity),
+# ?env (the environment the fit declares - derived from the fit, not asserted), and ?head (the signed
+# submission head) come in as query bindings, so every condition must be ABOUT this submission - an
+# unrelated pass/qualify/review elsewhere in the graph cannot satisfy the gate. Each UNION branch
+# yields one satisfied release-condition label; the harness passes only if every required one appears.
+PREFIX gxp:  <https://kton.dev/v/gxp/>
+PREFIX pmx:  <https://kton.dev/v/pmx/>
+PREFIX nk:   <https://kton.dev/v/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
 
 SELECT DISTINCT ?condition WHERE {
   {
-    ?tv gxp:validation-performed ?o . ?o nk:outcome "pass" .
+    ?env gxp:validation-performed ?o . ?o nk:outcome "pass" .
     BIND("tool-validated" AS ?condition)
   } UNION {
-    ?q nk:qualifies-as ?e .
+    ?x nk:qualifies-as ?bag . ?bag ?anyp ?env .
     BIND("env-qualified" AS ?condition)
   } UNION {
-    ?m pmx:model-role ?o . ?o nk:role "final" .
+    ?fit prov:used ?m . ?m pmx:model-role ?o . ?o nk:role "final" .
     BIND("final-model" AS ?condition)
   } UNION {
-    ?r nk:reproduces ?o . ?o nk:level-reached ?lvl . FILTER(?lvl IN ("L0", "L1"))
+    ?out prov:wasGeneratedBy ?fit . ?out nk:reproduces ?o . ?o nk:level-reached ?lvl . FILTER(?lvl IN ("L0", "L1"))
     BIND("reproduces" AS ?condition)
   } UNION {
-    ?rk gxp:risk-accepted ?o .
+    ?fit gxp:risk-accepted ?o .
     BIND("risk-accepted" AS ?condition)
   } UNION {
-    ?s nk:submitted ?who .
+    ?head nk:submitted ?who .
     BIND("submission-signed" AS ?condition)
   } UNION {
-    {
-      SELECT (COUNT(DISTINCT ?rev) AS ?n) WHERE {
-        GRAPH ?g { ?f gxp:reviewed ?ro . ?ro nk:outcome "pass" . }
-        ?g prov:wasAttributedTo ?rev .
-      }
-    }
-    FILTER(?n >= 2)
-    FILTER NOT EXISTS { ?ff gxp:reviewed ?fo . ?fo nk:outcome "fail" . }
+    GRAPH ?g1 { ?fit gxp:reviewed ?o1 . ?o1 nk:outcome "pass" . } ?g1 prov:wasAttributedTo ?r1 .
+    GRAPH ?g2 { ?fit gxp:reviewed ?o2 . ?o2 nk:outcome "pass" . } ?g2 prov:wasAttributedTo ?r2 .
+    FILTER(?r1 != ?r2)
+    FILTER NOT EXISTS { ?fit gxp:reviewed ?of . ?of nk:outcome "fail" . }
     BIND("two-independent-reviews" AS ?condition)
   }
 }

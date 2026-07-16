@@ -57,23 +57,39 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
 `plankton export --rdf` (the PROV lineage) plus every attestation as a **nanopublication**
 (`nekton export --nanopub`) merge at shared hash IRIs into one graph. The shipped query
 [`release.rq`](release.rq) returns one row per satisfied release condition; the submission is
-releasable only if **all** appear:
+releasable only if **all** appear.
+
+Crucially the gate is **bound to this submission**: the query takes `?fit` (the estimation activity),
+`?env` (the environment the fit *declares* - derived from the fit's own descriptor, not the sponsor's
+word), and `?head` (the signed submission head), so every condition must be *about* this submission. An
+unrelated pass/qualify/review elsewhere in the graph cannot satisfy it - a real risk, since a
+federated store holds many submissions' records at once.
 
 ```
-release checklist (SPARQL over the merged graph):
+release checklist (SPARQL bound to this submission):
   [x] toolchain validated (gxp:validation-performed = pass)
-  [x] environment qualified (a signed qualifies-as binding)
-  [x] a final model is designated (pmx:model-role = final)
-  [x] the fit reproduces (nk:reproduces at L0/L1)
-  [x] two independent reviewers passed, no fail (gxp:reviewed)
+  [x] the fit's environment is qualified (a signed qualifies-as binding)
+  [x] the fit ran the designated final model (pmx:model-role = final)
+  [x] the fit's output reproduces (nk:reproduces at L0/L1)
+  [x] two distinct reviewers passed, no fail (gxp:reviewed)
   [x] residual risk explicitly accepted (gxp:risk-accepted)
-  [x] submission signed by a verifiable identity (nk:submitted)
+  [x] the submission head is signed by a verifiable identity (nk:submitted)
 RELEASE: COMPLETE - the submission may be accepted
+  (same gate bound to an unrelated hash: 0/7 conditions -> BLOCKED)
 ```
 
-The regulator does not read a checklist - it **runs the gate** over the merged graph. Remove any one
-attestation and the corresponding box clears and release blocks. That is the whole thesis of the stack
-made executable. (The gate needs `rdflib`: `pip install rdflib`.)
+The regulator does not read a checklist - it **runs the gate**, bound to the submission it was handed.
+Remove any one attestation and the box clears and release blocks; point it at a different hash and every
+box clears. That is the whole thesis of the stack made executable. (The gate needs `rdflib`: `pip
+install rdflib`.)
+
+## Fetchable evidence (the bytes, not just the hashes)
+
+Every sign-off carries its document by **hash** (`nk:evidence`), and every such file also gets a signed
+`dcat:downloadURL` **located-at** claim, so the regulator can actually *fetch* the PDFs it holds hashes
+for and verify `sha256 == hash` on arrival. Location is a signed, plural, post-hoc claim - the kernels
+never dereference it; resolving it is kton's job. In the viewer these fold into the per-file locators
+rather than cluttering the graph.
 
 ## What is real today
 
