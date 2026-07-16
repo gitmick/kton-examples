@@ -161,6 +161,14 @@
       image reproduces every test. COVERED qualification vs CARRIED digest, made concrete.</p>
       <div class="links"><a href="viewer.html?union=data/09-environment/union.json&keys=data/09-environment/keys.json&names=data/09-environment/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/09-environment/README.md">read &rarr;</a></div>
     </div>
+    <div class="card">
+      <div class="n">10</div><h3>Tool spectrum: run it, see what reproduces</h3>
+      <p>A spectrum defines a tool by its reference outputs. This one really runs an R package's test
+      suite twice, in two environments, and the graph shows per test whether the runs are byte-identical
+      (an <b>L0</b> edge) or agree only after a normalizer strips a volatile line (an <b>L1</b> edge),
+      then binds the environment to the spectrum with <b>qualifies-as</b>. Nothing fabricated.</p>
+      <div class="links"><a href="viewer.html?union=data/10-tool-spectrum/union.json&keys=data/10-tool-spectrum/keys.json&names=data/10-tool-spectrum/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/10-tool-spectrum/README.md">read &rarr;</a></div>
+    </div>
   </div>
 
   <footer>
