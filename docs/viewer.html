@@ -60,6 +60,14 @@
   #panel .txt{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);white-space:pre-wrap;font-size:12.5px}
   .badge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600} .vok{background:rgba(52,211,153,.15);color:var(--ok)} .vno{background:rgba(248,113,113,.15);color:var(--bad)}
   #err{position:absolute;inset:0;display:none;place-items:center;color:var(--bad);text-align:center;padding:40px}
+  .drop{max-width:70ch;margin:6vh auto;border:1.5px dashed var(--line);border-radius:14px;padding:34px 30px;text-align:center;transition:border-color .15s,background .15s}
+  .drop.over{border-color:var(--accent);background:rgba(120,160,255,.06)}
+  .drop h2{margin:0 0 8px;font-size:19px} .drop p{color:var(--dim);font-size:13.5px;line-height:1.55;margin:0 auto 18px;max-width:60ch}
+  .drop code{font-family:ui-monospace,monospace;font-size:12px;color:var(--fg)}
+  .drop .picks{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+  .btn{display:inline-block;cursor:pointer;border:1px solid var(--line);border-radius:9px;padding:8px 16px;font-size:13px;color:var(--accent);background:var(--card,transparent)} .btn:hover{border-color:var(--accent)}
+  #trust{width:min(52ch,92%);padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);font-size:12.5px}
+  #dropmsg{margin-top:14px;color:var(--dim);font-size:12.5px;min-height:1.2em}
 </style>
 </head>
 <body>
@@ -92,19 +100,110 @@ let G=null, partColor={}, ex=null, filt=null;
 const pcol=p=>css(partColor[p]||"--dim");
 const clip=(s,n)=>s&&s.length>n?s.slice(0,n)+"…":s;
 
+let _wasmReady=false;
+async function initWasm(){ if(_wasmReady) return;
+  const go=new Go(); const wbuf=await (await fetch("graph.wasm")).arrayBuffer();
+  const wasm=await WebAssembly.instantiate(wbuf,go.importObject); go.run(wasm.instance); _wasmReady=true; }
+function showErr(e){ $("#err").style.display="grid"; $("#err").textContent="Could not build the graph: "+(e&&e.message||e); }
+function renderGraph(union,keys,names){
+  G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
+  $("#err").style.display="none";
+  index(); showStats(); showOverview(false); history.replaceState({view:'overview'},"");
+  window.onpopstate=e=>{ const s=e.state||{view:'overview'}; if(s.view==='explorer'&&G.byId.has(s.center)) enterExplorer(s.center,s.mode,false); else showOverview(false); };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$("#explorer").style.display!=='none') showOverview(); });
+}
 async function load(){
   try{
+    await initWasm();
     const qs=new URLSearchParams(location.search);
-    const go=new Go(); const wbuf=await (await fetch("graph.wasm")).arrayBuffer();
-    const wasm=await WebAssembly.instantiate(wbuf,go.importObject); go.run(wasm.instance);
+    if(!qs.get("union")){ showDropUI(); return; }          // no example named -> let anyone drop their own records
     const union=await (await fetch(qs.get("union")||"union.json")).text();
     const keys =await fetch(qs.get("keys")||"keys.json").then(r=>r.text()).catch(()=>"{}");
     const names=await fetch(qs.get("names")||"names.json").then(r=>r.text()).catch(()=>"{}");
-    G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
-    index(); showStats(); showOverview(false); history.replaceState({view:'overview'},"");
-    window.onpopstate=e=>{ const s=e.state||{view:'overview'}; if(s.view==='explorer'&&G.byId.has(s.center)) enterExplorer(s.center,s.mode,false); else showOverview(false); };
-    document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$("#explorer").style.display!=='none') showOverview(); });
-  }catch(e){ $("#err").style.display="grid"; $("#err").textContent="Could not build the graph: "+e.message; }
+    renderGraph(union,keys,names);
+  }catch(e){ showErr(e); }
+}
+
+/* ===== load your own records: build the union in the browser, exactly like a multi-source read ===== */
+function hexToBytes(h){ const a=new Uint8Array(h.length/2); for(let i=0;i<a.length;i++) a[i]=parseInt(h.substr(i*2,2),16); return a; }
+async function sha256hex(bytes){ const d=await crypto.subtle.digest("SHA-256",bytes); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""); }
+const shortName=p=>p.replace(/\/+$/,"").split("/").pop().split(":").pop()||p;
+
+// Read every file dropped OR picked - recursing into dropped folders via the entries API.
+async function filesFromDrop(dt){
+  const items=dt.items?[...dt.items]:[]; const entries=items.map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+  if(!entries.length) return [...dt.files];
+  const out=[];
+  const walk=e=>new Promise(res=>{
+    if(e.isFile){ e.file(f=>{ out.push(f); res(); }, ()=>res()); }
+    else if(e.isDirectory){ const rd=e.createReader(); const read=()=>rd.readEntries(async es=>{ if(!es.length) return res(); await Promise.all(es.map(walk)); read(); }, ()=>res()); read(); }
+    else res();
+  });
+  await Promise.all(entries.map(walk));
+  return out;
+}
+
+async function buildFromFiles(files){
+  const canHash=!!(window.crypto&&crypto.subtle&&crypto.subtle.digest);   // needs https or localhost
+  const records=[], seen=new Set(), keys={}, pubName={};
+  for(const f of files){
+    let text; try{ text=await f.text(); }catch{ continue; }
+    const t=text.trim();
+    if(/^[0-9a-f]{64}$/i.test(t)){                                        // a *.pub (raw ed25519 pubkey hex)
+      if(canHash){ const kid=(await sha256hex(hexToBytes(t))).slice(0,16); keys[kid]=t.toLowerCase(); pubName[kid]=(f.name||"").replace(/\.pub$/i,"").split(/[\\/]/).pop(); }
+      continue;
+    }
+    let rec; try{ rec=JSON.parse(text); }catch{ continue; }
+    const id=rec&&(rec.fotonId||rec.claimId);                            // one registry object per file
+    if(id&&rec.envelope&&!seen.has(id)){ seen.add(id); records.push(rec); }
+  }
+  // attested names: a sec:controller binding relabels a key ONLY if its signer is a trusted authority
+  // (same rule as build_union.py; leave the trust box empty to trust none). Else the .pub filename.
+  const trust=new Set(($("#trust")?.value||"").split(/[,\s]+/).map(s=>s.trim()).filter(Boolean));
+  const bindings={};
+  if(canHash) for(const rec of records){
+    let p; try{ p=JSON.parse(atob(rec.envelope.payload)); }catch{ continue; }
+    const signer=rec.envelope.signatures&&rec.envelope.signatures[0]&&rec.envelope.signatures[0].keyid;
+    const body=p.predicate||{};                        // the claim body: {by, object, predicate(term), when}
+    const pred=body.predicate;
+    if(pred&&pred.uri==="https://w3id.org/security#controller"){
+      if(trust.size&&!trust.has(signer)) continue;
+      const principal=(body.object||{}).id||(body.object||{}).value;   // object is in the body, not top-level
+      for(const s of (p.subject||[])) if(s.uri&&principal) bindings[s.uri]=principal;   // subject IS top-level
+    }
+  }
+  const names={};
+  if(canHash) for(const kid in keys){ const iri="https://kton.dev/o/"+await sha256hex(hexToBytes(keys[kid])); names[kid]=bindings[iri]?shortName(bindings[iri]):pubName[kid]; }
+  return { union:JSON.stringify(records), keys:JSON.stringify(keys), names:JSON.stringify(names), n:records.length, k:Object.keys(keys).length, noHash:!canHash };
+}
+
+function showDropUI(){
+  $("#stats").innerHTML=""; $("#explorer").style.display="none"; $("#overview").style.display="block";
+  $("#overview").innerHTML=`<div id="drop" class="drop">
+    <h2>View your own records</h2>
+    <p>Drop the object files from one or more <b>plankton</b> and <b>nekton</b> registries here
+      (<code>objects/&hellip;/*.json</code>), plus any <code>*.pub</code> keys to draw the verified ring.
+      No build step and nothing is uploaded - the union is assembled in your browser, exactly like a
+      multi-source read: several registries converge on one graph by content hash.</p>
+    <div class="picks">
+      <label class="btn">choose a folder&hellip;<input id="pick"  type="file" webkitdirectory multiple hidden></label>
+      <label class="btn">or files&hellip;<input id="pickf" type="file" multiple hidden></label>
+    </div>
+    <input id="trust" placeholder="optional: trusted authority keyids for attested names (comma-separated)">
+    <div id="dropmsg"></div>
+  </div>`;
+  const drop=$("#drop"), msg=$("#dropmsg");
+  const go=async files=>{ msg.textContent="reading "+files.length+" file"+(files.length===1?"":"s")+"…";
+    try{ const b=await buildFromFiles(files);
+      if(!b.n){ msg.textContent="No records found - drop registry object files (JSON with a fotonId or claimId)."; return; }
+      renderGraph(b.union,b.keys,b.names);
+      if(b.noHash) $("#stats").insertAdjacentHTML("beforeend",'<span class="bad">served over http: the verified ring needs https or localhost</span>');
+    }catch(e){ msg.textContent="Could not read: "+(e&&e.message||e); } };
+  $("#pick").onchange =e=>go([...e.target.files]);
+  $("#pickf").onchange=e=>go([...e.target.files]);
+  drop.ondragover=e=>{ e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave=()=>drop.classList.remove("over");
+  drop.ondrop=async e=>{ e.preventDefault(); drop.classList.remove("over"); go(await filesFromDrop(e.dataTransfer)); };
 }
 function index(){
   G.byId=new Map(G.nodes.map(n=>[n.id,n])); G.out={}; G.in={};
