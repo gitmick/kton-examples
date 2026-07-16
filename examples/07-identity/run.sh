@@ -38,12 +38,17 @@ echo "########## Part 2 - binding a key to a named model (attested) ##########"
 # ABOUT the key. A consumer believes the attribution only if they trust that authority. Note this is
 # just another single-signed claim (decision: one claim, one signer) - no new machinery.
 nekton keygen "$PWD/.work/keys/deployer" >/dev/null
-printf '{"subject":[{"uri":"urn:kton:key:%s"}],"predicate":"nk:actsAs","object":{"value":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-15T00:00:00Z"}' "$OPUS" > .work/id.spec.json
+# The key's IRI is its full content hash (the keyid is that hash's first 16 hex). The binding is a
+# lightweight Verifiable Credential: <key> sec:controller <principal>, sec: = W3C Security Vocabulary.
+# Written as a full IRI because the bare `nekton claim` path does not resolve aliases (annotate does).
+OPUS_IRI="https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/opus.pub').read().strip())).hexdigest())")"
+printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-15T00:00:00Z"}' "$OPUS_IRI" > .work/id.spec.json
 nekton claim .work/id.spec.json "$PWD/.work/keys/deployer.key" --add >/dev/null
-echo "-- what is asserted about the opus key? --"
-nekton about "urn:kton:key:$OPUS"
-echo "  ^ a separate, single-signed claim binds keyid -> model name, vouched by the deployer's key."
-echo "    (the urn:kton:key: form is illustrative; the exact vocabulary is still being settled.)"
+echo "-- what is asserted about the opus key (by its content-addressed IRI)? --"
+nekton about "$OPUS_IRI"
+echo "  ^ a signed Verifiable Credential: this key (a sec:Multikey, IRI = pk:<full key hash>)"
+echo "    sec:controller the principal model:anthropic/claude-opus-4-8, vouched by the deployer's key."
+echo "    keyid $OPUS is that hash's first 16 hex; the object is an IRI, so it merges in the RDF (ex 06)."
 
 echo ""
 # the viewer colours records by their signer, so each model's claims show in its own colour

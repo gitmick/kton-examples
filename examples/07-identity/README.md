@@ -59,23 +59,32 @@ cryptographic fact.
 ## Part 2 - binding a key to a named model (attested)
 
 Part 1 shows *that* a key made a claim, not *who* the key is. Who says keyid `$OPUS` really belongs to
-`claude-opus-4-8`? An **authority** signs an identity claim ABOUT the key (we splice `$OPUS` into the
-subject):
+`claude-opus-4-8`? An **authority** signs an identity claim ABOUT the key. That claim is a lightweight
+**Verifiable Credential**: *this key `sec:controller` this principal*. Two decisions make it merge with
+the rest of the graph:
+
+- the **key** is named by its content-addressed IRI `https://kton.dev/o/<full key hash>` (the same
+  `pk:` namespace file/foton hashes use), typed `sec:Multikey`. The `keyid` is just that hash's first
+  16 hex - a display fingerprint, not a separate identifier.
+- the **predicate** is `sec:controller` from the **W3C Security Vocabulary** (the same vocabulary DIDs
+  and Verifiable Credentials use), and the **principal** is a real IRI (`model:...`, or `did:web:...`
+  for a person), not a bare string - so it joins the RDF export in [example 06](../06-nanopub-rdf/).
 
 ```
 nekton keygen deployer
-cat > identity.spec.json <<JSON
-{ "subject":[{"uri":"urn:kton:key:$OPUS"}], "predicate":"nk:actsAs",
-  "object":{"value":"model:anthropic/claude-opus-4-8"},
-  "by":"CN=Deployment", "when":"2026-07-15T00:00:00Z" }
-JSON
+# the key's IRI is its full content hash; keyid = its first 16 hex
+KEYIRI="https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('opus.pub').read().strip())).hexdigest())")"
+printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-15T00:00:00Z"}' \
+  "$KEYIRI" > identity.spec.json
 nekton claim identity.spec.json deployer.key --add
-nekton about "urn:kton:key:$OPUS"
-# sha256:...  predicate=nk:actsAs  by=CN=Deployment  keyid=<deployer keyid>
+nekton about "$KEYIRI"
+# sha256:...  predicate=https://w3id.org/security#controller  by=CN=Deployment  keyid=<deployer keyid>
 ```
 
-A consumer now resolves keyid -> model name via that claim - **and believes it only if they trust the
-deployer's key**. It is just another single-signed claim; no new machinery.
+The predicate is written as a full IRI because the bare `nekton claim` path stores it verbatim; the
+`sec:controller` / `actsAs` aliases in `aliases.json` resolve to exactly this IRI when you author via
+`nekton annotate` instead. A consumer resolves key -> principal via the claim, and **believes it only
+if they trust the deployer's key**. It is still one claim, one signer; no new machinery.
 
 ## How identity works in kton
 
@@ -87,7 +96,7 @@ deployer's key**. It is just another single-signed claim; no new machinery.
   multi-signature, so nothing about the kernel changes.
 - **Three assurance tiers**, weakest to strongest:
   - **self-asserted** - the `by` label (Part 1). Zero proof.
-  - **attested** - a signed claim by someone you trust (Part 2).
+  - **attested** - a signed `sec:controller` claim (a Verifiable Credential) by someone you trust (Part 2).
   - **authority-backed** *(partially shipped)* - a certificate or an allow-list from a trusted issuer.
     For a **person** this is now real in [example 08](../08-sigstore-github/): **Sigstore** keyless (an
     OIDC/GitHub identity bound by a Fulcio certificate + the Rekor transparency log). Still pending:
@@ -96,8 +105,11 @@ deployer's key**. It is just another single-signed claim; no new machinery.
 - **Trust policy** - which authorities and identities you accept - is a consumer decision, never the
   kernel's.
 
-> The `urn:kton:key:` form used above is illustrative; the exact identity vocabulary (how a key is
-> named as a claim subject, which ontology the binding predicate comes from) is still being settled.
+> **Vocabulary (settled).** A key is named by its content-addressed IRI (`pk:<full hash>`, type
+> `sec:Multikey`); the binding predicate is `sec:controller` from the W3C Security Vocabulary, with
+> `actsAs` kept only as an alias for it; the principal is an IRI. This is deliberately the DID /
+> Verifiable-Credential vocabulary, so the authority-backed tier (a Fulcio certificate in
+> [example 08](../08-sigstore-github/) is exactly a `sec:controller` statement) needs no re-do.
 
 ## Run
 

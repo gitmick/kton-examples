@@ -72,9 +72,9 @@ removes the need to trust any single vouching key: the binding is backed by a CA
 log the whole ecosystem already audits.
 
 > **Next:** record this binding back into kton as an identity claim, so the GitHub signer becomes a
-> node in the graph (`sec:controller` of the record's key, the Verifiable-Credential form). That is
-> part of the identity-vocabulary work; a Fulcio certificate *is* already exactly such a
-> key-to-identity statement.
+> node in the graph: `<the record's key> sec:controller <did:web:...your GitHub identity>`, the settled
+> Verifiable-Credential form from [example 07](../07-identity/). A Fulcio certificate *is* already
+> exactly such a key-to-principal statement, so no new vocabulary is needed.
 
 ## Run it yourself
 
