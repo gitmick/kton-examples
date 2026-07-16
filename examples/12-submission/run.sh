@@ -95,7 +95,7 @@ printf '$PROB final: WT on CL, allometric\n' > "$F/run12.mod"
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1.ext"
 Rscript "$T/gof.R" "$F/run1.ext" > "$F/diagnostics.txt"
 CLEAN=$(pauthor --cmd "Rscript tools/clean.R raw.csv analysis.csv" --in "$F/raw.csv" --out "$F/analysis.csv" --sign "$(key analyst).key")
-FIT=$(plankton author --cmd "nmfe75 run12.mod (NONMEM stand-in: Rscript tools/fit.R)" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
+FIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
 GOF=$(pauthor --cmd "Rscript tools/gof.R run1.ext" --in "$F/run1.ext" --out "$F/diagnostics.txt" --sign "$(key analyst).key")
 echo "  clean -> FIT (runs run12.mod, --environment ENV COVERED) -> gof; FIT=$FIT"
 
@@ -111,7 +111,7 @@ echo; echo "########## ACT 3 - independent reproduction by QC (real re-run, auth
 # run, but a distinct signer and its own output), so the re-run is a visible parallel branch from
 # analysis.csv - not a dangling file. This is what makes reproduction show up in the lineage.
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1-qc.ext"
-QCFIT=$(plankton author --cmd "nmfe75 run12.mod (NONMEM stand-in: Rscript tools/fit.R)" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
 echo "  QC re-ran the fit -> $QCFIT (same action key as the analyst's, independent signer + output)"
 sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"
