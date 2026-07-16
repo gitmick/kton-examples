@@ -1,14 +1,17 @@
 # 10 - tool spectrum, executed and visualized
 
 A **spectrum** defines a tool by a reference foton set: a candidate fulfils it when it reproduces
-every reference output. This example takes a real tool - the test suite of an R package, `mypkg`,
-**one foton per test** - and answers, in the graph, the three questions you should always ask:
+every reference output. This is the executed, graphed companion to
+[example 09](../09-environment/): the same spectrum and `--environment` idea, but the tests **really
+run** and you watch L0 vs L1 in the viewer. It takes a real tool - the test suite of an R package,
+`mypkg`, **one foton per test** - and answers, in the graph, the three questions you should always ask:
 
 - **did the tests really run?** Yes. `run.sh` executes each test with `Rscript` twice (a reference
   environment and a candidate one). Nothing is fabricated; the fotons record real outputs.
 - **are they identical?** Two of the three are byte-identical across environments (**L0**).
 - **were they normalized?** The third prints a volatile `session:` line (pid + wall-clock), so its two
-  runs are *not* identical - they agree only after a real normalizer strips that line (**L1**).
+  runs are *not* identical - they agree only after a real normalizer strips that line (**L1**). That
+  normalizer is a **potential**: a content-addressed recipe, named by its own hash (more below).
 
 Every result is computed by running R; every relation (`reproduces`, `via` a normalizer, spectrum
 `fulfils`) is checked by a real `plankton` query, not asserted. Then it is recorded so the viewer
@@ -64,11 +67,12 @@ type** and there is no "register a potential" step. A potential is identified by
 (the content address of the normalizer recipe), and it is registered *by virtue of its application
 fotons being in the store*. Here both normalizer runs are `--add`ed as `kind=normalize` fotons and are
 discoverable - `plankton uses <raw-output>` returns the normalize foton that consumed it - and both
-carry the **same** `protocol.ref`. That shared ref **is** the potential: the spectrum stores it as its
-`normalizer`, and `plankton reproduces --via <ref>` / `spectrum check --normaliser <ref>` resolve L1 by
-finding a registered foton whose effective ref matches. (`--via` also accepts a normalizer foton id,
-which the registry resolves to that ref.) So the potential is registered, discoverable, and
-content-addressed - just not as a standalone record.
+carry the **same** `protocol.ref`. That shared ref **is** the potential: `spectrum define --normalizer
+<ref>` records it in the spectrum, and both `plankton reproduces --via <ref>` and `plankton spectrum
+check` (which reads the `normalizer` from the spectrum) resolve L1 by finding a registered foton whose
+effective ref matches. (`--via` also accepts a normalizer foton id, which the registry resolves to that
+ref; and `--normalizer`/`--normaliser` are accepted spellings of the same flag.) So the potential is
+registered, discoverable, and content-addressed - just not as a standalone record.
 
 ## The kernel line
 

@@ -62,7 +62,7 @@ echo -n "  test-predict via potential: "; plankton reproduces "${REFOUT[test-pre
 
 echo; echo "############ STAGE D: DEFINE the tool spectrum, then CHECK the candidate against it ##########"
 plankton spectrum define --id "mypkg-1.2.0-suite" --of "the mypkg 1.2.0 test suite (one foton per test)" \
-  --normaliser "$POT" \
+  --normalizer "$POT" \
   --member "test-glm=${REFOUT[test-glm]}" \
   --member "test-summary=${REFOUT[test-summary]}" \
   --member "test-predict=${REFOUT[test-predict]}" \
