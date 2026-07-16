@@ -9,12 +9,12 @@
 set -euo pipefail
 EXDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$EXDIR"; source ../../lib/common.sh
-export PLANKTON_DIR="$EXDIR/.work/plankton"
-export NEKTON_DIR="$EXDIR/.work/nekton"                 # the reviews registry
+export PLANKTON_DIR=".work/plankton"
+export NEKTON_DIR=".work/nekton"                 # the reviews registry
 export NEKTON_TEMPLATES="$EXROOT/templates"             # the shared, curated template set
 export NEKTON_ALIASES="$EXROOT/aliases.json"
-rm -rf "$EXDIR/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$EXDIR/.work/keys"
-W="$EXDIR/.work"
+rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" ".work/keys"
+W=".work"
 APPROVE="https://schema.org/AcceptAction"               # reused schema.org verdicts (no minted terms)
 REJECT="https://schema.org/RejectAction"
 

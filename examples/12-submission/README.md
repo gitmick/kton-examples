@@ -88,10 +88,26 @@ install rdflib`.)
 ## Fetchable evidence (the bytes, not just the hashes)
 
 Every sign-off carries its document by **hash** (`nk:evidence`), and every such file also gets a signed
-`dcat:downloadURL` **located-at** claim, so the regulator can actually *fetch* the PDFs it holds hashes
+`dcat:downloadURL` **located-at** claim, so the regulator can actually *fetch* the file it holds a hash
 for and verify `sha256 == hash` on arrival. Location is a signed, plural, post-hoc claim - the kernels
 never dereference it; resolving it is kton's job. In the viewer these fold into the per-file locators
 rather than cluttering the graph.
+
+To make that concrete and not just gestured at, the analysis code (`tools/fit.R`) is recorded as a
+foton input and located at a **real, commit-pinned raw URL** - fetch it, re-hash it, and it matches the
+recorded `sha256` forever. (The runtime PDFs keep illustrative `.example` URLs: they are generated in
+gitignored `.work/`, so there is nothing committed to pin them to.)
+
+## Best practices this example follows
+
+- **No absolute paths in the record.** Author with paths relative to the example dir, so a foton's
+  recorded input/output *names* never bake in a machine path (`/home`, `/mnt`, ...) that would then
+  live forever in the committed, public snapshot.
+- **Code is provenance.** Each analysis script is a recorded foton input, so the trail names exactly
+  which code produced each result - not just the data.
+- **Real, pinned locations for committed bytes; fictional identities stay fictional.** Evidence
+  locations point at commit-pinned raw URLs that actually resolve and re-hash; the *organizations* stay
+  `did:web:*.example` (RFC 2606 reserves `.example` so fictional entities never point at a real domain).
 
 ## Complete trails: nothing changed outside kton
 

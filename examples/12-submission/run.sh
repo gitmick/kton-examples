@@ -14,7 +14,10 @@ EXDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$EXDIR"; source ../../lib/common.sh
 command -v Rscript >/dev/null || { echo "this capstone runs real R; install Rscript"; exit 1; }
 export NEKTON_TEMPLATES="$EXROOT/templates" NEKTON_ALIASES="$EXROOT/aliases.json"
-W="$EXDIR/.work"; rm -rf "$W"; mkdir -p "$W"/{files,keys}
+# Best practice: author with paths RELATIVE to the example dir (cwd stays $EXDIR), so a foton's
+# recorded input/output NAMES never bake in an absolute machine path (/home, /mnt, ...) that would
+# then live forever in the committed, public snapshot. `.work/` is gitignored; only the names leak.
+W=".work"; rm -rf "$W"; mkdir -p "$W"/{files,keys}
 for org in cro sponsor agency; do mkdir -p "$W/$org/plankton" "$W/$org/nekton"; done
 F="$W/files"; T="$EXDIR/tools"
 key(){ echo "$W/keys/$1"; }
@@ -94,10 +97,17 @@ printf '$PROB +WT on CL\n' > "$F/run7.mod"
 printf '$PROB final: WT on CL, allometric\n' > "$F/run12.mod"
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1.ext"
 Rscript "$T/gof.R" "$F/run1.ext" > "$F/diagnostics.txt"
-CLEAN=$(pauthor --cmd "Rscript tools/clean.R raw.csv analysis.csv" --in "$F/raw.csv" --out "$F/analysis.csv" --sign "$(key analyst).key")
-FIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
-GOF=$(pauthor --cmd "Rscript tools/gof.R run1.ext" --in "$F/run1.ext" --out "$F/diagnostics.txt" --sign "$(key analyst).key")
-echo "  clean -> FIT (runs run12.mod, --environment ENV COVERED) -> gof; FIT=$FIT"
+# Best practice: the analysis CODE is provenance too - record each script as a foton input (relative
+# name, so no absolute path leaks), so the trail says exactly which code produced each result.
+CLEAN=$(pauthor --cmd "Rscript tools/clean.R raw.csv analysis.csv" --in "$F/raw.csv" --in "tools/clean.R" --out "$F/analysis.csv" --sign "$(key analyst).key")
+FIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
+GOF=$(pauthor --cmd "Rscript tools/gof.R run1.ext" --in "$F/run1.ext" --in "tools/gof.R" --out "$F/diagnostics.txt" --sign "$(key analyst).key")
+# Best practice: point at least one dcat:downloadURL at a REAL, commit-pinned raw URL of a committed
+# file, so "the regulator can fetch the bytes and re-hash" is demonstrable, not gestured at. fit.R is
+# committed, so its recorded hash resolves forever at this permalink. (The runtime PDFs below keep
+# illustrative .example URLs - they live in gitignored .work/, so there is nothing committed to pin.)
+locate "tools/fit.R" "https://raw.githubusercontent.com/gitmick/kton-examples/76a44ef8314ddb028812aab732de8f561b9e5cb6/examples/12-submission/tools/fit.R" analyst
+echo "  clean -> FIT (runs run12.mod, --environment ENV COVERED, code recorded + fit.R located) -> gof; FIT=$FIT"
 
 echo; echo "########## ACT 2b - the model-development tree (pmx/model-role: base -> covariate -> final) ##"
 export NEKTON_DIR="$W/cro/nekton"
@@ -111,7 +121,7 @@ echo; echo "########## ACT 3 - independent reproduction by QC (real re-run, auth
 # run, but a distinct signer and its own output), so the re-run is a visible parallel branch from
 # analysis.csv - not a dangling file. This is what makes reproduction show up in the lineage.
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1-qc.ext"
-QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
 echo "  QC re-ran the fit -> $QCFIT (same action key as the analyst's, independent signer + output)"
 sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"

@@ -10,10 +10,10 @@ EXDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$EXDIR"; source ../../lib/common.sh
 command -v Rscript >/dev/null || { echo "this example runs real R; install Rscript first"; exit 1; }
 
-export PLANKTON_DIR="$EXDIR/.work/plankton"
-export NEKTON_DIR="$EXDIR/.work/nekton"
-rm -rf "$EXDIR/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$EXDIR/.work/keys"
-W="$EXDIR/.work"
+export PLANKTON_DIR=".work/plankton"
+export NEKTON_DIR=".work/nekton"
+rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" ".work/keys"
+W=".work"
 plankton keygen "$W/keys/author" >/dev/null
 nekton  keygen "$W/keys/lab"    >/dev/null
 printf "conc\n4.2\n3.8\n5.1\n4.6\n" > "$W/pk.csv"          # the shared test fixture
