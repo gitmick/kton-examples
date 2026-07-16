@@ -12,8 +12,10 @@ A plankton **registry is just a directory** where records are filed, the *store*
 interchangeable ways: the `PLANKTON_DIR=<dir>` environment variable (`NEKTON_DIR` for nekton), or the
 `--registry <dir>` flag on commands that write to a store (`add`, and `author --add`). `--registry X`
 is simply `PLANKTON_DIR=X` for that one command. A different directory is a different, independent
-registry. Records move between registries by content hash with `plankton mirror` - no server, no
-shared folder. Every example makes this explicit in its `run.sh`.
+registry. Registries federate by being *read together*: a query pointed at several with `--source`
+converges on one lineage by content hash, nothing copied, no server, no shared folder (`plankton mirror`
+copies records into one store only as an optimization). Every example makes this explicit in its
+`run.sh`.
 
 (A registry is a store, not an *execution environment* like a container, an OS, or a tool call, which
 is what actually runs your code. That is a separate thing plankton can record; do not confuse the
@@ -33,7 +35,7 @@ two.)
 | # | example | teaches |
 |---|---|---|
 | 01 | `hello-foton` | the smallest create + use: record a foton, then show / verify / query it |
-| 02 | `federation` | two registries exchanging records by hash (mirror), read as one lineage |
+| 02 | `federation` | two registries read together as one lineage by hash (`--source`); mirror is an optimization |
 | 03 | `reproduce` | re-derive an output and prove it matches (L0), tampered gives none |
 | 04 | `claim` | nekton records a signed opinion about a foton; the two layers join by hash |
 | 05 | `review-scope` | a chain of signed claims sealed by one head, tamper-evident as a whole |
