@@ -52,7 +52,7 @@ Three reviewers - Alice, Bob, Carol - each approve. The run checks:
 
 ## The template is federated data, registered separately
 
-A template is not part of the protocol - the kernel prescribes no vocabulary (DECISIONS 7). It is
+A template is not part of the protocol - the kernel prescribes no vocabulary (spec Clause 7). It is
 **data**, content-addressed like anything else, and it federates. The run registers the template in a
 **separate** nekton registry (the publisher's), as a signed record - `<template hash> rdf:type
 kton.dev/template/v0` - then a consumer `nekton mirror`s the two registries (as in

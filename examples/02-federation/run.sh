@@ -50,6 +50,8 @@ PLANKTON_DIR="$B" plankton lineage "$MODEL"
 echo "-- name BOTH stores as sources: no mirror, no shared store, neither store is mutated --"
 plankton lineage --source "$A" --source "$B" "$MODEL"
 echo "   ^ complete again - the two records meet at the shared input hash the moment both are read."
+# "carol" is literally the same read command - which is the point: a read needs no identity, so ANYONE
+# who names both sources gets this lineage. The stranger is not a third keyholder, just a third reader.
 echo "-- a stranger (carol) who knows neither alice nor bob names both sources: identical result --"
 plankton lineage --source "$A" --source "$B" "$MODEL" | sed 's/^/   carol sees:  /'
 

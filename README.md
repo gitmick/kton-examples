@@ -70,9 +70,9 @@ dependencies) from the plankton repo onto their PATH (or into this repo's `bin/`
 also add to PATH):
 
 ```
-( cd reference        && go build -o ~/.local/bin/plankton ./cmd/plankton )
-( cd nekton/reference && go build -o ~/.local/bin/nekton   ./cmd/nekton )
-( cd kton/reference   && go build -o ~/.local/bin/kton     ./cmd/kton )
+( cd reference        && go build -o ~/.local/bin/plankton ./cmd/plankton )   # needed by every example
+( cd nekton/reference && go build -o ~/.local/bin/nekton   ./cmd/nekton   )   # needed from example 04 on
+( cd kton/reference   && go build -o ~/.local/bin/kton     ./cmd/kton     )   # OPTIONAL: only 08 (anchor) + 14 (fetch)
 ```
 </details>
 
