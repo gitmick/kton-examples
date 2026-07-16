@@ -176,13 +176,24 @@ echo -n "  3. analyst signature on the FIT:    "; nekton verify "$F/fit.dsse.jso
 echo    "  4. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
 
-echo; echo "########## ACT 8 - export the RDF and run the SPARQL RELEASE GATE (example 06 + a policy) ####"
+echo; echo "########## ACT 8 - the release decision, recorded as a reproducible attested foton #########"
 plankton export --rdf -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf > "$F/submission.ttl"
 : > "$F/attestations.trig"
 for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
-echo "  exported submission.ttl (PROV lineage) + attestations.trig (every claim as a nanopublication)"
+echo "  exported submission.ttl + attestations.trig - the corpus the decision is made over"
 if python3 -c "import rdflib" 2>/dev/null; then
-  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$F/fit.dsse.json" "$FIT" "$HEAD"
+  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$F/fit.dsse.json" "$FIT" "$HEAD" | tee "$F/verdict.txt"
+  # The decision is NOT a free-floating query: the agency records it as a FOTON. Its inputs are the
+  # exact corpus it consumed (submission.ttl + attestations.trig, by hash) and the gate logic
+  # (release.rq); its output is the verdict. So the decision is content-addressed and REPRODUCIBLE -
+  # re-run the gate over the same inputs and you get the same verdict (L0) - and it NAMES its own
+  # evidence set (its input list). The regulator signs its OWN verdict over the sources it chose.
+  export PLANKTON_DIR="$W/agency/plankton"
+  VERDICT=$(plankton author --cmd "release gate: release.rq over the submission graph" \
+    --in "$F/submission.ttl" --in "$F/attestations.trig" --in "release.rq" --out "$F/verdict.txt" \
+    --sign "$(key reviewer).key" --add | awk '/indexed foton/{print $3}')
+  echo "  release decision recorded as foton $VERDICT"
+  echo "    signed by the agency; its inputs ARE its corpus; re-run over them -> same verdict (L0)"
 else
   echo "  (the release gate needs rdflib: 'pip install rdflib' - skipping)"
 fi

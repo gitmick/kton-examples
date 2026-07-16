@@ -87,6 +87,14 @@ Remove any one attestation and the box clears and release blocks; point it at a 
 box clears. That is the whole thesis of the stack made executable. (The gate needs `rdflib`: `pip
 install rdflib`.)
 
+And the decision is not a free-floating query - the agency records it as a **foton**: its inputs are the
+exact corpus it consumed (`submission.ttl` + `attestations.trig`, by hash) and the gate logic
+(`release.rq`); its output is the verdict; it is signed by the agency. So the decision is
+content-addressed and **reproducible** - re-run the gate over the same inputs and you get the same
+verdict (L0) - and it **names its own evidence set** (its input list). A regulator does not trust the
+sponsor's verdict; it re-derives its *own* verdict-foton over the sources it chose. (A verdict without
+its corpus would be a configuration, not a statement.)
+
 ## Fetchable evidence (the bytes, not just the hashes)
 
 Every sign-off carries its document by **hash** (`nk:evidence`), and every such file also gets a signed
