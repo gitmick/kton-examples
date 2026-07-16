@@ -32,12 +32,12 @@ interprets it.) `--add` files each claim as it signs it.
 cat > opus.spec.json <<'JSON'
 { "subject":[{"uri":"urn:result:auc"}], "predicate":"nk:assessed",
   "object":{"value":"AUC is within the expected range"},
-  "by":"claude-opus-4-8", "when":"2026-07-15T00:00:00Z" }
+  "by":"claude-opus-4-8", "when":"2026-07-16T00:00:00Z" }
 JSON
 cat > sonnet.spec.json <<'JSON'
 { "subject":[{"uri":"urn:result:auc"}], "predicate":"nk:assessed",
   "object":{"value":"AUC looks plausible"},
-  "by":"claude-sonnet-5", "when":"2026-07-15T00:00:00Z" }
+  "by":"claude-sonnet-5", "when":"2026-07-16T00:00:00Z" }
 JSON
 nekton claim opus.spec.json   opus.key   --add
 nekton claim sonnet.spec.json sonnet.key --add
@@ -74,7 +74,7 @@ the rest of the graph:
 nekton keygen deployer
 # the key's IRI is its full content hash; keyid = its first 16 hex
 KEYIRI="https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('opus.pub').read().strip())).hexdigest())")"
-printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-15T00:00:00Z"}' \
+printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-16T00:00:00Z"}' \
   "$KEYIRI" > identity.spec.json
 nekton claim identity.spec.json deployer.key --add
 nekton about "$KEYIRI"

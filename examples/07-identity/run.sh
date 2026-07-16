@@ -18,7 +18,7 @@ echo "  sonnet keyid = $SONNET"
 
 # each model signs a claim about a result; --add files it directly.
 mkclaim(){ # $1 keyfile  $2 by-label  $3 statement
-  printf '{"subject":[{"uri":"urn:result:auc"}],"predicate":"nk:assessed","object":{"value":"%s"},"by":"%s","when":"2026-07-15T00:00:00Z"}' "$3" "$2" > .work/c.spec.json
+  printf '{"subject":[{"uri":"urn:result:auc"}],"predicate":"nk:assessed","object":{"value":"%s"},"by":"%s","when":"2026-07-16T00:00:00Z"}' "$3" "$2" > .work/c.spec.json
   nekton claim .work/c.spec.json "$1" --add >/dev/null
 }
 mkclaim "$PWD/.work/keys/opus.key"   "claude-opus-4-8" "AUC is within the expected range"
@@ -42,7 +42,7 @@ nekton keygen "$PWD/.work/keys/deployer" >/dev/null
 # lightweight Verifiable Credential: <key> sec:controller <principal>, sec: = W3C Security Vocabulary.
 # Written as a full IRI because the bare `nekton claim` path does not resolve aliases (annotate does).
 OPUS_IRI="https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/opus.pub').read().strip())).hexdigest())")"
-printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-15T00:00:00Z"}' "$OPUS_IRI" > .work/id.spec.json
+printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-16T00:00:00Z"}' "$OPUS_IRI" > .work/id.spec.json
 nekton claim .work/id.spec.json "$PWD/.work/keys/deployer.key" --add >/dev/null
 echo "-- what is asserted about the opus key (by its content-addressed IRI)? --"
 nekton about "$OPUS_IRI"

@@ -13,8 +13,8 @@ Every command below is runnable in order (ids are captured into shell variables,
 **1. Two identities and two registries.** plankton keeps its fotons; nekton keeps its claims.
 
 ```
-plankton keygen analyst          # makes the foton
-nekton   keygen reviewer         # makes the claim
+plankton keygen analyst          # the analyst's keypair (they will author the foton)
+nekton   keygen reviewer         # the reviewer's keypair (they will sign the claim)
 export PLANKTON_DIR=./plankton-data NEKTON_DIR=./nekton-data
 ```
 
@@ -37,7 +37,7 @@ cat > review.spec.json <<JSON
 { "subject":  [{"hash": "$FOTON"}],
   "predicate": "pav:reviewedBy",
   "object":    {"value": "looks correct"},
-  "by": "CN=Reviewer", "when": "2026-07-15T00:00:00Z" }
+  "by": "CN=Reviewer", "when": "2026-07-16T00:00:00Z" }
 JSON
 nekton claim review.spec.json reviewer.key review.dsse.json --add
 ```

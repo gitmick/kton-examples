@@ -4,7 +4,6 @@
   "target": "foton",
   "predicate": "gxpReviewed",
   "context": "ctx:gxp",
-  "vocab": "sha256:bb2c0ffee0000000000000000000000000000000000000000000000000000000",
   "fields": {
     "outcome": {
       "type": "enum",

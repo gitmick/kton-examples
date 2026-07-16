@@ -155,14 +155,14 @@ nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity
 locate "$F/shrinkage.pdf" "https://sponsor.example/risk/shrinkage-sensitivity.pdf" lead
 echo "  gxp:risk-accepted (medium, mitigation.pdf located) recorded"
 
-echo; echo "########## ACT 6 - authoritative submission signature (Sigstore keyless stand-in, example 08)"
+echo; echo "########## ACT 5 - authoritative submission signature (Sigstore keyless stand-in, example 08)"
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/submitted","object":{"id":"did:web:sponsor.example/people/submitter"},"why":"submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08","by":"did:web:sponsor.example/people/submitter","when":"2026-07-16T00:00:00Z"}' "${HEAD#sha256:}" > "$F/submit.json"
 # subject is the scope HEAD (a claim id); reference it by hash
 python3 -c "import json;d=json.load(open('$F/submit.json'));d['subject'][0]['hash']='$HEAD';json.dump(d,open('$F/submit.json','w'))"
 nekton claim "$F/submit.json" "$(key submitter).key" --add >/dev/null
 echo "  submission of HEAD attributed to the submitter's verifiable identity (nk:submitted)"
 
-echo; echo "########## ACT 5 - federate across the three orgs by hash (no server, example 02) ##########"
+echo; echo "########## ACT 6 - federate across the three orgs by hash (no server, example 02) ##########"
 PLANKTON_DIR="$W/sponsor/plankton" plankton mirror "$W/cro/plankton" | sed 's/^/  sponsor<-cro  /'
 NEKTON_DIR="$W/sponsor/nekton"     nekton  mirror "$W/cro/nekton"    | sed 's/^/  sponsor<-cro  /'
 PLANKTON_DIR="$W/agency/plankton"  plankton mirror "$W/sponsor/plankton" | sed 's/^/  agency<-sponsor  /'

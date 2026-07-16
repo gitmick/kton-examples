@@ -23,7 +23,7 @@ FOTON=$(plankton author --cmd "fit data.csv model.txt" --in data.csv --out model
 
 cat > review.spec.json <<JSON
 { "subject":[{"hash":"$FOTON"}], "predicate":"pav:reviewedBy",
-  "object":{"value":"approved"}, "by":"CN=Reviewer", "when":"2026-07-15T00:00:00Z" }
+  "object":{"value":"approved"}, "by":"CN=Reviewer", "when":"2026-07-16T00:00:00Z" }
 JSON
 nekton claim review.spec.json reviewer.key review.dsse.json --add   # file it + keep it for the export
 ```

@@ -32,7 +32,7 @@ first, `prev` is the scope id itself. We splice in `$SCOPE`, then capture the ne
 ```
 cat > c1.spec.json <<JSON
 { "subject":[{"uri":"urn:doc:protocol"}], "predicate":"pav:reviewedBy",
-  "object":{"value":"protocol approved"}, "by":"CN=Chair", "when":"2026-07-15T00:00:00Z",
+  "object":{"value":"protocol approved"}, "by":"CN=Chair", "when":"2026-07-16T00:00:00Z",
   "scope":"$SCOPE", "prev":"$SCOPE" }
 JSON
 C1=$(nekton claim c1.spec.json chair.key --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
@@ -44,7 +44,7 @@ echo "$C1"                       # sha256:...
 ```
 cat > c2.spec.json <<JSON
 { "subject":[{"uri":"urn:doc:results"}], "predicate":"pav:reviewedBy",
-  "object":{"value":"results approved"}, "by":"CN=Chair", "when":"2026-07-15T00:01:00Z",
+  "object":{"value":"results approved"}, "by":"CN=Chair", "when":"2026-07-16T00:01:00Z",
   "scope":"$SCOPE", "prev":"$C1" }
 JSON
 C2=$(nekton claim c2.spec.json chair.key --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
@@ -68,7 +68,7 @@ tampering:
 
 ```
 # a forged claim naming this scope but a prev that does not exist
-printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-15T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$SCOPE" > bad.spec.json
+printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$SCOPE" > bad.spec.json
 nekton claim bad.spec.json chair.key --add
 # error: prev sha256:deadbeef... does not resolve in scope ... (chain gap / tamper)
 ```

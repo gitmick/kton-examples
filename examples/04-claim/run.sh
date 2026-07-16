@@ -22,7 +22,7 @@ echo "  foton id = $FOTON"
 
 echo "== Create: reviewer records a CLAIM about that foton (nekton) =="
 # a claim spec: subject is the foton id; predicate is an opaque IRI (here pav:reviewedBy).
-printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"looks correct"},"by":"CN=Reviewer","when":"2026-07-15T00:00:00Z"}' "$FOTON" > .work/review.spec.json
+printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"looks correct"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json
 nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json --add >/dev/null
 
 echo ""

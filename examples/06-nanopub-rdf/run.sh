@@ -15,7 +15,7 @@ echo "== Create: a foton + a claim about it =="
 echo "raw" > .work/data.csv; echo "model" > .work/model.txt
 FOTON="$(plankton author --cmd "fit data.csv model.txt" --in .work/data.csv --out .work/model.txt \
   --sign "$PWD/.work/keys/analyst.key" --add | awk '/indexed foton/{print $3}')"
-printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"approved"},"by":"CN=Reviewer","when":"2026-07-15T00:00:00Z"}' "$FOTON" > .work/review.spec.json
+printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"approved"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json
 # keep the envelope file (for the nanopub export below) AND ingest, in one step
 nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json --add >/dev/null
 
