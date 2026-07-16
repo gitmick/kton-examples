@@ -61,6 +61,12 @@ Each run writes its graph data under `docs/data/<name>/` and prints a `SEE IT:` 
 locally, serve `docs/` (`python3 -m http.server -d docs`) and open the printed URL; on GitHub Pages
 the graphs are already live.
 
+> `docs/data/<name>/{union,keys,names}.json` are **viewer-only** artifacts (built by
+> `viewer/build_union.py` from the registries) - no kernel ever reads them. They are a rendering of the
+> records, not the records themselves, so a truncated or edited `union.json` is a viewer concern, never a
+> provenance one. (Relatedly, to find where a *shared input* was consumed use `plankton uses` - the
+> downstream join - not `producer`/`lineage`, which walk toward the roots.)
+
 <details><summary>Not installed yet? Build once from source (contributors)</summary>
 
 **The reference implementation is not public yet.** Until it is, you can follow every example through
