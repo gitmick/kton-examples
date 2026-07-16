@@ -95,8 +95,11 @@ for t in $TESTS; do
   printf "  %-13s candidate reproduces reference at %s\n" "$t" "${LEVEL[$t]}"
 done
 # the candidate environment qualifies-as the tool spectrum (all members fulfilled) - signed acceptance.
-printf '{"subject":[{"hash":"%s","uri":"oci://rocker/r-ver:4.3.2"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"spectrum":{"hash":"%s"},"fulfilment":{"hash":"%s"}},"why":"3/3 fulfilled, re-derivable in the spectrum-check foton (2 L0, 1 via potential)","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
-  "$CANDENV" "$SPECID" "$CHECK" > "$W/qualifies.spec.json"
+# Object fields are FLAT full IRIs (https://kton.dev/o/<hash>), the standard qualifies-as shape shared
+# with example 12: a nested {"hash":...} value would export as a Go map-literal string, not a joinable
+# pk: IRI, so a downstream gate could not follow it.
+printf '{"subject":[{"hash":"%s","uri":"oci://rocker/r-ver:4.3.2"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"spectrum":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s"},"why":"3/3 fulfilled, re-derivable in the spectrum-check foton (2 L0, 1 via potential)","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
+  "$CANDENV" "${SPECID#sha256:}" "${CHECK#sha256:}" > "$W/qualifies.spec.json"
 nekton claim "$W/qualifies.spec.json" "$W/keys/lab.key" "$W/qualifies.dsse.json" --add >/dev/null
 echo "  candidate environment --qualifies-as--> the tool spectrum (signed)"
 
