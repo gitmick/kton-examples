@@ -219,18 +219,23 @@
 
   <h2>What kton does not guarantee</h2>
   <p>The point of a substrate that says "trust no one" is that it is honest about the few things it
-  <b>cannot</b> settle with a hash, a signature, or a chain. Everything else - lineage, reproduction,
-  who signed what, whether a review is complete - is mechanical. These are the boundaries, surfaced
-  rather than hidden:</p>
+  <b>cannot</b> settle with a hash, a signature, or a chain. What they <b>can</b> settle - lineage,
+  reproduction, who signed what, that a sealed chain was not silently edited or a committed link dropped -
+  is mechanical. What they cannot is named here, surfaced rather than hidden:</p>
   <ul class="defs">
     <li><div class="term">whose keys you believe <span class="tag">trust policy</span></div>
       <p>A signature proves <i>which key</i> signed, never that you should trust that key. Which
       identities and authorities you accept is your decision, never the substrate's. The identity
       examples (07/08) give you verifiable bindings; they do not tell you whom to trust.</p></li>
-    <li><div class="term">who may open a review <span class="tag">enrolment authority</span></div>
-      <p>A sealed review is complete when every <i>enrolled</i> participant delivered. Who is authorised
-      to open the review and name its participants is a signed authority claim, not a hash or a chain -
-      an assumption the decision names rather than buries.</p></li>
+    <li><div class="term">that the corpus you judged was complete <span class="tag">completeness</span></div>
+      <p>Sealing is tamper-evidence, not append-control: a reject already in the chain cannot be silently
+      dropped - the published head stops matching - but no hash proves that every relevant review is
+      <i>in</i> the corpus you loaded. A <i>withheld</i> failing review, never federated to you, leaves no
+      trace; you cannot prove a negative over a partial union. A closed-world verdict therefore <b>names
+      and commits to its corpus</b> (a smaller-corpus rerun is a different, comparable verdict), but that
+      the corpus was complete is a boundary, not a theorem. Making "every <i>enrolled</i> participant
+      delivered" mechanical needs an enrolment authority - a scope that commits to an authorized signer
+      set, vouched by a trust root - which is a roadmap step, not yet built.</p></li>
     <li><div class="term">that you looked at the latest decision <span class="tag">freshness</span></div>
       <p>A chain proves a head's integrity, not that it is the current one. Anchoring makes a superseding
       round undeniable and time-ordered, but confirming you hold the latest anchored head before you
