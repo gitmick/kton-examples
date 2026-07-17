@@ -22,6 +22,13 @@
   figure img{max-width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
   figcaption{font-size:12.5px;color:var(--muted);margin-top:8px;text-align:left}
   code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:#f0f2f5;padding:.05em .35em;border-radius:4px}
+  h2.econ{font-family:ui-sans-serif,system-ui,sans-serif;font-size:16px;margin:38px 0 6px;letter-spacing:.01em;color:var(--ink)}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0 6px}
+  @media (max-width:520px){.stats{grid-template-columns:1fr}}
+  .stat{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fafbfc}
+  .stat .num{font-family:ui-sans-serif,system-ui,sans-serif;font-size:23px;font-weight:700;color:var(--accent);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .stat .lbl{font-family:ui-sans-serif,system-ui,sans-serif;font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45}
+  .econ-note{font-size:14.5px;color:var(--ink2)} .econ-note .cav{color:var(--muted);font-size:13px}
   .foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
 </style>
 </head>
@@ -50,6 +57,28 @@
         and an external lab — identical bytes, so the lens reads <code>↻3</code>. A figure only one team
         made would read <code>✓</code> with no counter.</figcaption>
     </figure>
+
+    <h2 class="econ">A rainbow table of every calculation — what it would cost</h2>
+    <p>Each execution is a file <b>named by its own hash</b>, so the mirror is just static, immutable,
+      auto-deduplicated blobs. Serving one is the same operation as serving five billion — a content-addressed
+      <code>GET</code>. There is nothing to "scale": it is a storage problem, and storage of cacheable blobs is
+      the cheapest thing on the internet. Numbers below are measured from this demo (~1.2 KB per signed record,
+      ~⅓ index overhead) and extrapolated:</p>
+    <div class="stats">
+      <div class="stat"><div class="num">1 billion</div><div class="lbl">recorded executions — a foton for a billion scientific calculations</div></div>
+      <div class="stat"><div class="num">≈ 1.6 TB</div><div class="lbl">total static files: 1.2 TB signed records + 0.4 TB rainbow-table index</div></div>
+      <div class="stat"><div class="num">≈ $10–24 / mo</div><div class="lbl">storage — Backblaze B2 ~$10, Cloudflare R2 ~$24 with $0 egress</div></div>
+      <div class="stat"><div class="num">≈ $0</div><div class="lbl">per additional viewer — immutable + content-addressed ⇒ cached at every CDN edge</div></div>
+    </div>
+    <p class="econ-note">Serving <b>unlimited people</b> is essentially free: every object is immutable and
+      addressed by its hash, so it caches perfectly at the network edge — the origin serves each object roughly
+      once <i>per edge</i>, not once per person. A figure seen by one scientist or by ten million costs the same,
+      and identical calculations run anywhere <b>deduplicate to a single stored object</b>. So a public,
+      verifiable record of <b>all</b> the world's reproducible computation is affordable to a single hobbyist —
+      the price of a coffee subscription, forever.
+      <span class="cav">(The lookup <i>index</i> is ordinary infrastructure, not part of the protocol; the one
+      thing that isn't free is knowing the full <i>set</i> to index — completeness — which lives in the ordered
+      nekton layer, not in this rainbow table.)</span></p>
 
     <div class="foot">
       Rendered with the kton lens · a plot with no badge is simply unknown to the connected planktons.
