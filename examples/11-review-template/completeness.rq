@@ -1,18 +1,29 @@
 # Review completeness, over the merged RDF (plankton foton lineage + nekton review nanopubs).
-# For a bound ?foton, count the DISTINCT reviewers (provenance agents) under each verdict.
-# The verdict reuses schema.org: approve = schema:AcceptAction, reject = schema:RejectAction.
-# Each review is its own nanopub (named graph), so the reviewer is joined from that graph's provenance.
+# For a bound ?foton, count the DISTINCT reviewers under each verdict, SPLIT by whether the signer was
+# cryptographically VERIFIED (prov:wasAttributedTo, emitted by export --nanopub --trust-keys only for a
+# trusted key) or merely CLAIMED (nk:claimedSigner, an unverified signer). Binding from EITHER is what
+# stops a signed REJECT from vanishing when its signer key is absent from the export trust-keys: an
+# unverified reject is still counted (and surfaced), never silently dropped (completeness-gate F1).
+# verdict reuses schema.org: approve = schema:AcceptAction, reject = schema:RejectAction.
 PREFIX pav:    <http://purl.org/pav/>
 PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX nk:     <https://kton.dev/v/>
 PREFIX schema: <https://schema.org/>
 PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-SELECT ?verdict (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
+SELECT ?verdict ?verified (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
   GRAPH ?review {
     ?foton pav:reviewedBy ?r .
     ?r rdf:type ?verdict .
   }
-  ?review prov:wasAttributedTo ?reviewer .
+  {
+    ?review prov:wasAttributedTo ?reviewer .   # a cryptographically VERIFIED signer
+    BIND(true AS ?verified)
+  } UNION {
+    ?review nk:claimedSigner ?reviewer .        # an UNVERIFIED signer (not in the export trust-keys)
+    FILTER NOT EXISTS { ?review prov:wasAttributedTo ?any }
+    BIND(false AS ?verified)
+  }
   FILTER(?verdict IN (schema:AcceptAction, schema:RejectAction))
 }
-GROUP BY ?verdict
+GROUP BY ?verdict ?verified

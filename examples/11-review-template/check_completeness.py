@@ -18,19 +18,30 @@ foton = rdflib.URIRef("https://kton.dev/o/" + fhash)
 ACCEPT = "https://schema.org/AcceptAction"
 REJECT = "https://schema.org/RejectAction"
 
+# tally[(verdict, verified)] = distinct reviewer count
 tally = {}
 for row in ds.query(query, initBindings={"foton": foton}):
-    tally[str(row.verdict)] = int(row.reviewers)
+    tally[(str(row.verdict), bool(row.verified.toPython()))] = int(row.reviewers)
 
-approvals = tally.get(ACCEPT, 0)
-rejects = tally.get(REJECT, 0)
+approvals_verified = tally.get((ACCEPT, True), 0)
+approvals_claimed = tally.get((ACCEPT, False), 0)
+rejects_verified = tally.get((REJECT, True), 0)
+rejects_claimed = tally.get((REJECT, False), 0)
+rejects_total = rejects_verified + rejects_claimed
 need = len(required)
 
 print("  SPARQL tally (distinct reviewers per verdict):")
-print(f"    approve (schema:AcceptAction): {approvals}")
-print(f"    reject  (schema:RejectAction): {rejects}")
-complete = approvals >= need and rejects == 0
-print(f"  policy: all {need} required reviewers ({', '.join(required)}) approve, no rejects")
-print(f"  REVIEW COMPLETE: {complete}  (approvals={approvals}/{need}, rejects={rejects})")
+print(f"    approve: {approvals_verified} verified, {approvals_claimed} unverified")
+print(f"    reject : {rejects_verified} verified, {rejects_claimed} unverified")
+# Completeness: enough VERIFIED approvals (an unverified approval is not trusted) AND NO reject on record
+# - verified OR claimed. A reject whose signer is not in the export trust-keys must still BLOCK, never be
+# silently dropped (completeness-gate F1): a real reviewer's key may just be absent from this export's
+# trust set, and an on-record "no" is a strong signal to surface, not swallow.
+complete = approvals_verified >= need and rejects_total == 0
+print(f"  policy: >= {need} required reviewers ({', '.join(required)}) approve VERIFIED, and NO reject (verified or claimed)")
+print(f"  REVIEW COMPLETE: {complete}  (verified approvals={approvals_verified}/{need}, rejects={rejects_total})")
 if not complete:
-    print("  -> a missing approval or any reject would make this INCOMPLETE; the query is the gate.")
+    if rejects_total:
+        print(f"  -> BLOCKED by {rejects_total} reject(s) on record ({rejects_claimed} from an UNVERIFIED signer - NOT dropped).")
+    else:
+        print("  -> a missing verified approval makes this INCOMPLETE; the query is the gate.")
