@@ -310,6 +310,23 @@ function resolveFocus(union, focus){
 /* ===== load your own records: build the union in the browser, exactly like a multi-source read ===== */
 function hexToBytes(h){ const a=new Uint8Array(h.length/2); for(let i=0;i<a.length;i++) a[i]=parseInt(h.substr(i*2,2),16); return a; }
 async function sha256hex(bytes){ const d=await crypto.subtle.digest("SHA-256",bytes); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""); }
+const b64ToBytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+// verifyDsse: does env's Ed25519 signature verify under the raw-hex Ed25519 pubkey? Reconstructs the
+// DSSE PAE ("DSSEv1 <lenType> <type> <lenPayload> <payload>", byte lengths) and checks it with WebCrypto.
+// Used to AUTHENTICATE a sec:controller binding: an attacker can relabel a binding's claimed keyid to a
+// trusted authority, but not forge that authority's SIGNATURE - so a relabelled "attested senior
+// identity" fails here. Returns false on any error / unsupported engine (fail-safe: no false attest).
+async function verifyDsse(env, pubHex){
+  try{
+    if(!(env&&env.payload&&env.signatures&&env.signatures[0]&&env.signatures[0].sig)) return false;
+    const payload=b64ToBytes(env.payload), type=new TextEncoder().encode(env.payloadType||"");
+    const head=new TextEncoder().encode("DSSEv1 "+type.length+" "), mid=new TextEncoder().encode(" "+payload.length+" ");
+    const pae=new Uint8Array(head.length+type.length+mid.length+payload.length); let o=0;
+    for(const part of [head,type,mid,payload]){ pae.set(part,o); o+=part.length; }
+    const key=await crypto.subtle.importKey("raw",hexToBytes(pubHex),{name:"Ed25519"},false,["verify"]);
+    return await crypto.subtle.verify({name:"Ed25519"},key,b64ToBytes(env.signatures[0].sig),pae);
+  }catch(e){ return false; }
+}
 const shortName=p=>p.replace(/\/+$/,"").split("/").pop().split(":").pop()||p;
 
 // Read every file dropped OR picked - recursing into dropped folders via the entries API.
@@ -350,12 +367,17 @@ async function buildFromFiles(files){
     const body=p.predicate||{};                        // the claim body: {by, object, predicate(term), when}
     const pred=body.predicate;
     if(pred&&pred.uri==="https://w3id.org/security#controller"){
-      // A binding relabels a key to a principal ONLY if a TRUSTED authority signed it. Empty trust box
-      // = trust nobody, so NO binding is applied (keys keep their .pub filename) - otherwise a
-      // SELF-SIGNED binding would relabel a key to any "senior identity" it names (run-4 finding). This
-      // must be `!trust.has(signer)` unconditionally, not `trust.size && !trust.has(signer)` (which let
-      // every binding through when the box was empty).
+      // A binding relabels a key to a principal ONLY if a TRUSTED authority signed it. Two checks, both
+      // required: (1) the claimed signer keyid is in the trust set (empty box = trust nobody, so a
+      // SELF-SIGNED binding never attests - run-4); (2) the binding's DSSE signature actually VERIFIES
+      // under THAT authority's real public key. Without (2), an attacker just RELABELS a self-signed
+      // binding's keyid to a trusted authority and gets an "attested senior identity" green ring
+      // (run-5): the claimed keyid is checked, the signature is not. verifyDsse closes that - the
+      // authority's signature can't be forged. (If crypto.subtle lacks Ed25519, verifyDsse is false =
+      // no attestation, the safe direction.)
       if(!trust.has(signer)) continue;
+      const authPub=keys[signer];
+      if(!authPub || !(await verifyDsse(rec.envelope, authPub))) continue;
       const principal=(body.object||{}).id||(body.object||{}).value;   // object is in the body, not top-level
       for(const s of (p.subject||[])) if(s.uri&&principal) bindings[s.uri]=principal;   // subject IS top-level
     }
