@@ -167,7 +167,7 @@ function buildLoc(unionStr){ LOC={};
     let p; try{ p=JSON.parse(atob(r.envelope.payload)); }catch{ continue; }
     const files=(p.subject||[]).concat((p.predicate&&p.predicate.inputs)||[]);
     for(const s of files){ const d=s.digest&&(s.digest.sha256||s.digest["sha-256"]);
-      if(d&&s.uri){ const k=String(d).toLowerCase().slice(0,12); LOC[k]=[...new Set([...(LOC[k]||[]),...[].concat(s.uri)])]; } }
+      if(d&&s.uri){ const k=String(d).toLowerCase().slice(0,32); LOC[k]=[...new Set([...(LOC[k]||[]),...[].concat(s.uri)])]; } }
   } }catch{}
 }
 function renderPreview(uri,bytes,partial){ const ext=(uri.split(/[?#]/)[0].split(".").pop()||"").toLowerCase();
@@ -243,10 +243,10 @@ function buildClaimFacets(unionStr){ CLAIMS=[]; try{ const recs=JSON.parse(union
   for(const r of recs){ const id=r&&r.claimId; if(!id||!r.envelope||!r.envelope.payload) continue;
     let p; try{ p=JSON.parse(atob(r.envelope.payload)); }catch{ continue; }
     const pd=p.predicate||{}, obj=pd.object;
-    const nid=String(id).replace(/^sha256:/,"").toLowerCase().slice(0,12); const n=G.byId.get(nid); if(!n) continue;
+    const nid=String(id).replace(/^sha256:/,"").toLowerCase().slice(0,32); const n=G.byId.get(nid); if(!n) continue;
     const pick=(obj&&typeof obj==="object")?(obj.value!=null?obj.value:(obj.level!=null?obj.level:null)):obj;
     const s0=(p.subject||[])[0]||{}; const sh=(s0.digest&&s0.digest.sha256)||(typeof s0.hash==="string"?s0.hash.replace(/^sha256:/,""):"");
-    CLAIMS.push({ id:nid, pred:n.role, value:(pick!=null&&typeof pick!=="object")?String(pick):"", part:n.participant||"", by:pd.by||"", subj:String(sh||"").toLowerCase().slice(0,12) });
+    CLAIMS.push({ id:nid, pred:n.role, value:(pick!=null&&typeof pick!=="object")?String(pick):"", part:n.participant||"", by:pd.by||"", subj:String(sh||"").toLowerCase().slice(0,32) });
   } }catch{} }
 function renderGraph(union,keys,names){
   G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
