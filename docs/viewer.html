@@ -193,6 +193,22 @@ async function fetchCapped(uri,cap){ const ac=new AbortController(); const r=awa
   const out=new Uint8Array(Math.min(total,cap)); let off=0; for(const c of chunks){ if(off>=out.length) break; const take=Math.min(c.length,out.length-off); out.set(c.subarray(0,take),off); off+=take; }
   return {bytes:out, truncated};
 }
+// streamHashAndPreview: verify a file of ANY size by streaming its bytes through the WASM's incremental
+// sha256 (O(1) memory) while capturing only the first `previewCap` bytes to show. One pass, one download.
+// Returns null if the WASM streaming hash isn't available (falls back to the capped path). This is what
+// turns a big file's "partial preview, unhashable" into a real ✓ over the WHOLE file.
+async function streamHashAndPreview(uri,previewCap){
+  if(typeof plktSha256Init!=="function") return null;
+  plktSha256Init();
+  const r=await fetch(uri); if(!r.ok) throw new Error("HTTP "+r.status);
+  if(!r.body){ const all=new Uint8Array(await r.arrayBuffer()); plktSha256Update(all); return {hash:plktSha256Final(), preview:all.slice(0,previewCap)}; }
+  const rd=r.body.getReader(); const pv=[]; let pvLen=0;
+  for(;;){ const {done,value}=await rd.read(); if(done) break;
+    plktSha256Update(value);
+    if(pvLen<previewCap){ const take=Math.min(value.length,previewCap-pvLen); pv.push(value.subarray(0,take)); pvLen+=take; } }
+  const preview=new Uint8Array(pvLen); let off=0; for(const p of pv){ preview.set(p,off); off+=p.length; }
+  return {hash:plktSha256Final(), preview};
+}
 async function previewFile(nodeId,uri,box){ box=box||$("#preview"); if(!box) return;
   if(box.dataset.open){ box.innerHTML=""; delete box.dataset.open; return; }   // click again = close
   box.dataset.open="1"; box.innerHTML='<div class="kv">fetching…</div>';
@@ -201,9 +217,13 @@ async function previewFile(nodeId,uri,box){ box=box||$("#preview"); if(!box) ret
     +`<div class="kv">too large to hash in the browser - the recorded hash still covers the whole file. verify with <code>plankton verify</code> or re-download the bytes.</div>`;
   try{
     const size=await headSize(uri);
-    if(size!=null && size>VERIFY_CAP){                                   // known-large: pull only a slice, do NOT claim a hash match
-      const {bytes}=await fetchCapped(uri,PREVIEW_CAP);
-      box.innerHTML=partialHead(PREVIEW_CAP,size)+renderPreview(uri,bytes,true);
+    if(size!=null && size>VERIFY_CAP){                                   // known-large: STREAM-verify the whole file (O(1) memory)
+      const sv=await streamHashAndPreview(uri,PREVIEW_CAP);
+      if(sv){ const match=sv.hash.startsWith(String(nodeId).toLowerCase());
+        box.innerHTML=`<div class="pvhead"><span class="badge ${match?"vok":"vno"}">${match?"✓ whole file streamed - matches the recorded hash":"✗ streamed bytes do not match the hash"}</span>${X}</div>`
+          +`<div class="kv">preview shows the first ${humanSize(PREVIEW_CAP)}; the ✓ covers the whole ${humanSize(size)}, streamed without loading it into memory.</div>`+renderPreview(uri,sv.preview,true);
+      }else{ const {bytes}=await fetchCapped(uri,PREVIEW_CAP);            // no WASM streaming: fall back to partial preview
+        box.innerHTML=partialHead(PREVIEW_CAP,size)+renderPreview(uri,bytes,true); }
     }else{                                                               // small / unknown: fetch up to the verify cap
       const {bytes,truncated}=await fetchCapped(uri,VERIFY_CAP);
       if(truncated){ box.innerHTML=partialHead(VERIFY_CAP,size)+renderPreview(uri,bytes,true); }   // no Content-Length but still huge
