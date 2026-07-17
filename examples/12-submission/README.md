@@ -117,6 +117,14 @@ seven conditions hold **over the corpus it was handed** - no more:
   key-count reads the ring as 3/3; this gate rejects it (0 authority-vouched), and the viewer marks the
   self/ring-signed bindings unattested. It passes only if the *verifier* trusts those keys - which is a
   different trust root, hence (see below) a different verdict.
+  - **Boundary (not closed): two DIDs, one human.** The gate proves two *distinct authority-vouched
+    principals*; it cannot prove they are two distinct *people*. If a trusted authority vouches two DIDs
+    that are in fact the same human (e.g. an org issues its own analyst a second reviewer identity), the
+    gate reads two independent reviews. That is a property of the **authority's** honesty in issuing
+    principals, not something the substrate can decide from signatures. For real independence, require the
+    reviewers' vouching **authority to differ from the author's** (cross-org review) - a trust-root policy
+    the verifier sets, not a bug the gate can close. The `?p1 != ?p2` join is necessary but not sufficient
+    for "two humans."
 - **"no reject" is corpus-relative.** The one non-monotone condition (`FILTER NOT EXISTS` a fail review)
   means "no fail *in the corpus loaded*". A withheld failing review makes the gate pass. The gate names
   its corpus (its inputs) but cannot itself establish that the corpus is complete - that is the
