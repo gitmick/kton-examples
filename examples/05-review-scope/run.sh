@@ -58,8 +58,20 @@ echo "== Hand it over: the review store is self-contained; a recipient checks th
 cp -r "$PWD/.work/r1" "$PWD/.work/handed"
 NEKTON_DIR="$PWD/.work/handed" nekton head "$R1" | sed 's/^/    /'
 echo "  -> resolves to its head, 0 unresolved: the seedchain is INTACT (integrity - not yet 'complete')."
-echo "== The consumer's completeness gate (leg 2: conditions + close from the public parent) =="
-python3 check.py "$PWD/.work/r1" "$PUB_DIR" "$R1" || true
+echo "== The completeness gate, DOCUMENTED as a reproducible plankton result (nekton in, verdict out) =="
+# The decision is not an ephemeral print: it is a plankton FOTON whose COVERED inputs ARE the nekton -
+# the review and the public parent, bundled by hash - plus check.py; its OUTPUT is the verdict. So the
+# verdict is content-addressed and REPRODUCIBLE: re-run check.py over the same nekton and you get the
+# same verdict (L0). This is the plankton/nekton division - nekton is the signed review, plankton is the
+# reproducible decision over it - and it is exactly example 12's "nekton in, verdict out" shape.
+NEKTON_DIR="$PWD/.work/r1" nekton export .work/review-bundle.json  >/dev/null
+NEKTON_DIR="$PUB_DIR"      nekton export .work/parent-bundle.json  >/dev/null
+python3 check.py "$PWD/.work/r1" "$PUB_DIR" "$R1" | tee .work/verdict.txt || true
+export PLANKTON_DIR="$PWD/.work/plankton"
+VERDICT=$(plankton author --cmd "check.py: review + parent nekton -> completeness verdict" \
+  --in .work/review-bundle.json --in .work/parent-bundle.json --in check.py --out .work/verdict.txt \
+  --sign "$(K board)" --add | awk '/indexed foton/{print $3}')
+echo "  verdict documented as plankton foton $VERDICT (inputs = the review + parent nekton by hash + check.py)"
 
 echo ""
 echo "########## Scenario 2: reviewer b REJECTS - a reject BLOCKS (it cannot be hidden) ##########"
@@ -82,4 +94,4 @@ NEKTON_DIR="$PWD/.work/r1" nekton claim .work/bad.json "$(K board)" --add >/dev/
 echo -n "  head of r1 after a forged dangling link (UNCHANGED): "; NEKTON_DIR="$PWD/.work/r1" nekton head "$R1" | awk '/^head:/{print $2}'
 
 echo ""
-snapshot 05-review-scope "$PWD/.work/keys" --reg "$PUB_DIR" --reg "$PWD/.work/r1"
+snapshot 05-review-scope "$PWD/.work/keys" --reg "$PUB_DIR" --reg "$PWD/.work/r1" --reg "$PWD/.work/plankton"

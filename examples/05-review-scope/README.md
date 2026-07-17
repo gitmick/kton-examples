@@ -41,6 +41,12 @@ the parent, the same shape as a verdict; the predicate is the only thing that sa
 6. **The gate** (`check.py`) decides COMPLETE or BLOCKED: the chain is intact and reaches the seed, the
    conditions are on the sealed chain and anchored, the close is by the authority, **every enrolled
    reviewer delivered** (completeness), and **none rejected** (safety).
+7. **The verdict is documented in plankton, with the nekton as input.** The decision is not an ephemeral
+   print: it is authored as a plankton **foton** whose COVERED inputs are the review and the public
+   parent (bundled by hash) plus `check.py`, and whose output is the verdict. So it is content-addressed
+   and **reproducible** - re-run the check over the same nekton and you get the same verdict (L0). That is
+   the plankton/nekton division: nekton is the signed review, plankton is the reproducible decision over
+   it - example 12's "nekton in, verdict out".
 
 ## The exhibit - `bash run.sh` runs three scenarios
 
