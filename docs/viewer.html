@@ -75,8 +75,10 @@
   .arrows button.on{background:var(--accent);color:#0b0f18;border-color:var(--accent)}
   .fchips{display:flex;flex-wrap:wrap;gap:5px} .fchip{cursor:pointer;border:1px solid var(--line);border-radius:20px;padding:2px 8px;font-size:11.5px;display:inline-flex;align-items:center;gap:5px;user-select:none}
   .fchip .d{width:8px;height:8px;border-radius:50%} .fchip.off{opacity:.35}
-  .hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:var(--dim);font-size:11.5px}
-  .legend{position:absolute;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-size:11.5px;color:var(--dim)}
+  .hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:var(--dim);font-size:11.5px;transition:opacity .5s} .hint.gone{opacity:0;pointer-events:none}
+  .legend{position:absolute;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:11.5px;color:var(--dim)}
+  .legtoggle{cursor:pointer;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;user-select:none} .legtoggle:hover{color:var(--ink)}
+  .legbody{display:none;margin-top:6px} .legend.open .legbody{display:block} .legend.open .legtoggle{color:var(--ink)}
   .legend .row{display:flex;align-items:center;gap:7px;margin:2px 0} .dot{width:11px;height:11px;border-radius:50%} .sq{width:11px;height:11px;border-radius:3px} .sw{width:18px;border-top:2px solid}
   #panel{position:absolute;top:0;right:0;width:360px;max-width:88vw;height:100%;background:var(--panel);border-left:1px solid var(--line);padding:16px 18px;overflow:auto;transform:translateX(100%);transition:transform .18s}
   #panel.open{transform:none} #panel .x{float:right;color:var(--dim);cursor:pointer;font-size:18px}
@@ -122,12 +124,15 @@
   <div id="explorer">
     <canvas id="cv"></canvas>
     <div id="controls"></div>
-    <div class="legend">
-      <div class="row"><span class="dot" style="background:#889"></span>foton&nbsp;<span class="sq" style="background:#889"></span>claim&nbsp;<span class="dot" style="background:#cfd8e6"></span>dataset</div>
-      <div class="row"><span class="sw" style="border-color:var(--dim)"></span>builds-on&nbsp;<span class="sw" style="border-color:var(--about);border-top-style:dashed"></span>about</div>
-      <div class="row"><span style="color:var(--ok)">◎</span>bright ring = verified · colour = participant</div>
+    <div class="legend" id="legend">
+      <div class="legtoggle" id="legtoggle">legend</div>
+      <div class="legbody">
+        <div class="row"><span class="dot" style="background:#889"></span>foton&nbsp;<span class="sq" style="background:#889"></span>claim&nbsp;<span class="dot" style="background:#cfd8e6"></span>dataset</div>
+        <div class="row"><span class="sw" style="border-color:var(--dim)"></span>builds-on&nbsp;<span class="sw" style="border-color:var(--about);border-top-style:dashed"></span>about</div>
+        <div class="row"><span style="color:var(--ok)">◎</span>bright ring = verified · colour = participant</div>
+      </div>
     </div>
-    <div class="hint">scroll to zoom · drag to pan · double-click a node to re-centre · Esc or browser Back to return</div>
+    <div class="hint" id="hint">scroll to zoom · drag to pan · double-click a node to re-centre · Esc or browser Back to return</div>
     <div id="panel"></div>
   </div>
   <div id="err"></div>
@@ -643,9 +648,9 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
   const s2w=(sx,sy)=>[(sx*DPR-ex.view.tx)/ex.view.scale,(sy*DPR-ex.view.ty)/ex.view.scale];
   const hit=(sx,sy)=>{const [wx,wy]=s2w(sx,sy);return ex.nodes.find(n=>Math.hypot(n.x-wx,n.y-wy)<RW*1.7);};
   let drag=null,pan=null;
-  cv.onwheel=e=>{ e.preventDefault(); const f=e.deltaY<0?1.12:1/1.12,mx=e.offsetX*DPR,my=e.offsetY*DPR;
+  cv.onwheel=e=>{ e.preventDefault(); $("#hint")?.classList.add("gone"); const f=e.deltaY<0?1.12:1/1.12,mx=e.offsetX*DPR,my=e.offsetY*DPR;
     const wx=(mx-ex.view.tx)/ex.view.scale,wy=(my-ex.view.ty)/ex.view.scale; ex.view.scale*=f; ex.view.tx=mx-wx*ex.view.scale; ex.view.ty=my-wy*ex.view.scale; redraw(); };
-  cv.onmousedown=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){drag={n,moved:false};} else {pan={x:e.offsetX*DPR,y:e.offsetY*DPR,tx:ex.view.tx,ty:ex.view.ty};cv.style.cursor="grabbing";} };
+  cv.onmousedown=e=>{ $("#hint")?.classList.add("gone"); const n=hit(e.offsetX,e.offsetY); if(n){drag={n,moved:false};} else {pan={x:e.offsetX*DPR,y:e.offsetY*DPR,tx:ex.view.tx,ty:ex.view.ty};cv.style.cursor="grabbing";} };
   cv.onmousemove=e=>{ if(drag){const [wx,wy]=s2w(e.offsetX,e.offsetY);drag.n.x=wx;drag.n.y=wy;drag.moved=true;redraw();}
     else if(pan){ex.view.tx=pan.tx+(e.offsetX*DPR-pan.x);ex.view.ty=pan.ty+(e.offsetY*DPR-pan.y);redraw();}
     else{cv.style.cursor=hit(e.offsetX,e.offsetY)?"pointer":"grab";} };
@@ -704,6 +709,7 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
 $("#gear").onclick=()=>{ const el=$("#settings"); if(el.style.display==="block") el.style.display="none"; else openSettings(); };
 { const st=$("#story"), ab=$("#about"); const show=localStorage.getItem("kton-about")==="1"; st.style.display=show?"block":"none"; ab.classList.toggle("on",show);   // intro hidden by default; ⓘ toggles it, remembered
   ab.onclick=()=>{ const on=st.style.display!=="block"; st.style.display=on?"block":"none"; ab.classList.toggle("on",on); localStorage.setItem("kton-about",on?"1":""); }; }
+{ const lt=$("#legtoggle"); if(lt) lt.onclick=()=>$("#legend").classList.toggle("open"); }   // legend collapsed by default
 load();
 </script>
 </body>
