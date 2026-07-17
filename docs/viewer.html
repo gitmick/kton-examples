@@ -22,6 +22,11 @@
   .story b{color:var(--ink)} .aC{color:var(--a)} .bC{color:var(--b)} .cC{color:var(--c)}
   #stats { margin-top:5px; display:flex; gap:14px; font-size:12.5px; color:var(--dim); }
   #stats b{color:var(--ink)} .ok{color:var(--ok)} .bad{color:var(--bad)}
+  /* identity attestation: an unattested name is a key label, not an authenticated identity. It must not
+     read as vouched-for next to the green signature ring (screenshot-deception). */
+  .idun{ border-bottom:1px dashed var(--bad); }
+  .idun .idmark{ font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--bad);
+     border:1px solid var(--bad); border-radius:3px; padding:0 3px; margin-left:5px; vertical-align:1px; font-weight:600; }
   #gear{margin-left:12px;cursor:pointer;font-size:16px;color:var(--dim)} #gear:hover{color:var(--ink)}
   #settings{position:fixed;top:54px;right:18px;z-index:30;width:340px;max-width:92vw;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.45);font-size:13px;color:var(--ink)}
   #settings .sthead{font-weight:650;display:flex;justify-content:space-between;margin-bottom:8px}
@@ -129,7 +134,8 @@
       <div class="legbody">
         <div class="row"><span class="dot" style="background:#889"></span>foton&nbsp;<span class="sq" style="background:#889"></span>claim&nbsp;<span class="dot" style="background:#cfd8e6"></span>dataset</div>
         <div class="row"><span class="sw" style="border-color:var(--dim)"></span>builds-on&nbsp;<span class="sw" style="border-color:var(--about);border-top-style:dashed"></span>about</div>
-        <div class="row"><span style="color:var(--ok)">◎</span>bright ring = verified · colour = participant</div>
+        <div class="row"><span style="color:var(--ok)">◎</span>bright ring = signature verifies (the KEY) · colour = participant</div>
+        <div class="row"><span class="idun" style="border:0">name<span class="idmark">unverified&nbsp;id</span></span> = a key label, not an authenticated identity (no trusted-authority sec:controller)</div>
       </div>
     </div>
     <div class="hint" id="hint">scroll to zoom · drag to pan · double-click a node to re-centre · Esc or browser Back to return</div>
@@ -160,6 +166,16 @@ function showErr(e){ $("#err").style.display="grid"; $("#err").textContent="Coul
 // otherwise execute. Escapes the 5 significant chars (element-text AND quoted-attribute contexts).
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const clipe=(s,n)=>esc(clip(s,n));                                    // clip THEN escape - for record-derived text
+// ATTESTED_NAMES: the participant labels backed by a trusted-authority sec:controller binding. A name
+// NOT in this set is a mere .pub key label, NOT an authenticated identity - so the green signature ring
+// (which verifies the KEY) must not be read as vouching for the human NAME (screenshot-deception). idlabel
+// renders an unattested identity with a visible "unverified id" marker so a screenshot cannot pass a
+// key label off as "senior person approved". idmark carries the same marker as a compact suffix.
+let ATTESTED_NAMES=new Set();
+function isAttestedName(name){ return ATTESTED_NAMES.has(String(name==null?"":name)); }
+function idlabel(name){ const n=esc(String(name==null?"":name).replace('pfed-',''));
+  return isAttestedName(name) ? `<span class="idok" title="identity attested by a trusted authority (signed sec:controller)">${n}</span>`
+    : `<span class="idun" title="unattested: this is a key label, not an authenticated identity - the signature verifies the KEY, not this name">${n}<span class="idmark">unverified&nbsp;id</span></span>`; }
 const safeUri=u=>/^(https?|ipfs):/i.test(String(u||""))?String(u):"";  // only http(s)/ipfs into an href; else inert text
 // hash(12) -> [uri], read from FileRef.uri carried on inputs/outputs (plankton --located); merged with claim-based G.locators
 function buildLoc(unionStr){ LOC={};
@@ -260,11 +276,12 @@ function renderGraph(union,keys,names){
 // a JSON array or comma list of union.json URLs); unioned onto the delivered registry.
 function extraSources(){ try{ const v=localStorage.getItem("kton-planktons"); if(!v) return [];
   try{ return JSON.parse(v); }catch{ return v.split(",").map(s=>s.trim()).filter(Boolean); } }catch{ return []; } }
-function regUrls(u){ const b=u.replace(/[^/]*$/,""); return {union:u, keys:b+"keys.json", names:b+"names.json"}; }
+function regUrls(u){ const b=u.replace(/[^/]*$/,""); return {union:u, keys:b+"keys.json", names:b+"names.json", attested:b+"attested.json"}; }
 async function fetchSrc(reg){ const recs=JSON.parse(await (await fetch(reg.union)).text());
-  let keys={},names={}; try{ keys=JSON.parse(await (await fetch(reg.keys)).text()); }catch{}
+  let keys={},names={},attested=[]; try{ keys=JSON.parse(await (await fetch(reg.keys)).text()); }catch{}
   try{ names=JSON.parse(await (await fetch(reg.names)).text()); }catch{}
-  return {recs,keys,names}; }
+  try{ attested=JSON.parse(await (await fetch(reg.attested)).text()); }catch{}  // absent -> nothing attested (safe)
+  return {recs,keys,names,attested}; }
 async function load(){
   try{
     await initWasm();
@@ -273,11 +290,14 @@ async function load(){
     const prim=regUrls(qs.get("union"));                    // sibling keys.json/names.json, unless overridden
     if(qs.get("keys")) prim.keys=qs.get("keys"); if(qs.get("names")) prim.names=qs.get("names");
     const regs=[prim, ...extraSources().map(regUrls)];      // delivered + the reader's own connected planktons
-    const seen=new Set(), recs=[], keys={}, names={}; let total=0;
+    const seen=new Set(), recs=[], keys={}, names={}; const attKids=new Set(); let total=0;
     for(const reg of regs){ try{ const s=await fetchSrc(reg);   // union by content hash; dedup on foton/claim id
       for(const r of s.recs){ const id=r&&(r.fotonId||r.claimId); if(id&&!seen.has(id)){ seen.add(id); total++; if(recs.length<RECORD_CAP) recs.push(r); } }
-      Object.assign(keys,s.keys); Object.assign(names,s.names);
+      Object.assign(keys,s.keys); Object.assign(names,s.names); for(const k of (s.attested||[])) attKids.add(k);
     }catch(e){ /* an unreachable source is skipped, not fatal */ } }
+    // an identity label is authenticated only if its keyid is in some source's attested.json (a
+    // trusted-authority sec:controller binding); everything else is a bare key label.
+    ATTESTED_NAMES=new Set([...attKids].map(k=>names[k]).filter(Boolean));
     const truncated=total>recs.length;
     const union=JSON.stringify(recs);
     renderGraph(union, JSON.stringify(keys), JSON.stringify(names));
@@ -402,8 +422,11 @@ async function buildFromFiles(files){
       for(const s of (p.subject||[])) if(s.uri&&principal) bindings[s.uri]=principal;   // subject IS top-level
     }
   }
-  const names={};
-  if(canHash) for(const kid in keys){ const iri="https://kton.dev/o/"+await sha256hex(hexToBytes(keys[kid])); names[kid]=bindings[iri]?shortName(bindings[iri]):pubName[kid]; }
+  const names={}, attNames=new Set();
+  if(canHash) for(const kid in keys){ const iri="https://kton.dev/o/"+await sha256hex(hexToBytes(keys[kid]));
+    if(bindings[iri]){ names[kid]=shortName(bindings[iri]); attNames.add(names[kid]); }   // attested identity
+    else names[kid]=pubName[kid]; }                                                       // bare key label
+  ATTESTED_NAMES=attNames;   // same rule as the URL flow: only trusted-authority-vouched labels are authenticated
   return { union:JSON.stringify(records), keys:JSON.stringify(keys), names:JSON.stringify(names), n:records.length, k:Object.keys(keys).length, noHash:!canHash };
 }
 
@@ -453,7 +476,7 @@ function showOverview(push=true){
   const S=G.summary, rel={};
   for(const e of (S.edges||[])){ (rel[e.from]??=[]).push(`${e.kind==="about"?"reviews":"builds on"} ${esc(e.to.replace('pfed-',''))}×${esc(e.count)}`); }
   const cards=S.participants.map(p=>{ const pct=p.total?Math.round(100*p.verified/p.total):0;
-    return `<div class="card" data-p="${esc(p.name)}"><div class="nm"><span class="d" style="background:${pcol(p.name)}"></span>${esc(p.name)}</div>
+    return `<div class="card" data-p="${esc(p.name)}"><div class="nm"><span class="d" style="background:${pcol(p.name)}"></span>${idlabel(p.name)}</div>
       <div class="mt">${p.fotons} fotons · ${p.claims} claims</div><div class="bar"><i style="width:${pct}%"></i></div>
       <div class="mt" style="margin-top:5px">${p.verified}/${p.total} verified (${pct}%)</div>${rel[p.name]?`<div class="rel">${rel[p.name].join(" · ")}</div>`:``}</div>`;}).join("");
   const datasets=G.nodes.filter(n=>n.type==="source"&&n.kind==="dataset");
@@ -482,7 +505,7 @@ function showOverview(push=true){
   const q=$("#q"),res=$("#results");
   q.oninput=()=>{ const s=q.value.trim().toLowerCase(); if(!s){res.style.display="none";return;}
     const hits=G.nodes.filter(n=>`${n.id} ${n.role} ${n.text||""} ${n.participant} ${n.by||""}`.toLowerCase().includes(s)).slice(0,40);
-    res.innerHTML=hits.map(n=>`<div class="r" data-id="${esc(n.id)}"><span style="color:${pcol(n.participant)}">${esc(n.participant.replace('pfed-',''))}</span> · ${esc(n.type)} · ${esc(n.role)} <span class="m">${clipe(n.headline||n.id,44)}</span></div>`).join("")||`<div class="r m">no match</div>`;
+    res.innerHTML=hits.map(n=>`<div class="r" data-id="${esc(n.id)}"><span style="color:${pcol(n.participant)}">${idlabel(n.participant)}</span> · ${esc(n.type)} · ${esc(n.role)} <span class="m">${clipe(n.headline||n.id,44)}</span></div>`).join("")||`<div class="r m">no match</div>`;
     res.style.display="block"; res.querySelectorAll(".r[data-id]").forEach(r=>r.onclick=()=>enterExplorer(r.dataset.id,"both")); };
   document.addEventListener("click",e=>{ if(e.target!==q) res.style.display="none"; },true);
 }
@@ -502,7 +525,7 @@ function renderView(kind){ const out=$("#viewout"); if(!out) return; if(out.data
   if(kind==="review"){ list=fotonsLacking("reviewedBy","approve"); head=`<b>${list.length}</b> of ${fot.length} fotons have <b>no approval</b> — the sign-off worklist`; }
   else { const conf=new Set(fotonsWith("reproduces").map(n=>n.id)); list=fot.filter(n=>!conf.has(n.id)); head=`<b>${conf.size}</b> reproduced · <b>${list.length}</b> not — showing the <b>unconfirmed</b>`; }
   out.innerHTML=`<div class="cmt" style="margin:4px 0 8px;display:flex;justify-content:space-between;gap:8px;align-items:center"><span>🔍 ${head}</span><span class="fchip" style="flex:none" onclick="renderView('${kind}')">✕ clear</span></div>`
-    +list.slice(0,200).map(n=>`<div class="crow" data-id="${esc(n.id)}"><span class="cd" style="background:${pcol(n.participant)}"></span><b>${esc(n.participant.replace('pfed-',''))}</b> <span class="cpred">${esc(n.role)}</span> <span class="cm">${esc(n.id)}</span></div>`).join("")
+    +list.slice(0,200).map(n=>`<div class="crow" data-id="${esc(n.id)}"><span class="cd" style="background:${pcol(n.participant)}"></span><b>${idlabel(n.participant)}</b> <span class="cpred">${esc(n.role)}</span> <span class="cm">${esc(n.id)}</span></div>`).join("")
     +(list.length>200?`<div class="crow cm">…and ${list.length-200} more</div>`:"");
   $$("#viewout .crow[data-id]").forEach(el=>el.onclick=()=>enterExplorer(el.dataset.id,"nbr"));   // land in a small local view
 }
@@ -564,7 +587,7 @@ function enterExplorer(centerId, mode, push=true, note=""){ $("#overview").style
 function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
   $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview&nbsp;&nbsp;<span style="opacity:.55;font-weight:400">Esc</span></span>
     <div class="qbar"><span class="qq">🔍 ${ex.note?esc(ex.note):("pedigree · "+({nbr:"neighbours",anc:"ancestors",desc:"descendants",both:"both",lin:"trace inputs",imp:"blast radius"}[ex.mode]||ex.mode))}</span><span class="qx" id="qreset" title="reset to this node's pedigree">reset ✕</span></div>
-    <div class="lbl">centre</div><div style="font-size:12.5px;color:${c.type==='source'?'#cfd8e6':'var(--accent)'}">${c.type==='source'?esc(c.role):esc(c.participant.replace('pfed-',''))+" · "+esc(c.role)}</div>
+    <div class="lbl">centre</div><div style="font-size:12.5px;color:${c.type==='source'?'#cfd8e6':'var(--accent)'}">${c.type==='source'?esc(c.role):idlabel(c.participant)+" · "+esc(c.role)}</div>
     ${ex.note?`<div class="lbl" style="color:var(--b);margin-top:4px;text-transform:none;letter-spacing:0">▸ ${ex.note}</div>`:``}
     <div class="lbl">pedigree (path explorer)</div><div class="arrows">${modes.map(m=>`<button data-m="${m[0]}" class="${ex.mode===m[0]?'on':''}">${m[1]}</button>`).join("")}</div>
     <div class="lbl">grouping</div><div class="fchips"><span class="fchip ${ex.grouped?'':'off'}" id="grpbtn">▣ group same-participant runs</span></div>
@@ -738,14 +761,14 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
   }
   const n=G.byId.get(id),ins=(G.in[id]||[]),outs=(G.out[id]||[]),isSrc=n.type==="source"||n.type==="ref";
   const lk=(o,kind)=>{const c=o.type==="source"?"#cfd8e6":pcol(o.participant);
-    return `<div class="nav" data-id="${esc(o.id)}"><span class="d" style="background:${c}"></span>${o.type==="source"?esc(o.role):esc(o.participant.replace('pfed-',''))+" · "+esc(o.role)} <span style="color:var(--dim)">(${esc(kind)})</span></div>`;};
+    return `<div class="nav" data-id="${esc(o.id)}"><span class="d" style="background:${c}"></span>${o.type==="source"?esc(o.role):idlabel(o.participant)+" · "+esc(o.role)} <span style="color:var(--dim)">(${esc(kind)})</span></div>`;};
   const link=(e)=>lk(G.byId.get(e.from),e.kind);
   const uris=[...new Set([...(LOC[n.id]||[]), ...((G.locators||{})[n.id]||[])])];
   const meta=isSrc?`<div class="kv">external input - referenced by content hash; not a signed record.</div>`
     :`<div class="kv">signer <code>${esc(n.signer||"?")}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
   const linN=n.type==="foton"?reach(n.id,"up","builds-on",Infinity).size-1:0, impN=n.type==="foton"?reach(n.id,"down","builds-on",Infinity).size-1:0;  // counts on the buttons
   p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
-    <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?esc(n.role):esc(n.participant)}</div>
+    <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?esc(n.role):idlabel(n.participant)}</div>
     <div class="role">${isSrc?("source · "+esc(n.kind)):(esc(n.type)+" · "+esc(n.role))}</div>
     ${n.id!==ex.center?`<span class="rc" onclick="recentre('${esc(n.id)}')">⌖ re-centre pedigree here</span>`:``}
     <div class="kv">id <code>${esc(n.id)}</code></div>${(n.by&&!isSrc)?`<div class="kv">by <code>${esc(n.by)}</code></div>`:``}${meta}

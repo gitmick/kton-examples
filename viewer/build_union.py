@@ -63,8 +63,13 @@ def short(principal):  # did:web:host/people/analyst -> analyst ; model:anthropi
     return principal.rstrip("/").split("/")[-1].split(":")[-1] or principal
 
 # 3. keys + names: the label is the SIGNED principal where a binding exists, else the keyfile label.
+# attested_kids records WHICH labels are authenticated (a trusted-authority sec:controller binding), so
+# the viewer can distinguish an authenticated human identity from a mere .pub filename. Without this the
+# viewer renders both identically next to the green "signature-verified" ring, and a screenshot of
+# "senior person approved ✓" reads as authenticated when the corpus only proves SOME key signed it
+# (cold-session screenshot-deception). The green ring is about the KEY; attestation is about the LABEL.
 keys, names = {}, {}
-attested = 0
+attested_kids = []
 for pub in glob.glob(os.path.join(a.keydir, "*.pub")):
     hx = open(pub).read().strip()
     if len(hx) != 64:
@@ -74,12 +79,14 @@ for pub in glob.glob(os.path.join(a.keydir, "*.pub")):
     iri = "https://kton.dev/o/" + hashlib.sha256(bytes.fromhex(hx)).hexdigest()
     if iri in bindings:
         names[kid] = short(bindings[iri])                                  # attested (signed sec:controller)
-        attested += 1
+        attested_kids.append(kid)
     else:
         names.setdefault(kid, os.path.splitext(os.path.basename(pub))[0])  # site label (unattested)
+attested = len(attested_kids)
 
 json.dump(union, open(os.path.join(a.out, "union.json"), "w"))
 json.dump(keys, open(os.path.join(a.out, "keys.json"), "w"))
 json.dump(names, open(os.path.join(a.out, "names.json"), "w"))
+json.dump(sorted(attested_kids), open(os.path.join(a.out, "attested.json"), "w"))
 nf = sum(1 for r in union if "fotonId" in r)
 print(f"  viewer data: {len(union)} records ({nf} fotons, {len(union)-nf} claims), {len(keys)} identities ({attested} attested) -> {a.out}")
