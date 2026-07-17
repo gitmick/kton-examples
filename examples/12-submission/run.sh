@@ -185,7 +185,11 @@ NEKTON_DIR="$W/agency/nekton"      nekton  mirror "$W/sponsor/nekton"    | sed '
 
 echo; echo "########## ACT 8a - the regulator re-verifies everything, trusting no one ##########"
 export PLANKTON_DIR="$W/agency/plankton" NEKTON_DIR="$W/agency/nekton"
-echo -n "  1. reproduction re-check (L1):      "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
+# zero-trust reproduction: the regulator RE-DERIVES the L1 match itself (analyst output vs QC's re-run,
+# under the same normalizer potential) and ABORTS if it does not reproduce. The QC-signed nk:reproduces
+# claim only draws the reproducedBy EDGE in the graph - it is NOT what the gate trusts. Without this hard
+# gate a QC re-run that genuinely differs would still ship on the strength of its own signed L1 label.
+echo -n "  1. reproduction re-check (L1):      "; if plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT"; then :; else echo "  does not reproduce -> abort"; exit 1; fi
 # zero-trust re-derivation of the tally: the regulator RE-RUNS the check itself; a partial pass exits
 # non-zero and ABORTS. This is what makes a forged N==M on the qualification harmless - the regulator
 # never takes the sponsor's word for "3/3", it recomputes it. (spectrum check exits 0 only on N==M.)
