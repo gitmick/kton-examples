@@ -22,10 +22,10 @@ nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.
 echo ""
 echo "== Use: export both layers as RDF =="
 echo "-- plankton lineage as RDF/Turtle (PROV) --"
-plankton export --rdf -o .work/exports/lineage.ttl
+plankton export --rdf --trust-keys .work/keys -o .work/exports/lineage.ttl
 grep -E "a prov:Activity|prov:wasGeneratedBy" .work/exports/lineage.ttl | sed 's/^/    /'
 echo "-- nekton claim as nanopublication (RDF/TriG) --"
-nekton export --nanopub .work/review.dsse.json -o .work/exports/claim.trig 2>/dev/null
+nekton export --nanopub --trust-keys .work/keys .work/review.dsse.json -o .work/exports/claim.trig 2>/dev/null
 grep -E "pav:reviewedBy" .work/exports/claim.trig | sed 's/^/    /'
 FHEX="${FOTON#sha256:}"
 echo "-- the JOIN: both name the same node pk:${FHEX:0:16}... --"

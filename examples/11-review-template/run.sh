@@ -59,7 +59,7 @@ nekton about "$TPLHASH" | sed 's/^/    /'
 echo; echo "########## Part 5 - export the RDF and TEST review completeness with SPARQL ##########"
 plankton export --rdf -o "$W/lineage.ttl" >/dev/null 2>&1 || plankton export --rdf > "$W/lineage.ttl"
 : > "$W/reviews.trig"
-for f in "$NEKTON_DIR"/objects/sha256/*.json; do nekton export --nanopub "$f" >> "$W/reviews.trig"; echo >> "$W/reviews.trig"; done
+for f in "$NEKTON_DIR"/objects/sha256/*.json; do nekton export --nanopub --trust-keys "$W/keys" "$f" >> "$W/reviews.trig"; echo >> "$W/reviews.trig"; done
 echo "  exported: lineage.ttl (foton, PROV) + reviews.trig (each review as a nanopublication)"
 if python3 -c "import rdflib" 2>/dev/null; then
   python3 "$EXDIR/check_completeness.py" "$W/lineage.ttl" "$W/reviews.trig" "$EXDIR/completeness.rq" "${FOTON#sha256:}" alice bob carol

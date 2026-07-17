@@ -206,9 +206,12 @@ echo    "  5. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
 
 echo; echo "########## ACT 8b - the release decision, recorded as a reproducible attested foton ########"
-plankton export --rdf -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf > "$F/submission.ttl"
+# --trust-keys: the regulator attributes each foton to the key that ACTUALLY signed it (verified),
+# never the self-declared keyid - a relabelled attribution is dropped (nk:signerVerified false), so the
+# gate can never read a forged signer as an established author/reviewer.
+plankton export --rdf --trust-keys "$W/keys" -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf --trust-keys "$W/keys" > "$F/submission.ttl"
 : > "$F/attestations.trig"
-for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
+for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub --trust-keys "$W/keys" "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
 echo "  exported submission.ttl + attestations.trig - the corpus the decision is made over"
 # The verifier's OWN trust root: the authorities whose sec:controller vouchers it accepts (here the two
 # org authorities). This is what stops the sock-puppet forgery - three self-issued (or ring-signed) keys
