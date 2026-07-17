@@ -1,0 +1,37 @@
+{
+  "claimId": "sha256:162721835d61b98840413eb352d88b7408e93cb12cbca20332b53d3249483698",
+  "envelope": {
+    "payloadType": "application/vnd.in-toto+json",
+    "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnkiOiJDTj1DYXJvbCIsIm9iamVjdCI6eyJyZXZpZXdlciI6ImNhcm9sIiwidmFsdWUiOiJhcHByb3ZlIn0sInByZWRpY2F0ZSI6eyJ1cmkiOiJwYXY6cmV2aWV3ZWRCeSJ9LCJ3aGVuIjoiMjAyNi0wNy0xN1QwMDowMDowMFoifSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8va3Rvbi5kZXYvY2xhaW0vdjAiLCJzdWJqZWN0IjpbeyJkaWdlc3QiOnsic2hhMjU2IjoiODEzYWM2NzQ3ZTg2OWI1ZTY4MTA3NDQ2OGYwNzVjMzg4MDEyZDc5ZTBlZjc4ZDFlYTJhNjg5NjUxNDFkOWE2ZiJ9fV19",
+    "signatures": [
+      {
+        "keyid": "8f93f66b3f886326",
+        "sig": "TcNByu2M/1nVt+M+HfmTuYSUqskas+eTZwmBG11I9cy/kjK40TE7c1o18TuomN4pO/CcjjvPrOcdbSnLdSzzCQ=="
+      }
+    ]
+  }
+}{
+  "claimId": "sha256:1c53eb366bb735cefc756b3f10dfbd164635d23a3e6747eee2851922b02ea1b6",
+  "envelope": {
+    "payloadType": "application/vnd.in-toto+json",
+    "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnkiOiJDTj1BbGljZSIsIm9iamVjdCI6eyJyZXZpZXdlciI6ImFsaWNlIiwidmFsdWUiOiJhcHByb3ZlIn0sInByZWRpY2F0ZSI6eyJ1cmkiOiJwYXY6cmV2aWV3ZWRCeSJ9LCJ3aGVuIjoiMjAyNi0wNy0xN1QwMDowMDowMFoifSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8va3Rvbi5kZXYvY2xhaW0vdjAiLCJzdWJqZWN0IjpbeyJkaWdlc3QiOnsic2hhMjU2IjoiODEzYWM2NzQ3ZTg2OWI1ZTY4MTA3NDQ2OGYwNzVjMzg4MDEyZDc5ZTBlZjc4ZDFlYTJhNjg5NjUxNDFkOWE2ZiJ9fV19",
+    "signatures": [
+      {
+        "keyid": "32bb065a70356175",
+        "sig": "NLLOVTLo61OlWlqxlmCTq04tgzWnPEUfsl5mS96jEOCJ7XDfd5uL4zd/cfZIXhQg8yiu6a3h/I76mWcbDF5kBA=="
+      }
+    ]
+  }
+}{
+  "claimId": "sha256:d087cb2fa50b40af018ad2dc0f95b424614e6ebe765f633fffb1f50b7759b783",
+  "envelope": {
+    "payloadType": "application/vnd.in-toto+json",
+    "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnkiOiJDTj1Cb2IiLCJvYmplY3QiOnsicmV2aWV3ZXIiOiJib2IiLCJ2YWx1ZSI6ImFwcHJvdmUifSwicHJlZGljYXRlIjp7InVyaSI6InBhdjpyZXZpZXdlZEJ5In0sIndoZW4iOiIyMDI2LTA3LTE3VDAwOjAwOjAwWiJ9LCJwcmVkaWNhdGVUeXBlIjoiaHR0cHM6Ly9rdG9uLmRldi9jbGFpbS92MCIsInN1YmplY3QiOlt7ImRpZ2VzdCI6eyJzaGEyNTYiOiI4MTNhYzY3NDdlODY5YjVlNjgxMDc0NDY4ZjA3NWMzODgwMTJkNzllMGVmNzhkMWVhMmE2ODk2NTE0MWQ5YTZmIn19XX0=",
+    "signatures": [
+      {
+        "keyid": "c0ee04240971317e",
+        "sig": "lDlfD4XJC7dl+emzX4Jeo3kpuWAKhySWnzzHxCX9tDFYp7sbMJXKXTbP3qMXHwXqhouvQDbRo6/9/4omrKqJAw=="
+      }
+    ]
+  }
+}

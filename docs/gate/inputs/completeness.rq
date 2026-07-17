@@ -1,0 +1,5 @@
+# >=3 DISTINCT reviewers must approve for the foton to pass review completeness.
+PREFIX pav: <http://purl.org/pav/>
+SELECT (COUNT(DISTINCT ?reviewer) AS ?approvals) WHERE {
+  ?c pav:reviewedBy ?foton . ?c :by ?reviewer . ?c :verdict "approve" .
+} HAVING (COUNT(DISTINCT ?reviewer) >= 3)

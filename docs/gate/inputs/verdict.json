@@ -1,0 +1,1 @@
+{"gate":"review-completeness","query":"completeness.rq","threshold":3,"approvals":3,"reviewers":["alice","bob","carol"],"result":"PASS","about":"sha256:813ac6747e869b5e681074468f075c388012d79e0ef78d1ea2a68965141d9a6f"}
