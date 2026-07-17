@@ -65,6 +65,9 @@
   #controls .back{color:var(--accent);cursor:pointer;font-size:12.5px;margin-bottom:10px;display:inline-block;border:1px solid var(--accent);border-radius:7px;padding:5px 10px;font-weight:600}
   #controls .back:hover{background:var(--accent);color:#0b0f18}
   #controls .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin:8px 0 5px}
+  #controls .qbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#0b0f18;border:1px solid var(--line);border-radius:8px;padding:6px 9px;margin:9px 0;font-size:11.5px}
+  #controls .qbar .qq{color:var(--b);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #controls .qbar .qx{color:var(--dim);cursor:pointer;white-space:nowrap;border:1px solid var(--line);border-radius:6px;padding:2px 6px} #controls .qbar .qx:hover{color:var(--bad);border-color:var(--bad)}
   .arrows{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .arrows button{background:#1c2434;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:6px 4px;cursor:pointer;font-size:11.5px}
   .arrows button.on{background:var(--accent);color:#0b0f18;border-color:var(--accent)}
@@ -432,7 +435,7 @@ function renderView(kind){ const out=$("#viewout"); if(!out) return; if(out.data
   const fot=G.nodes.filter(n=>n.type==="foton"); let head, list;
   if(kind==="review"){ list=fotonsLacking("reviewedBy","approve"); head=`<b>${list.length}</b> of ${fot.length} fotons have <b>no approval</b> — the sign-off worklist`; }
   else { const conf=new Set(fotonsWith("reproduces").map(n=>n.id)); list=fot.filter(n=>!conf.has(n.id)); head=`<b>${conf.size}</b> reproduced · <b>${list.length}</b> not — showing the <b>unconfirmed</b>`; }
-  out.innerHTML=`<div class="cmt" style="margin:4px 0 8px">${head}</div>`
+  out.innerHTML=`<div class="cmt" style="margin:4px 0 8px;display:flex;justify-content:space-between;gap:8px;align-items:center"><span>🔍 ${head}</span><span class="fchip" style="flex:none" onclick="renderView('${kind}')">✕ clear</span></div>`
     +list.slice(0,200).map(n=>`<div class="crow" data-id="${n.id}"><span class="cd" style="background:${pcol(n.participant)}"></span><b>${n.participant.replace('pfed-','')}</b> <span class="cpred">${n.role}</span> <span class="cm">${n.id}</span></div>`).join("")
     +(list.length>200?`<div class="crow cm">…and ${list.length-200} more</div>`:"");
   $$("#viewout .crow[data-id]").forEach(el=>el.onclick=()=>enterExplorer(el.dataset.id,"nbr"));   // land in a small local view
@@ -490,10 +493,11 @@ function trustCard(id){ const cs=claimsOf(id); if(!cs.length) return `<div class
   return `<div class="tcbanner"><span class="badge ${rej?"vno":appr?"vok":"vpart"}">${appr} approve · ${rej} reject</span> <span class="badge ${repro?"vok":"vpart"}">${repro?"✓ reproduced":"not reproduced"}</span></div>${rows}`;
 }
 function enterExplorer(centerId, mode, push=true, note=""){ $("#overview").style.display="none"; $("#explorer").style.display="block";
-  ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, note, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
+  ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, note, expand:new Set(), view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
   if(push) history.pushState({view:'explorer',center:centerId,mode},""); }
 function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
   $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview&nbsp;&nbsp;<span style="opacity:.55;font-weight:400">Esc</span></span>
+    <div class="qbar"><span class="qq">🔍 ${ex.note?esc(ex.note):("pedigree · "+({nbr:"neighbours",anc:"ancestors",desc:"descendants",both:"both",lin:"trace inputs",imp:"blast radius"}[ex.mode]||ex.mode))}</span><span class="qx" id="qreset" title="reset to this node's pedigree">reset ✕</span></div>
     <div class="lbl">centre</div><div style="font-size:12.5px;color:${c.type==='source'?'#cfd8e6':'var(--accent)'}">${c.type==='source'?c.role:c.participant.replace('pfed-','')+" · "+c.role}</div>
     ${ex.note?`<div class="lbl" style="color:var(--b);margin-top:4px;text-transform:none;letter-spacing:0">▸ ${ex.note}</div>`:``}
     <div class="lbl">pedigree (path explorer)</div><div class="arrows">${modes.map(m=>`<button data-m="${m[0]}" class="${ex.mode===m[0]?'on':''}">${m[1]}</button>`).join("")}</div>
@@ -502,9 +506,10 @@ function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],[
     <div class="lbl">filter · participant</div><div class="fchips">${G._parts.map(p=>`<span class="fchip ${filt.parts.has(p)?'':'off'}" data-fp="${p}"><span class="d" style="background:${pcol(p)}"></span>${p.replace('pfed-','')}</span>`).join("")}</div>
     <div class="lbl">filter · type</div><div class="fchips">${["foton","claim","source"].map(t=>`<span class="fchip ${filt.types.has(t)?'':'off'}" data-ft="${t}">${t}</span>`).join("")}</div>
     <div class="lbl" id="cnt"></div>`;
-  $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;ex.cap=PED_CAP;ex.note="";drawControls();layoutAndRun();});   // re-cap + leave any story view
+  $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;ex.cap=PED_CAP;ex.note="";ex.expand=new Set();drawControls();layoutAndRun();});   // re-cap + leave any story view
   $("#grpbtn").onclick=()=>{ex.grouped=!ex.grouped;drawControls();layoutAndRun();};
   { const cb=$("#collbtn"); if(cb) cb.onclick=()=>{ex.collapse=(ex.collapse===false);drawControls();layoutAndRun();}; }
+  { const qr=$("#qreset"); if(qr) qr.onclick=()=>enterExplorer(ex.center,"both"); }   // reset the query -> plain pedigree of this node
   $$("#controls [data-fp]").forEach(el=>el.onclick=()=>{const p=el.dataset.fp;filt.parts.has(p)?filt.parts.delete(p):filt.parts.add(p);drawControls();layoutAndRun();});
   $$("#controls [data-ft]").forEach(el=>el.onclick=()=>{const t=el.dataset.ft;filt.types.has(t)?filt.types.delete(t):filt.types.add(t);drawControls();layoutAndRun();});
 }
@@ -516,7 +521,7 @@ function layoutAndRun(){
   if(ex.grouped){ const g=groupRuns(nodes,edges); nodes=g.nodes; edges=g.edges; }
   if((ex.mode==="lin"||ex.mode==="imp") && ex.collapse!==false){        // lineage skeleton: keep the centre + any ATTESTED node (a landmark), collapse the rest
     const keepIds=new Set([ex.center,ex.sel]); for(const nn of nodes) if(claimsOf(nn.id).length) keepIds.add(nn.id);
-    const c=collapseRuns(nodes,edges,keepIds); nodes=c.nodes; edges=c.edges; }
+    const c=collapseRuns(nodes,edges,keepIds,ex.expand); nodes=c.nodes; edges=c.edges; }
   ex.nodes=nodes; ex.edges=edges; ex._byId=new Map(nodes.map(n=>[n.id,n]));
   layerLayout(ex.nodes, ex.edges, ex._byId);
   $("#cnt").innerHTML=`${ex.nodes.length} nodes · ${ex.edges.length} links`
@@ -529,19 +534,25 @@ function layoutAndRun(){
 // collapseRuns: contract maximal chains of PASS-THROUGH fotons (exactly one parent + one child within the
 // view) into a single "×N steps" edge, so a long lineage shows its SKELETON - sources, merges, forks, and
 // the node you're on - not every intermediate step. A node with >1 input (a merge/fan-in) is always kept.
-function collapseRuns(nodes, edges, keep){
-  const E=edges.map(e=>({from:e.from,to:e.to,kind:e.kind,steps:e.steps||1}));
-  const alive=new Set(nodes.map(n=>n.id));
-  const deg=()=>{ const o={},i={}; for(const e of E){ if(e.dead)continue; (o[e.from]??=[]).push(e); (i[e.to]??=[]).push(e); } return [o,i]; };
-  let changed=true;
-  while(changed){ changed=false; const [o,i]=deg();
-    for(const n of nodes){ const id=n.id; if(!alive.has(id)||keep.has(id)||n.type!=="foton") continue;
-      const oe=(o[id]||[]), ie=(i[id]||[]);
-      if(oe.length===1 && ie.length===1 && oe[0].kind==="builds-on" && ie[0].kind==="builds-on"){   // pass-through: splice it out
-        ie[0].dead=true; oe[0].dead=true; alive.delete(id);
-        E.push({from:ie[0].from, to:oe[0].to, kind:"builds-on", steps:ie[0].steps+oe[0].steps});
-        changed=true; break; } } }
-  return { nodes:nodes.filter(n=>alive.has(n.id)), edges:E.filter(e=>!e.dead) };
+function collapseRuns(nodes, edges, keep, expand){
+  expand = expand || new Set();
+  const byId=new Map(nodes.map(n=>[n.id,n])), outE={}, inE={};
+  for(const e of edges){ (outE[e.from]??=[]).push(e); (inE[e.to]??=[]).push(e); }
+  const isPass=id=>{ const n=byId.get(id); return !!n && n.type==="foton" && !keep.has(id) && !expand.has(id)
+    && (outE[id]||[]).length===1 && (inE[id]||[]).length===1 && outE[id][0].kind==="builds-on" && inE[id][0].kind==="builds-on"; };
+  const pass=new Set(nodes.filter(n=>isPass(n.id)).map(n=>n.id));
+  if(!pass.size) return {nodes, edges};
+  const uf={}, find=x=>{ while(uf[x]!==x) x=uf[x]=uf[uf[x]]; return x; };
+  for(const id of pass) uf[id]=id;
+  for(const e of edges){ if(pass.has(e.from)&&pass.has(e.to)) uf[find(e.from)]=find(e.to); }   // one run per connected chain of pass-through nodes
+  const groups={}; for(const id of pass) (groups[find(id)]??=[]).push(id);
+  const runNode={}, resNodes=nodes.filter(n=>!pass.has(n.id));
+  for(const r in groups){ const mem=groups[r], rid="run:"+mem[0]; runNode[r]=rid;
+    resNodes.push({id:rid, type:"run", count:mem.length, members:mem, participant:byId.get(mem[0]).participant, role:mem.length+" steps", verified:true}); }
+  const rep=id=> pass.has(id) ? runNode[find(id)] : id;
+  const seen=new Set(), resEdges=[];
+  for(const e of edges){ const f=rep(e.from), t=rep(e.to); if(f===t) continue; const k=f+">"+t+">"+e.kind; if(!seen.has(k)){ seen.add(k); resEdges.push({from:f,to:t,kind:e.kind}); } }
+  return { nodes:resNodes, edges:resEdges };
 }
 // groupRuns: contract each CONNECTED RUN of same-participant nodes into one group node, preserving
 // lineage. a-a-b-a-a-b-b -> a-b-a-b (two 'a' runs stay separate because a 'b' sits between them).
@@ -597,8 +608,7 @@ function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
   for(const e of ex.edges){ const f=ex._byId.get(e.from),t=ex._byId.get(e.to); if(!f||!t)continue;
     if(LOD&&!vis(f)&&!vis(t)) continue;                            // skip edges wholly off-screen
     const [L,R]= f._d>=t._d?[t,f]:[f,t]; const rel=e.kind!=="builds-on";
-    const lbl=(e.steps>1)?`⋯ ${e.steps} steps`:((!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:"");
-    edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,lbl); }
+    edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
   for(const n of ex.nodes){ if(LOD&&!vis(n)) continue; nodeDraw(ctx,n); }
 }
 function edgeArrow(ctx,a,b,color,dash,lbl){ const x1=a.x+RW,y1=a.y,x2=b.x-RW-4,y2=b.y,mx=(x1+x2)/2;
@@ -615,6 +625,10 @@ function nodeDraw(ctx,n){ const sel=n.id===ex.center;
   if(n.type==="ref"){ ctx.strokeStyle="#8b97ad"; ctx.lineWidth=sel?3:1.4; ctx.setLineDash([3,3]);
     ctx.beginPath();ctx.arc(n.x,n.y,RW*0.9,0,7);ctx.stroke();ctx.setLineDash([]);
     label(ctx,n,n.role,RW*0.9); return; }
+  if(n.type==="run"){ const w=RW*3.0,h=RW*1.5; ctx.fillStyle="#161d2b"; ctx.strokeStyle=css("--dim"); ctx.lineWidth=sel?2.4:1.3; ctx.setLineDash([3,3]);   // collapsed linear run - click to expand
+    rrect(ctx,n.x-w/2,n.y-h/2,w,h,7); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=css("--dim"); ctx.font="10px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("⋯ "+n.count+" steps",n.x,n.y);
+    if(!LOD) label(ctx,n,"click to expand",w/2+2); return; }
   if(n.type==="source"){ const data=n.kind==="dataset"; ctx.fillStyle=data?"#cfd8e6":"#455066";ctx.strokeStyle="#6b7688";ctx.lineWidth=sel?3:1.4;
     const r=data?RW*1.15:RW*0.7;ctx.beginPath();ctx.arc(n.x,n.y,r,0,7);ctx.fill();ctx.stroke(); if(data||sel)label(ctx,n,n.role,r); return; }
   ctx.fillStyle=pcol(n.participant);ctx.strokeStyle=n.verified?css("--ok"):css("--bad");ctx.lineWidth=sel?3:2;
@@ -633,10 +647,13 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
   cv.onmousemove=e=>{ if(drag){const [wx,wy]=s2w(e.offsetX,e.offsetY);drag.n.x=wx;drag.n.y=wy;drag.moved=true;redraw();}
     else if(pan){ex.view.tx=pan.tx+(e.offsetX*DPR-pan.x);ex.view.ty=pan.ty+(e.offsetY*DPR-pan.y);redraw();}
     else{cv.style.cursor=hit(e.offsetX,e.offsetY)?"pointer":"grab";} };
-  window.onmouseup=()=>{ if(drag&&!drag.moved){ ex.sel=drag.n.id; openNode(drag.n.id); redraw(); } if(pan)cv.style.cursor="grab"; drag=null;pan=null; };
+  window.onmouseup=()=>{ if(drag&&!drag.moved){ const nd=drag.n;
+      if(nd.type==="run"){ (ex.expand||(ex.expand=new Set())); nd.members.forEach(m=>ex.expand.add(m)); layoutAndRun(); }   // expand this collapsed run in place
+      else { ex.sel=nd.id; openNode(nd.id); redraw(); } }
+    if(pan)cv.style.cursor="grab"; drag=null;pan=null; };
   cv.ondblclick=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){recentre(n.id);} };
 }
-function recentre(id, push=true){ ex.center=id; ex.sel=id; ex.cap=PED_CAP; ex.note=""; drawControls(); layoutAndRun(); openNode(id);
+function recentre(id, push=true){ ex.center=id; ex.sel=id; ex.cap=PED_CAP; ex.note=""; ex.expand=new Set(); drawControls(); layoutAndRun(); openNode(id);
   if(push) history.pushState({view:'explorer',center:id,mode:ex.mode},""); }
 function fileRow(f,isOut){ const uris=[...new Set([...(LOC[f.hash]||[]), ...((G.locators||{})[f.hash]||[])])], isNode=G.byId.has(f.hash);
   return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${f.hash}"`:``}>${f.name||"(unnamed)"} <span class="m">${f.hash}</span>`+
