@@ -1,76 +1,85 @@
 #!/usr/bin/env bash
-# 05 - a review is its own (sub)nekton. A nekton is a CONTEXT ("a talk"): the claims of one conversation,
-# kept together. A review is such a context - and here it is LITERALLY its own registry, so you can hand
-# it over WHOLE to someone to verify, and it stands on its own as a valid seedchain. You OPEN it by
-# seeding it FROM a public scope (--parent), HOLD it as a chain (each claim covers the previous, so one
-# head seals it), CLOSE it by writing a CLAIM BACK to that parent naming the review + its head, and a
-# consumer VERIFIES it two ways: (1) the sub-nekton resolves to its head on its own; (2) the public
-# parent's close pins that head+seed. "Close" is no new verb - an ordinary claim, same shape as a verdict
-# (SPEC 7.4: parent->child registration + sealing are convention, checked by consumers).
+# 05 - a review is its own (sub)nekton, and its completeness is MECHANICAL. A nekton is a CONTEXT
+# ("a talk"). A review is one you can hand over WHOLE: it is literally its own registry, so a recipient
+# verifies it two ways - (1) the seedchain is INTACT on its own; (2) the public parent's close pins its
+# head. Crucially the review carries its OWN completeness definition: right after the seed it is
+# INITIALISED with its conditions (the enrolled reviewers), and those conditions are ANCHORED BACK to the
+# public parent - so the corpus is DEFINED, not "what you happened to load". A withheld reject is then not
+# a silent pass but a LIVENESS failure: the missing reviewer makes the review INCOMPLETE, and incomplete
+# BLOCKS. Nothing new in the kernel (SPEC 7.4: parent->child registration + sealing are consumer
+# convention); the gate is check.py, the consumer's own completeness decision.
 set -euo pipefail
 cd "$(dirname "$0")"
 source ../../lib/common.sh
 
 rm -rf "$PWD/.work"; mkdir -p "$PWD/.work/keys"
-PUB_DIR="$PWD/.work/public"; REV_DIR="$PWD/.work/review"; HANDED="$PWD/.work/handed"
-nekton keygen "$PWD/.work/keys/board" >/dev/null   # authority over the public record
-nekton keygen "$PWD/.work/keys/chair" >/dev/null   # runs the review
+PUB_DIR="$PWD/.work/public"
+nekton keygen "$PWD/.work/keys/board"       >/dev/null   # authority: sets the rules AND closes
+nekton keygen "$PWD/.work/keys/reviewer-a"  >/dev/null
+nekton keygen "$PWD/.work/keys/reviewer-b"  >/dev/null
 K(){ echo "$PWD/.work/keys/$1.key"; }
-# a seed prints its parent hash BEFORE its own claim id, so the SCOPE id is the LAST hash in the output.
+kid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/$1.pub').read().strip())).hexdigest()[:16])"; }
 seedid(){ echo "$1" | grep -oE 'sha256:[0-9a-f]{64}' | tail -1; }
+KA=$(kid16 reviewer-a); KB=$(kid16 reviewer-b)
 
 echo "== The public record: a standing PARENT scope, in its own store =="
-PUB=$(seedid "$(NEKTON_DIR=$PUB_DIR nekton seed public-record --sign "$(K board)" --by 'CN=Board' --add)")
-echo "  public scope = $PUB"
+PUB=$(seedid "$(NEKTON_DIR=$PUB_DIR nekton seed drug-reviews --sign "$(K board)" --by 'CN=Board' --add)")
+echo "  public scope = $PUB   (enrolled reviewers this run: a=$KA  b=$KB)"
+
+# build_review <name> <revStore> <delivery...>   delivery = "a:pass" | "b:reject"  -> prints the scope id.
+# The name must differ per review, else identical seeds (same parent+signer+second) collide to one scope id.
+build_review(){
+  local NAME="$1" RD="$2"; shift 2
+  local REV; REV=$(seedid "$(NEKTON_DIR=$RD nekton seed "$NAME" --parent "$PUB" --sign "$(K board)" --by 'CN=Board' --add)")
+  # INITIALISE (first link): the review's conditions - who is enrolled - signed by the board, which is
+  # therefore the close authority. predicateBody carries the exact signed body (the reviewers array).
+  printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"reviewers":["%s","%s"],"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$KA" "$KB" "$REV" "$REV" > .work/init.json
+  local HINIT; HINIT=$(NEKTON_DIR=$RD nekton claim .work/init.json "$(K board)" --add | grep -oE 'sha256:[0-9a-f]{64}' | head -1)
+  # ANCHOR the conditions back to the public parent (an init record naming the review + its init head)
+  printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$HINIT" "$PUB" "$PUB" > .work/anchor.json
+  NEKTON_DIR=$PUB_DIR nekton claim .work/anchor.json "$(K board)" --add >/dev/null
+  # DELIVERIES chained under the review
+  local prev="$HINIT" d who verdict kf
+  for d in "$@"; do who="${d%%:*}"; verdict="${d##*:}"; kf="reviewer-$who"
+    printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"%s"},"by":"reviewer-%s","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$verdict" "$who" "$REV" "$prev" > .work/rev.json
+    prev=$(NEKTON_DIR=$RD nekton claim .work/rev.json "$(K $kf)" --add | grep -oE 'sha256:[0-9a-f]{64}' | head -1)
+  done
+  local HEAD; HEAD=$(NEKTON_DIR=$RD nekton head "$REV" | awk '/^head:/{print $2}')
+  # CLOSE on the parent, signed by the board (the authority that initialised)
+  printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/closed"},"object":{"hash":"%s"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$HEAD" "$PUB" "$PUB" > .work/close.json
+  NEKTON_DIR=$PUB_DIR nekton claim .work/close.json "$(K board)" --add >/dev/null
+  echo "$REV"
+}
 
 echo ""
-echo "== Open the REVIEW as its OWN nekton (its own store), seeded FROM the public scope (--parent) =="
-REV=$(seedid "$(NEKTON_DIR=$REV_DIR nekton seed drug-review --parent "$PUB" --sign "$(K chair)" --by 'CN=Chair' --add)")
-echo "  review scope = $REV   (the --parent link rides in the signed seed; it cannot be stripped)"
+echo "########## Scenario 1: both enrolled reviewers PASS - the review is complete ##########"
+R1=$(build_review review-happy "$PWD/.work/r1" a:pass b:pass)
+echo "== Hand it over: the review store is self-contained; a recipient checks the seedchain INTACT (leg 1) =="
+cp -r "$PWD/.work/r1" "$PWD/.work/handed"
+NEKTON_DIR="$PWD/.work/handed" nekton head "$R1" | sed 's/^/    /'
+echo "  -> resolves to its head, 0 unresolved: the seedchain is INTACT (integrity - not yet 'complete')."
+echo "== The consumer's completeness gate (leg 2: conditions + close from the public parent) =="
+python3 check.py "$PWD/.work/r1" "$PUB_DIR" "$R1" || true
 
 echo ""
-echo "== Hold the review: chain signed claims INSIDE the review's own store =="
-mkrev(){ printf '{"subject":[{"uri":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"%s"},"by":"CN=Chair","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}' "$1" "$2" "$REV" "$3" > .work/c.json
-  NEKTON_DIR=$REV_DIR nekton claim .work/c.json "$(K chair)" --add | grep -oE 'sha256:[0-9a-f]{64}' | head -1; }
-C1=$(mkrev urn:doc:protocol "protocol approved" "$REV")
-C2=$(mkrev urn:doc:results  "results approved"  "$C1")
-HEAD=$(NEKTON_DIR=$REV_DIR nekton head "$REV" | awk '/^head:/{print $2}')
-echo "  chain: seed -> $C1 -> $C2   head = $HEAD"
+echo "########## Scenario 2: reviewer b REJECTS - a reject BLOCKS (it cannot be hidden) ##########"
+R2=$(build_review review-reject "$PWD/.work/r2" a:pass b:reject)
+python3 check.py "$PWD/.work/r2" "$PUB_DIR" "$R2" || true
 
 echo ""
-echo "== HAND IT OVER: the review store is self-contained. Copy it to a recipient who verifies it ALONE =="
-cp -r "$REV_DIR" "$HANDED"                              # in the wild: `nekton mirror`, or fetch by hash
-echo "  the recipient, with only the review (no parent, no other attestations), checks the seedchain:"
-NEKTON_DIR=$HANDED nekton head "$REV" | sed 's/^/    /'
-echo "  -> resolves to the same head, 0 unresolved: a valid, COMPLETE seedchain on its own (leg 1)."
+echo "########## Scenario 3: strip b's reject by closing WITHOUT it - now the review is INCOMPLETE ##########"
+# The sponsor omits reviewer b entirely and closes on just a's pass. The reject is gone - but so is b's
+# delivery, and b is ENROLLED (in the signed, anchored conditions). Missing enrolled reviewer -> INCOMPLETE
+# -> BLOCKED. That is the whole point: you cannot cut the reject out to get a clean review; you get an
+# incomplete one, and incomplete fails closed.
+R3=$(build_review review-strip "$PWD/.work/r3" a:pass)
+python3 check.py "$PWD/.work/r3" "$PUB_DIR" "$R3" || true
 
 echo ""
-echo "== CLOSE: a claim to the PARENT naming the review + its head (written into the public record) =="
-# NOT a new verb: subject = the review scope, object = its sealed head, scoped into PUB. Swap the
-# predicate for a verdict and it is a verdict. WHO may write it is trust policy (the board; a scope's
-# `responsible` set names it). Whether the review was CONDUCTED honestly - every input captured, the
-# signer saw what they signed - is a validated system's job, behind kton's boundary; kton documents it.
-printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/closed","object":{"hash":"%s"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}' "$REV" "$HEAD" "$PUB" "$PUB" > .work/close.json
-NEKTON_DIR=$PUB_DIR nekton claim .work/close.json "$(K board)" --add >/dev/null
-echo "  the board wrote 'drug-review closed at $HEAD' into the public record"
+echo "== Tamper-evidence still holds: a dangling prev never joins the chain =="
+printf '{"subject":[{"uri":"urn:doc:x"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"forged"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}}' "$R1" > .work/bad.json
+NEKTON_DIR="$PWD/.work/r1" nekton claim .work/bad.json "$(K board)" --add >/dev/null 2>&1
+echo -n "  head of r1 after a forged dangling link (UNCHANGED): "; NEKTON_DIR="$PWD/.work/r1" nekton head "$R1" | awk '/^head:/{print $2}'
 
 echo ""
-echo "== The PARENT binds it: look up the review in the public record (leg 2) =="
-NEKTON_DIR=$PUB_DIR nekton about "$REV" | sed 's/^/  /'
-echo "  a consumer with the public parent confirms the close names THIS seed and THIS head - so the head"
-echo "  the recipient resolved in leg 1 is the authoritative one (this defeats a rewind to a shorter chain)."
-echo "  Over a public parent this same binding is a SPARQL check - the release gate in example 12."
-
-echo ""
-echo "== Tamper-evidence + 'you can still add, but it is over' =="
-# a dangling prev never joins; and a valid claim added AFTER the closed head is simply outside the review.
-printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$REV" > .work/bad.json
-NEKTON_DIR=$REV_DIR nekton claim .work/bad.json "$(K chair)" --add >/dev/null 2>&1
-echo -n "  head after a forged dangling link (UNCHANGED - never joined): "; NEKTON_DIR=$REV_DIR nekton head "$REV" | awk '/^head:/{print $2}'
-C3=$(mkrev urn:doc:addendum "late addendum" "$HEAD")
-echo -n "  the review's LIVE head moved to: "; NEKTON_DIR=$REV_DIR nekton head "$REV" | awk '/^head:/{print $2}'
-echo "  but the public record still pins closed@$HEAD, so $C3 is a valid claim AFTER the close,"
-echo "  outside the closed conversation. The handed-over review (leg 1) + the parent (leg 2) agree it is over."
-
-echo ""
-snapshot 05-review-scope "$PWD/.work/keys" --reg "$PUB_DIR" --reg "$REV_DIR"
+snapshot 05-review-scope "$PWD/.work/keys" --reg "$PUB_DIR" --reg "$PWD/.work/r1"

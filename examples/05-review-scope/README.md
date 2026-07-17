@@ -1,118 +1,78 @@
-# 05 - a review is its own (sub)nekton
+# 05 - a review is its own (sub)nekton, and completeness is mechanical
 
-A single signed claim (example 04) says one thing. A **review** is a *conversation*: a sequence of
-decisions that must hang together, be handed over whole, and whose rejections cannot be silently
-stripped. Think of a nekton as a **context - a "talk"**: the things that belong to one conversation,
-kept together. A review is such a context, and here it is **literally its own registry**, so you can
-hand it over whole to someone who verifies it **two ways**: (1) the sub-nekton resolves to its head *on
-its own* - a valid seedchain, no other attestations attached; (2) if the parent is public, the parent's
-**close** claim pins that seed and head. You **open** the review by seeding it *from* a public scope, you
-**hold** it as a chain (each claim covers the previous, so one **head** seals the history), and you
-**close** it by writing a **claim back to the parent** naming the review and its head.
+A single signed claim (example 04) says one thing. A **review** is a *conversation* - a nekton is a
+**context ("a talk")**: the claims that belong to one conversation, kept together. Here the review is
+**literally its own registry**, which buys two things:
 
-Closing is **not a new verb**. It is an ordinary claim - the same shape as a verdict - and the predicate
-is the only thing that says "closed". The kernel gains nothing: SPEC §7.4 already reserves parent→child
-registration and sealing as *convention, checked by consumers*, over the seed/chain grammar it does
-mandate.
+1. **You can hand it over whole.** A recipient verifies it two ways: leg 1, the seedchain is **intact**
+   on its own (resolves to its head, nothing dangling); leg 2, the public parent's **close** pins that
+   head, so the head they hold is the authoritative one (this is what defeats a rewind to a shorter chain).
+2. **Its completeness is *mechanical*, not "what you happened to load."** Right after the seed the review
+   is **initialised** with its conditions - the enrolled reviewers - and those conditions are **anchored
+   back** to the public parent. So the corpus is **defined**. A withheld reject stops being a silent pass
+   and becomes a **liveness** failure: the missing reviewer makes the review *incomplete*, and incomplete
+   **blocks**. You cannot cut a reject out to get a clean review - you get an incomplete one, fail-closed.
 
-Assumes `nekton` is on your PATH. Each claim points at the previous by id, so every command captures the
-id it needs into a shell variable.
+Nothing new in the kernel. SPEC §7.4 reserves parent→child registration and sealing as *consumer
+convention* over the seed/chain grammar; "close", "initialised" and the completeness decision are all
+ordinary claims plus a consumer check ([`check.py`](check.py)). "Close" is not a verb - it is a claim to
+the parent, the same shape as a verdict; the predicate is the only thing that says "closed".
 
-## Walk through it, one command at a time
+## Two words that are easy to conflate
 
-**1. Two identities, two stores.** The board owns the public record; the chair runs the review. The
-review gets **its own registry** - that is what lets you hand it over on its own.
+- **intact** = leg 1: the seedchain resolves, 0 unresolved. That is **integrity**, and it is *not*
+  "finished". A review can be intact and still missing a reviewer.
+- **complete** = every *enrolled* reviewer delivered. That is a **different** check, done against the
+  conditions the review carries. Seeing leg 1 green does **not** mean the review is complete.
 
-```
-nekton keygen board ; nekton keygen chair
-PUB_DIR=./public ; REV_DIR=./review
-```
+## The lifecycle
 
-**2. The public record - a standing parent scope**, in the public store.
+1. **Public record + review as its own nekton.** Seed the public parent; seed the review `--parent` it,
+   in its own store. The `--parent` link rides inside the signed seed, so it cannot be stripped.
+2. **Initialise the conditions in the review** (the first chain link): the enrolled reviewers, signed by
+   the authority - which, being the party that sets the rules, is also the one that may **close**.
+3. **Anchor the conditions back to the parent** (an init record naming the review + its init head). Now
+   the ruleset is double-locked: the chain seal makes it unrollbackable in the review, and the parent
+   pins it - nobody can swap in a friendlier ruleset.
+4. **Hold** the review: reviewers chain their deliveries.
+5. **Close**: a claim on the parent naming the sealed head, **by that same authority**. A close by anyone
+   else does not count - otherwise an attacker writes a close on a short head and "any close" is just a
+   rewind with an extra step.
+6. **The gate** (`check.py`) decides COMPLETE or BLOCKED: the chain is intact and reaches the seed, the
+   conditions are on the sealed chain and anchored, the close is by the authority, **every enrolled
+   reviewer delivered** (completeness), and **none rejected** (safety).
 
-```
-PUB=$(NEKTON_DIR=$PUB_DIR nekton seed public-record --sign board.key --by "CN=Board" --add \
-      | grep -oE 'sha256:[0-9a-f]+' | tail -1)     # a seed prints its parent hash first, so take the LAST
-```
-
-**3. Open the review as its OWN nekton, seeded FROM the public scope.** The `--parent` link rides
-*inside* the signed seed, so it cannot be stripped without changing the review's identity - from any
-copy of the review you can find its parent.
-
-```
-REV=$(NEKTON_DIR=$REV_DIR nekton seed drug-review --parent "$PUB" --sign chair.key --by "CN=Chair" --add \
-      | grep -oE 'sha256:[0-9a-f]+' | tail -1)
-```
-
-**4. Hold the review: chain the claims inside the review's store.** Every scoped claim names the scope
-and a `prev`; for the first, `prev` is the scope id itself.
+## The exhibit - `bash run.sh` runs three scenarios
 
 ```
-# c1: prev = $REV ; c2: prev = $C1 ; ... ; then read the sealed head
-NEKTON_DIR=$REV_DIR nekton head "$REV"        # head: sha256:...  (the tip that seals the whole chain)
+Scenario 1  both enrolled reviewers PASS   -> RELEASE: COMPLETE
+Scenario 2  reviewer b REJECTS             -> RELEASE: BLOCKED (a reject blocks release)
+Scenario 3  close WITHOUT b (strip it)     -> RELEASE: BLOCKED (enrolled reviewer did not deliver - INCOMPLETE)
 ```
 
-**5. Hand it over, and verify it alone (leg 1).** The review store is self-contained. Give someone only
-that store - `cp -r`, `nekton mirror`, or a fetch by hash - and they verify the seedchain with no parent
-and no other attestations:
+Scenario 3 is the point: stripping the reject does not yield a clean review, it yields an **incomplete**
+one, because `b` is enrolled in the review's own signed, anchored conditions. Safety (no reject) and
+liveness (all enrolled delivered) both fail closed.
 
-```
-NEKTON_DIR=$HANDED nekton head "$REV"
-# resolves to the same head, 0 unresolved -> a valid, COMPLETE seedchain on its own
-```
+## The boundaries - what this does and does not settle
 
-**6. Close it: a claim to the PARENT (leg 2).** An ordinary claim whose `subject` is the review scope,
-whose `object` is its sealed head, scoped **into** the public record. Swap the predicate for a verdict and
-it *is* a verdict - one shape, two meanings.
+**Integrity, not currency.** The parent's close is tamper-evident but does not prove it is the *latest*;
+a rewind verifies just as cleanly. Anchoring the close in a transparency log (`kton anchor`, example 08)
+time-orders it; holding the latest anchored close is a consumer **freshness** step.
 
-```
-cat > close.spec.json <<JSON
-{ "subject":[{"hash":"$REV"}], "predicate":"https://kton.dev/v/closed",
-  "object":{"hash":"$HEAD"}, "by":"CN=Board", "when":"2026-07-16T00:00:00Z",
-  "scope":"$PUB", "prev":"$PUB" }
-JSON
-NEKTON_DIR=$PUB_DIR nekton claim close.spec.json board.key --add
-NEKTON_DIR=$PUB_DIR nekton about "$REV"    # -> predicate=.../closed  by=CN=Board  (closed at $HEAD)
-```
+**Append-only, so "closed" is documented, not enforced.** Anyone can still sign a claim extending the
+review; what closes it is the parent's record pinning the head. A claim added *after* that head is valid
+but **outside** the closed review - "you can still add, but look it up, it is over."
 
-That is the whole contract: the review travels as one bounded context and **self-verifies** (leg 1); the
-public parent **binds** its seed and head (leg 2), so the head the recipient resolved is the authoritative
-one - which is what defeats a rewind to a shorter, cleaner chain. Over a public parent, leg 2 is a SPARQL
-check ("a `nk:closed` claim whose subject is `$REV` and object is `$HEAD`") - the release gate of
-[example 12](../12-submission/). You hand over one review, not a pile of a hundred unrelated attestations.
+**Conducting the review is behind kton's boundary.** *Who* is enrolled and *who* may close is trust
+policy, carried in the review's own conditions. Whether every input was captured and whether a signer
+*saw what they signed* is a validated system's job (a transactional trail + a validated UI). kton
+**documents** the review and makes tampering, rewinds, missing reviewers and rejects *detectable*; it
+does not *conduct* it.
 
-## The boundaries - what "closed" does and does not settle
-
-**The head proves integrity, not currency.** A published head is tamper-evident, but by itself it does
-not prove it is the *latest*: an earlier, shorter chain (a **rewind**) verifies just as cleanly.
-Anchoring the parent's close in a transparency log (`kton anchor`, example 08) time-orders it so a rewind
-is undeniable; confirming you hold the latest anchored close is a consumer **freshness** step.
-
-**Sealing is tamper-evidence, not append-control - and the substrate is append-only.** The chain
-guarantees no *committed* link is silently dropped or edited (remove an inconvenient reject and the head
-stops matching). It does **not** stop anyone from signing a well-formed claim that extends the review.
-That is fine: what closes the conversation is the **parent's record**, which pins the head at close time.
-A claim added *after* that head is a valid claim that is simply **outside** the closed review - "you can
-still add, but look it up, it is over." Try it: extend the review after the close and its *live* head
-moves, but the parent still pins `closed@HEAD`, so the addendum is visibly post-close.
-
-**Who may close, and whether the review was conducted honestly, are behind kton's boundary.** *Who* may
-write the close is trust policy - here the board, the parent's authority; a scope's `responsible` set
-(SPEC §7.4) names it. And whether every input was captured and whether a signer *saw what they signed* is
-a validated system's job (a transactional trail + a validated UI) - kton **documents** the review and
-makes tampering, rewinds and post-close additions *detectable*; it does not *conduct* the review.
-
-**A dangling `prev` never joins the chain.** A claim naming this scope but with a `prev` that resolves
-nowhere is **persisted** - its `prev` might arrive from another peer later, so the substrate treats it as
-*incomplete, not invalid* - but it never joins the scope, so it is never the head. This is the
-open-substrate rule (the same one federation needs), not a special sealed-scope fatality: a resolved
-chain is complete and tamper-evident; a dangling link is deferred, not rejected on the spot.
-
-## Or just run the whole thing
-
-```
-bash run.sh
-```
+**A dangling `prev` never joins the chain.** A claim with a `prev` that resolves nowhere is *persisted*
+(it might resolve from another peer later - incomplete, not invalid) but never joins the scope, so it is
+never the head. The open-substrate rule, not a sealed-scope fatality.
 
 ## See it
 
