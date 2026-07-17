@@ -61,13 +61,19 @@ SELECT DISTINCT ?condition WHERE {
     FILTER(STRSTARTS(STRAFTER(STR(?k2), "kton.dev/o/"), ?kid2))
     FILTER(?a2 IN (#TRUSTED#))
     FILTER(?p1 != ?p2)
-    # FOUR-EYES: a review is only "independent" if the reviewer is NOT the model's author. Resolve the
-    # fit's own signer to its authority-vouched principal (same binding rule as the reviewers) and
-    # require BOTH reviewers to be a different principal. Without this, the analyst who authored the fit
-    # could sign one of the two "pass" reviews and be counted as an independent reviewer (the whole point
-    # of author != reviewer, example 07 / GxP OQ). The author must itself be a vouched principal, so an
-    # unvouched or forged author fails this branch closed rather than sneaking a self-review through.
+    # FOUR-EYES: a review is only "independent" if the reviewer is NOT the model's author.
+    # (1) KEY granularity is the load-bearing check: the reviewer's SIGNING KEY must differ from the key
+    # that signed the fit. Excluding by PRINCIPAL alone was bypassable - if the author's one key is
+    # vouched under two DIDs, the solver binds ?pauthor to one DID and the self-review's principal to the
+    # other, so ?p1 != ?pauthor passes while it is the SAME key reviewing itself (beat-gate-v3/F1). The
+    # agent IRIs ?r1/?r2/?rauthor ARE the keyids, so comparing them is the key-level exclusion.
     ?fit prov:wasAttributedTo ?rauthor .
+    FILTER(?r1 != ?rauthor)
+    FILTER(?r2 != ?rauthor)
+    # (2) PRINCIPAL granularity, additionally: a DIFFERENT key bound to the author's SAME principal (the
+    # same person signing with a second key) is also not independent. Resolve the fit's signer to its
+    # authority-vouched principal (same binding rule as the reviewers) and require both reviewers to
+    # differ. The author must itself be a vouched principal, so a forged/unvouched author fails closed.
     BIND(STRAFTER(STR(?rauthor), "kton.dev/agent/") AS ?kidA)
     GRAPH ?gba { ?ka sec:controller ?cba . ?cba ?cbpa ?pauthor . } ?gba prov:wasAttributedTo ?aa .
     FILTER(STRSTARTS(STRAFTER(STR(?ka), "kton.dev/o/"), ?kidA))
