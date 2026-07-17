@@ -61,6 +61,19 @@ SELECT DISTINCT ?condition WHERE {
     FILTER(STRSTARTS(STRAFTER(STR(?k2), "kton.dev/o/"), ?kid2))
     FILTER(?a2 IN (#TRUSTED#))
     FILTER(?p1 != ?p2)
+    # FOUR-EYES: a review is only "independent" if the reviewer is NOT the model's author. Resolve the
+    # fit's own signer to its authority-vouched principal (same binding rule as the reviewers) and
+    # require BOTH reviewers to be a different principal. Without this, the analyst who authored the fit
+    # could sign one of the two "pass" reviews and be counted as an independent reviewer (the whole point
+    # of author != reviewer, example 07 / GxP OQ). The author must itself be a vouched principal, so an
+    # unvouched or forged author fails this branch closed rather than sneaking a self-review through.
+    ?fit prov:wasAttributedTo ?rauthor .
+    BIND(STRAFTER(STR(?rauthor), "kton.dev/agent/") AS ?kidA)
+    GRAPH ?gba { ?ka sec:controller ?cba . ?cba ?cbpa ?pauthor . } ?gba prov:wasAttributedTo ?aa .
+    FILTER(STRSTARTS(STRAFTER(STR(?ka), "kton.dev/o/"), ?kidA))
+    FILTER(?aa IN (#TRUSTED#))
+    FILTER(?p1 != ?pauthor)
+    FILTER(?p2 != ?pauthor)
     FILTER NOT EXISTS { ?fit gxp:reviewed ?of . ?of nk:outcome "fail" . }
     BIND("two-independent-reviews" AS ?condition)
   }
