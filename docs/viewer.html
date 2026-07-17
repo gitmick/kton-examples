@@ -343,7 +343,12 @@ async function buildFromFiles(files){
     const body=p.predicate||{};                        // the claim body: {by, object, predicate(term), when}
     const pred=body.predicate;
     if(pred&&pred.uri==="https://w3id.org/security#controller"){
-      if(trust.size&&!trust.has(signer)) continue;
+      // A binding relabels a key to a principal ONLY if a TRUSTED authority signed it. Empty trust box
+      // = trust nobody, so NO binding is applied (keys keep their .pub filename) - otherwise a
+      // SELF-SIGNED binding would relabel a key to any "senior identity" it names (run-4 finding). This
+      // must be `!trust.has(signer)` unconditionally, not `trust.size && !trust.has(signer)` (which let
+      // every binding through when the box was empty).
+      if(!trust.has(signer)) continue;
       const principal=(body.object||{}).id||(body.object||{}).value;   // object is in the body, not top-level
       for(const s of (p.subject||[])) if(s.uri&&principal) bindings[s.uri]=principal;   // subject IS top-level
     }
