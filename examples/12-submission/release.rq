@@ -50,50 +50,13 @@ SELECT DISTINCT ?condition WHERE {
   } UNION {
     ?head nk:submitted ?who .
     BIND("submission-signed" AS ?condition)
-  } UNION {
-    # NOT two distinct KEYS (three sock-puppet keys would pass), but two distinct PRINCIPALS, each
-    # bound to its signing key by a sec:controller binding that is ITSELF signed by an authority the
-    # verifier trusts. The trust root is DATA: release.py asserts `<authority> a nk:TrustedAuthority`
-    # for each keyid in the verifier's OWN root (a COVERED input of the verdict), so the query matches
-    # `?a a nk:TrustedAuthority` as an ordinary graph pattern - no query-string placeholder. A
-    # self-issued binding - or a ring of mutual attestations (K2 vouches K3, K3 vouches K2) - is not
-    # signed by a trusted authority, so it never counts. Example 07's rule: a binding is only worth the
-    # authority that signed it.
-    GRAPH ?g1 { ?fit gxp:reviewed ?o1 . ?o1 nk:outcome "pass" . } ?g1 prov:wasAttributedTo ?r1 .
-    BIND(STRAFTER(STR(?r1), "kton.dev/agent/") AS ?kid1)
-    GRAPH ?gb1 { ?k1 sec:controller ?cb1 . ?cb1 ?cbp1 ?p1 . } ?gb1 prov:wasAttributedTo ?a1 .
-    FILTER(STRSTARTS(STRAFTER(STR(?k1), "kton.dev/o/"), ?kid1))
-    ?a1 a nk:TrustedAuthority .
-    GRAPH ?g2 { ?fit gxp:reviewed ?o2 . ?o2 nk:outcome "pass" . } ?g2 prov:wasAttributedTo ?r2 .
-    BIND(STRAFTER(STR(?r2), "kton.dev/agent/") AS ?kid2)
-    GRAPH ?gb2 { ?k2 sec:controller ?cb2 . ?cb2 ?cbp2 ?p2 . } ?gb2 prov:wasAttributedTo ?a2 .
-    FILTER(STRSTARTS(STRAFTER(STR(?k2), "kton.dev/o/"), ?kid2))
-    ?a2 a nk:TrustedAuthority .
-    FILTER(?p1 != ?p2)
-    # FOUR-EYES: a review is only "independent" if the reviewer is NOT the model's author.
-    # (1) KEY granularity is the load-bearing check: the reviewer's SIGNING KEY must differ from the key
-    # that signed the fit. The author is ANCHORED to the VERIFIED fit signer by reading it ONLY from the
-    # trusted plankton-lineage graph (where `plankton export --rdf` emits prov:wasAttributedTo just for a
-    # cryptographically-verified signer, tagged nk:signerVerified true). Reading ?rauthor from the merged
-    # default graph was bypassable: an injected nekton claim <fit> prov:wasAttributedTo <garbage> gave
-    # ?rauthor a second binding, so the author's self-review passed ?r1 != <garbage> (four-eyes bypass v2).
-    # Graph-scoping makes ?rauthor the unique verified signer, so the exclusion is universal. (Excluding by
-    # PRINCIPAL alone was ALSO bypassable via a key vouched under two DIDs - beat-gate-v3/F1 - hence key
-    # granularity here; the agent IRIs ?r1/?r2/?rauthor ARE the keyids.)
-    GRAPH <urn:kton:lineage> { ?fit prov:wasAttributedTo ?rauthor . ?fit nk:signerVerified true . }
-    FILTER(?r1 != ?rauthor)
-    FILTER(?r2 != ?rauthor)
-    # (2) PRINCIPAL granularity, additionally: a DIFFERENT key bound to the author's SAME principal (the
-    # same person signing with a second key) is also not independent. Resolve the fit's signer to its
-    # authority-vouched principal (same binding rule as the reviewers) and require both reviewers to
-    # differ. The author must itself be a vouched principal, so a forged/unvouched author fails closed.
-    BIND(STRAFTER(STR(?rauthor), "kton.dev/agent/") AS ?kidA)
-    GRAPH ?gba { ?ka sec:controller ?cba . ?cba ?cbpa ?pauthor . } ?gba prov:wasAttributedTo ?aa .
-    FILTER(STRSTARTS(STRAFTER(STR(?ka), "kton.dev/o/"), ?kidA))
-    ?aa a nk:TrustedAuthority .
-    FILTER(?p1 != ?pauthor)
-    FILTER(?p2 != ?pauthor)
-    FILTER NOT EXISTS { ?fit gxp:reviewed ?of . ?of nk:outcome "fail" . }
-    BIND("two-independent-reviews" AS ?condition)
   }
+  # FOUR-EYES is deliberately NOT a UNION branch here. Independence (>= 2 distinct authority-vouched
+  # reviewer PRINCIPALS, each != the fit's VERIFIED author, no fail) kept regressing every time it was
+  # expressed as a SPARQL existential join over the mutable merged graph: counting (?p1,?p2) PAIRS let a
+  # SINGLE reviewer's binding satisfy "two" (one binding can yield two principal-value bindings), and an
+  # injected edge could pollute the author binding. It is now DECIDED OUTSIDE THE GRAPH, in release.py,
+  # which counts DISTINCT verified reviewer keys->principals deterministically over the trusted lineage
+  # graph + authority-vouched sec:controller bindings (see release.py::independent_reviews). This file
+  # keeps only the six monotone graph-pattern conditions; the seventh is computed by the driver.
 }

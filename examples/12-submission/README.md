@@ -72,7 +72,9 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
 `plankton export --rdf` (the PROV lineage) plus every attestation as a **nanopublication**
 (`nekton export --nanopub`) merge at shared hash IRIs into one graph. The shipped query
 [`release.rq`](release.rq) returns one row per satisfied release condition; the submission is
-releasable only if **all** appear.
+releasable only if **all** appear. Six of the seven conditions are monotone graph patterns in that
+query; the seventh - **four-eyes independence** - is decided by the driver ([`release.py`](release.py)),
+not the graph, because expressing independence as a SPARQL join kept regressing (see below).
 
 Crucially the gate is **bound to this submission**: the query takes `?fit` (the estimation activity),
 `?env` (the environment the fit *declares* - derived from the fit's own descriptor, not the sponsor's
@@ -81,12 +83,12 @@ unrelated pass/qualify/review elsewhere in the graph cannot satisfy it - a real 
 federated store holds many submissions' records at once.
 
 ```
-release checklist (SPARQL bound to this submission):
+release checklist (six graph conditions + four-eyes decided in the driver, all bound to this submission):
   [x] toolchain validated (gxp:validation-performed = pass)
   [x] the fit's environment is qualified (qualifies-as citing a check foton that FULLY passed, N==M)
   [x] the fit ran the designated final model (pmx:model-role = final)
   [x] the fit's output reproduces (nk:reproduces at L0/L1)
-  [x] two distinct PRINCIPALS passed (each vouched by a trusted authority), no fail (gxp:reviewed)
+  [x] two distinct authority-vouched PRINCIPALS reviewed, each != the verified author, no fail (driver-decided)
   [x] residual risk explicitly accepted (gxp:risk-accepted)
   [x] the submission head is signed by a verifiable identity (nk:submitted)
 RELEASE: COMPLETE - the submission may be accepted
@@ -118,24 +120,29 @@ protocol's [Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/tr
 seven conditions hold **over the corpus it was handed** - no more:
 
 - **"two reviewers" means two distinct PRINCIPALS, each vouched by a trusted authority - not two
-  distinct keys.** This is the one that has to be a *join*, not a count, or the "zero-trust" gate is a
-  forgery machine: one actor generates three keys, self-issues (or ring-signs: K1 vouches K2, K2 vouches
-  K3, K3 vouches K1 - no self-loop) three `sec:controller` bindings, and each key genuinely approves.
-  A key-count gate reads 3/3; the viewer would render three named reviewers. So the gate does **not**
-  count keys. It requires each approving key to chain, through a `sec:controller` binding **signed by an
-  authority the verifier itself names** (the `#TRUSTED#` root - here the two org authorities), to a
-  distinct principal. A binding the trusted authorities did not sign never counts. *Executed:* a naive
-  key-count reads the ring as 3/3; this gate rejects it (0 authority-vouched), and the viewer marks the
-  self/ring-signed bindings unattested. It passes only if the *verifier* trusts those keys - which is a
-  different trust root, hence (see below) a different verdict.
-  - **Boundary (not closed): two DIDs, one human.** The gate proves two *distinct authority-vouched
-    principals*; it cannot prove they are two distinct *people*. If a trusted authority vouches two DIDs
-    that are in fact the same human (e.g. an org issues its own analyst a second reviewer identity), the
-    gate reads two independent reviews. That is a property of the **authority's** honesty in issuing
-    principals, not something the substrate can decide from signatures. For real independence, require the
-    reviewers' vouching **authority to differ from the author's** (cross-org review) - a trust-root policy
-    the verifier sets, not a bug the gate can close. The `?p1 != ?p2` join is necessary but not sufficient
-    for "two humans."
+  distinct keys - and it is DECIDED IN THE DRIVER, not in SPARQL.** Independence kept regressing every
+  time it was written as a SPARQL existential join over the merged graph: the join counted `(?p1,?p2)`
+  principal *pairs*, so a **single** reviewer whose one `sec:controller` binding bound `?p` twice could
+  satisfy "two", and an injected edge could pollute the author binding (the ~5th distinct four-eyes
+  bypass). So `release.py` now **counts** instead: it reads the fit's unique verified author from the
+  trusted plankton-lineage graph, the reviewers who signed a `gxp:reviewed=pass` of this fit, and a
+  key->(principal, authority) map from `sec:controller` bindings **whose own signer is a trusted
+  authority**; then it requires **>= 2 distinct principals**, each authority-vouched, each a different key
+  *and* different principal from the author, and no fail. Deterministic - no pair-matching or
+  graph-pollution surface. *Executed:* a naive key-count reads a sock-puppet ring (K1 vouches K2, K2
+  vouches K3, K3 vouches K1) as 3/3; this gate counts 0 authority-vouched principals and blocks; a
+  **single** review blocks; an author **self-review** blocks (the author is excluded by key and by
+  principal); an empty trust root blocks (nothing is vouched). The viewer marks the self/ring-signed
+  bindings unattested. It passes only if the *verifier* trusts those authorities - a different trust root,
+  hence (see below) a different verdict.
+  - **Boundary (a policy choice, not a bug): same-org and two-DIDs-one-human.** The driver proves two
+    *distinct authority-vouched principals* distinct from the author; it does not require them to be a
+    different **organisation** from the author (ex-12 mixes an internal CRO QC review with the sponsor's),
+    and it cannot prove two DIDs are two different *people* (if one authority vouches the same human under
+    two DIDs, that is the **authority's** honesty, not something signatures can decide). For stricter
+    independence a verifier layers a trust-root policy on top - require the reviewers' vouching
+    **authority to differ from the author's** (cross-org) - which, because the decision now lives in the
+    driver, is a few lines there rather than another fragile SPARQL join.
 - **"no reject" is corpus-relative.** The one non-monotone condition (`FILTER NOT EXISTS` a fail review)
   means "no fail *in the corpus loaded*". A withheld failing review makes the gate pass. The gate names
   its corpus (its inputs) but cannot itself establish that the corpus is complete - that is the
