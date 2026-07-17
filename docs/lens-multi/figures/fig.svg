@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="460" height="300" viewBox="0 0 460 300" font-family="system-ui,sans-serif">
+<rect width="460" height="300" fill="#ffffff"/>
+<text x="230" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="#1a2230">Concentration-time profile</text>
+<line x1="60" y1="255" x2="430" y2="255" stroke="#4a5568"/><line x1="60" y1="46" x2="60" y2="255" stroke="#4a5568"/>
+<path d="M70 210 C130 70,210 90,430 120" fill="none" stroke="#2b6cb0" stroke-width="2"/>
+<g fill="#2b6cb0"><circle cx="90" cy="150" r="3.4"/><circle cx="150" cy="96" r="3.4"/><circle cx="250" cy="104" r="3.4"/><circle cx="360" cy="118" r="3.4"/></g>
+<text x="245" y="285" text-anchor="middle" font-size="11" fill="#4a5568">time (h)</text>
+<text x="24" y="150" text-anchor="middle" font-size="11" fill="#4a5568" transform="rotate(-90 24 150)">conc (mg/L)</text>
+</svg>
