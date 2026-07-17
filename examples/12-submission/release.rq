@@ -72,11 +72,15 @@ SELECT DISTINCT ?condition WHERE {
     FILTER(?p1 != ?p2)
     # FOUR-EYES: a review is only "independent" if the reviewer is NOT the model's author.
     # (1) KEY granularity is the load-bearing check: the reviewer's SIGNING KEY must differ from the key
-    # that signed the fit. Excluding by PRINCIPAL alone was bypassable - if the author's one key is
-    # vouched under two DIDs, the solver binds ?pauthor to one DID and the self-review's principal to the
-    # other, so ?p1 != ?pauthor passes while it is the SAME key reviewing itself (beat-gate-v3/F1). The
-    # agent IRIs ?r1/?r2/?rauthor ARE the keyids, so comparing them is the key-level exclusion.
-    ?fit prov:wasAttributedTo ?rauthor .
+    # that signed the fit. The author is ANCHORED to the VERIFIED fit signer by reading it ONLY from the
+    # trusted plankton-lineage graph (where `plankton export --rdf` emits prov:wasAttributedTo just for a
+    # cryptographically-verified signer, tagged nk:signerVerified true). Reading ?rauthor from the merged
+    # default graph was bypassable: an injected nekton claim <fit> prov:wasAttributedTo <garbage> gave
+    # ?rauthor a second binding, so the author's self-review passed ?r1 != <garbage> (four-eyes bypass v2).
+    # Graph-scoping makes ?rauthor the unique verified signer, so the exclusion is universal. (Excluding by
+    # PRINCIPAL alone was ALSO bypassable via a key vouched under two DIDs - beat-gate-v3/F1 - hence key
+    # granularity here; the agent IRIs ?r1/?r2/?rauthor ARE the keyids.)
+    GRAPH <urn:kton:lineage> { ?fit prov:wasAttributedTo ?rauthor . ?fit nk:signerVerified true . }
     FILTER(?r1 != ?rauthor)
     FILTER(?r2 != ?rauthor)
     # (2) PRINCIPAL granularity, additionally: a DIFFERENT key bound to the author's SAME principal (the

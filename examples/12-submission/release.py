@@ -24,12 +24,17 @@ def iri(h): return rdflib.URIRef(PK + h.replace("sha256:", ""))
 # nanopubs into their named graphs (the reviews branch needs graph identity to tie a review to its
 # signer) AND ALSO merge every named-graph triple into the default graph, so bare patterns resolve in
 # any engine (Jena included). This is a load-time choice; the query itself is stock SPARQL.
+LINEAGE = rdflib.URIRef("urn:kton:lineage")  # the TRUSTED plankton export (verified attributions)
 ds = rdflib.Dataset()  # default_union stays FALSE
-ds.parse(ttl, format="turtle")   # plankton lineage -> default graph
+# Load the plankton lineage into its OWN named graph, not the default. The gate reads the fit's AUTHOR
+# from THIS graph specifically (GRAPH <urn:kton:lineage>), so an injected nekton claim asserting
+# <fit> prov:wasAttributedTo <garbage> - which lands in some nanopub's named graph - cannot add a rival
+# ?rauthor binding and let the author self-review slip past ?r1 != ?rauthor (four-eyes bypass v2).
+ds.get_context(LINEAGE).parse(ttl, format="turtle")
 ds.parse(trig, format="trig")    # each nanopub -> its own named graph
 dg = ds.default_context
 for (s, p, o, _g) in list(ds.quads((None, None, None, None))):
-    dg.add((s, p, o))            # merge named-graph triples into the default graph
+    dg.add((s, p, o))            # merge ALL (lineage + nanopubs) into the default graph for bare patterns
 # the trust root as DATA, not a query-string placeholder (rdf-interop F3): each trusted authority IS a
 # nk:TrustedAuthority, so the query matches `?a a nk:TrustedAuthority` as an ordinary pattern. An empty
 # root asserts nothing -> no reviewer is authority-vouched -> two-independent-reviews cannot be met.
