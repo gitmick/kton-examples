@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A reproduced, reviewed analysis — imported from improve</title>
+<style>
+  :root{ --ink:#1a2230; --ink2:#3d4658; --muted:#6b7686; --line:#e3e7ee; --bg:#f6f7f9; --accent:#2b6cb0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:17px/1.62 "Iowan Old Style","Palatino Linotype",Georgia,serif;-webkit-font-smoothing:antialiased}
+  .page{max-width:780px;margin:0 auto;background:#fff;padding:56px 60px 80px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06),0 12px 40px rgba(20,30,50,.06);min-height:100vh}
+  h1,h2,.eyebrow,.byline,figcaption,.note,.foot{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  .eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:11.5px;font-weight:640;color:var(--accent)}
+  h1{font-size:26px;line-height:1.2;letter-spacing:-.01em;margin:.25em 0 .1em}
+  .byline{color:var(--muted);font-size:13.5px;margin:.2em 0 0}
+  .note{margin:22px 0 4px;background:#f0f5fb;border:1px solid #d5e3f2;border-radius:10px;padding:13px 16px;font-size:13.5px;color:var(--ink2)}
+  .note b{color:var(--accent)}
+  .note ul{margin:7px 0 0;padding-left:18px} .note li{margin:3px 0}
+  h2{font-size:16px;margin:34px 0 6px}
+  p{margin:.7em 0}
+  .abstract{font-size:15.5px;color:var(--ink2);border-left:3px solid var(--line);padding-left:16px}
+  figure{margin:22px 0 6px;text-align:center}
+  figure img{max-width:320px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  figcaption{font-size:12.5px;color:var(--muted);margin-top:7px;text-align:left}
+  figcaption b{color:var(--ink2)}
+  .foot{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:#f0f2f5;padding:.05em .35em;border-radius:4px}
+</style>
+</head>
+<body>
+  <article class="page">
+    <span class="eyebrow">Pharmacometrics · imported from improve</span>
+    <h1>A base + covariate model, reproduced by a second party and reviewed — assembled from a plankton import of improve steps</h1>
+    <div class="byline">Administrator (analysis) · test1 (independent reproduction &amp; review) · 2026</div>
+
+    <div class="note">
+      The figure below carries a <b>plankton lens</b> — the logo in its corner. Click it to open the
+      <b>kton world</b>: the whole analysis, re-verified in your browser. This registry was produced by
+      <b>importing improve steps as fotons</b> (planktonImporter, R) and exporting their nekton claims.
+      Walking the lens shows:
+      <ul>
+        <li><b>Lineage</b>: <code>fit.svg</code> ← the <b>final</b> (covariate) model ← the <b>base</b>
+          model ← the <b>QC</b>'d dataset ← the raw data — the improve step tree, by content hash.</li>
+        <li><b>Two participants</b>: <code>Administrator</code> ran it; <code>test1</code>
+          <b>independently reproduced</b> every output byte-for-byte (a second colour on the graph).</li>
+        <li><b>Attested judgments</b>: <code>model-role: base / final</code> (pmx), the child model
+          <code>wasRevisionOf</code> the base, and the reviewer's <b>sign-off</b> on <code>fit.svg</code>
+          (<code>pav:reviewedBy</code> · schema:AcceptAction).</li>
+      </ul>
+    </div>
+
+    <p class="abstract">A one-compartment base model and a covariate (final) model were fit to a QC'd
+    dataset. Each step is a signed foton — <code>inputs → protocol → outputs</code>, addressed by
+    SHA-256 — recovered from a live improve repository. Nothing here asks for trust: the figure's bytes
+    re-hash to a recorded output, each producing record is signed, the run was independently reproduced
+    by a second user, and the final model was reviewed — all visible by clicking the lens.</p>
+
+    <h2>Model fit</h2>
+    <figure>
+      <img class="lens" src="plankton-flow/figures/fit.svg" alt="Data and fitted line, final model" width="320">
+      <figcaption><b>Figure 1.</b> Cleaned observations (blue) and the fitted line of the covariate
+        (final) model. Its lens descends the whole pipeline — QC → base → final → visualisation — and
+        carries test1's independent reproduction and the reviewer's sign-off.</figcaption>
+    </figure>
+
+    <h2>Reproducibility</h2>
+    <p>The four outputs — <code>clean.csv</code>, <code>params_base.csv</code>,
+    <code>params_child.csv</code>, <code>fit.svg</code> — were re-run independently by <code>test1</code>
+    in a separate tree and matched byte-for-byte (an <code>L0</code> reproduction). The final model's
+    visualisation was accepted by the reviewer. Both attestations are signed claims on the same graph
+    nodes the figure descends from — open the lens and walk to them.</p>
+
+    <div class="foot">
+      Rendered with the kton lens · registry imported from improve via planktonImporter (R). A figure
+      with no logo is simply unknown to the connected planktons.
+    </div>
+  </article>
+
+  <script src="lens.js"
+          data-planktons="plankton-flow/data/union.json"
+          data-viewer="viewer.html"
+          data-logo="logo.png"></script>
+</body>
+</html>

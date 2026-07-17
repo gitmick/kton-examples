@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="300" viewBox="0 0 440 300" font-family="system-ui,sans-serif">
+<rect width="440" height="300" fill="#ffffff"/>
+<text x="220" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#1a2230">Visual predictive check</text>
+<line x1="62" y1="255" x2="410" y2="255" stroke="#4a5568"/><line x1="62" y1="46" x2="62" y2="255" stroke="#4a5568"/>
+<path d="M62 92 C150 60,260 76,410 112 L410 152 C260 122,150 106,62 132 Z" fill="#2b6cb0" opacity="0.18"/>
+<path d="M62 112 C150 80,260 96,410 132" fill="none" stroke="#2b6cb0" stroke-width="2"/>
+<g fill="#1a2230"><circle cx="120" cy="104" r="2.6"/><circle cx="200" cy="94" r="2.6"/><circle cx="300" cy="110" r="2.6"/><circle cx="360" cy="122" r="2.6"/></g>
+<text x="236" y="285" text-anchor="middle" font-size="11" fill="#4a5568">time (h)</text>
+<text x="22" y="150" text-anchor="middle" font-size="11" fill="#4a5568" transform="rotate(-90 22 150)">conc (mg/L)</text>
+</svg>

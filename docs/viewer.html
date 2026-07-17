@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>kton example · graph viewer</title>
+<title>kton · graph viewer</title>
 <link rel="icon" type="image/png" href="logo.png">
 <style>
   :root { --bg:#0f1420; --panel:#151b29; --ink:#e7ecf5; --dim:#8b97ad; --line:#2a3346;
@@ -20,6 +20,19 @@
   .story b{color:var(--ink)} .aC{color:var(--a)} .bC{color:var(--b)} .cC{color:var(--c)}
   #stats { margin-top:5px; display:flex; gap:14px; font-size:12.5px; color:var(--dim); }
   #stats b{color:var(--ink)} .ok{color:var(--ok)} .bad{color:var(--bad)}
+  #gear{margin-left:auto;cursor:pointer;font-size:16px;color:var(--dim)} #gear:hover{color:var(--ink)}
+  #settings{position:fixed;top:54px;right:18px;z-index:30;width:340px;max-width:92vw;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.45);font-size:13px;color:var(--ink)}
+  #settings .sthead{font-weight:650;display:flex;justify-content:space-between;margin-bottom:8px}
+  #settings .stx{cursor:pointer;color:var(--dim)} #settings .stx:hover{color:var(--ink)}
+  #settings .strow{display:flex;gap:8px;align-items:center;margin:8px 0}
+  #settings .stlbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);margin:12px 0 6px}
+  #settings .srcrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0}
+  #settings .srcrow code{color:var(--ink);font-size:11px;word-break:break-all}
+  #settings .srcx{cursor:pointer;color:var(--bad);font-size:11px;white-space:nowrap}
+  #settings .srcadd{display:flex;gap:6px;margin-top:8px}
+  #settings .srcadd input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:5px 8px;font-size:12px}
+  #settings .srcadd button{background:var(--accent);color:#fff;border:0;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px}
+  #settings .stmuted{color:var(--dim);font-size:11px;margin-top:8px}
   #main { position:relative; height:calc(100% - 92px); }
   #overview { position:absolute; inset:0; overflow:auto; padding:20px 22px; }
   .searchrow { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
@@ -34,13 +47,25 @@
   .card .nm .d{width:11px;height:11px;border-radius:50%} .card .mt{color:var(--dim);font-size:12.5px;margin-top:5px}
   .bar{height:5px;border-radius:3px;background:#20293b;margin-top:9px;overflow:hidden} .bar>i{display:block;height:100%;background:var(--ok)}
   .rel{color:var(--dim);font-size:12px;margin-top:8px}
+  .cfacets{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .cfacets select{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:12.5px;cursor:pointer}
+  .cfacets .cmt{color:var(--dim);font-size:12px}
+  .claimlist{display:flex;flex-direction:column;gap:3px;max-width:1080px}
+  .claimlist .crow{display:flex;align-items:center;gap:8px;padding:6px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-size:12.5px}
+  .claimlist .crow:hover{border-color:var(--accent)}
+  .claimlist .cd{width:9px;height:9px;border-radius:50%;flex:none}
+  .claimlist .cpred{color:var(--ink)} .claimlist .cm{color:var(--dim)}
+  .claimlist .crow.cm{cursor:default;border-style:dashed}
+  #panel .navrow{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px}
+  #panel #navout{margin-top:4px} #panel .tcbanner{display:flex;gap:7px;flex-wrap:wrap;margin:6px 0}
+  #panel .tcrow{font-size:12px;color:var(--dim);padding:2px 0} #panel .tcrow b{color:var(--ink)}
   #explorer { position:absolute; inset:0; display:none; }
   canvas { display:block; width:100%; height:100%; cursor:grab; }
   #controls { position:absolute; top:12px; left:12px; background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; font-size:12.5px; width:220px; }
   #controls .back{color:var(--accent);cursor:pointer;font-size:12.5px;margin-bottom:10px;display:inline-block;border:1px solid var(--accent);border-radius:7px;padding:5px 10px;font-weight:600}
   #controls .back:hover{background:var(--accent);color:#0b0f18}
   #controls .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin:8px 0 5px}
-  .arrows{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .arrows{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .arrows button{background:#1c2434;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:6px 4px;cursor:pointer;font-size:11.5px}
   .arrows button.on{background:var(--accent);color:#0b0f18;border-color:var(--accent)}
   .fchips{display:flex;flex-wrap:wrap;gap:5px} .fchip{cursor:pointer;border:1px solid var(--line);border-radius:20px;padding:2px 8px;font-size:11.5px;display:inline-flex;align-items:center;gap:5px;user-select:none}
@@ -58,7 +83,17 @@
   #panel .uri{display:block;margin:1px 0 3px 0;color:var(--ok);font-size:11.5px;text-decoration:none} #panel .uri:hover{text-decoration:underline}
   #panel .rc{display:inline-block;margin:2px 0 8px;color:var(--accent);cursor:pointer;font-size:12px;border:1px solid var(--line);border-radius:7px;padding:3px 9px}
   #panel .txt{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);white-space:pre-wrap;font-size:12.5px}
-  .badge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600} .vok{background:rgba(52,211,153,.15);color:var(--ok)} .vno{background:rgba(248,113,113,.15);color:var(--bad)}
+  #panel .previmg{max-width:100%;margin-top:9px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  #panel .prevscroll{overflow:auto;max-height:280px;margin-top:9px;border:1px solid var(--line);border-radius:6px}
+  #panel .prevt{border-collapse:collapse;font-size:11.5px;font-family:ui-monospace,monospace}
+  #panel .prevt th,#panel .prevt td{border:1px solid var(--line);padding:2px 6px;text-align:left;color:var(--ink);white-space:nowrap}
+  #panel .prevt th{background:var(--bg);position:sticky;top:0}
+  #panel .prevpre{margin-top:9px;padding:9px 11px;background:#0b0f18;border:1px solid var(--line);border-radius:6px;max-height:300px;overflow:auto;white-space:pre;font-family:ui-monospace,monospace;font-size:11.5px;color:#cdd6e6}
+  #panel .pvhead{margin-top:10px}
+  #panel .pvx{float:right;cursor:pointer;color:var(--dim);font-size:16px;line-height:.9} #panel .pvx:hover{color:var(--ink)}
+  #panel .frow-prev{margin:2px 0 6px} #panel .frow-prev:empty{display:none}
+  #panel .rc.pvrow{margin:0 6px 0 4px;padding:1px 7px}
+  .badge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600} .vok{background:rgba(52,211,153,.15);color:var(--ok)} .vno{background:rgba(248,113,113,.15);color:var(--bad)} .vpart{background:rgba(245,182,66,.15);color:var(--b)}
   #err{position:absolute;inset:0;display:none;place-items:center;color:var(--bad);text-align:center;padding:40px}
   .drop{max-width:70ch;margin:6vh auto;border:1.5px dashed var(--line);border-radius:14px;padding:34px 30px;text-align:center;transition:border-color .15s,background .15s}
   .drop.over{border-color:var(--accent);background:rgba(120,160,255,.06)}
@@ -72,8 +107,9 @@
 </head>
 <body>
 <header>
-  <div class="titlerow"><img src="logo.png" alt="plankton"><h1>kton example <small>· graph viewer</small></h1></div>
-  <div class="story">The graph for one kton example. Round nodes are <b>fotons</b> (recorded computations), squares are <b>claims</b> (signed statements); edges are lineage and attestation. Click a dataset or record, then walk its pedigree - every node's <b>signature is re-verified in your browser</b> (WASM, Ed25519/DSSE) against this example's published keys: that is the <i>record-authentic</i> tier. To verify a record with a tool that is not kton, see <a href="https://github.com/gitmick/kton-examples/blob/main/examples/13-foreign-verify/README.md">example 13</a>; to re-derive the bytes (reproduce), <a href="https://github.com/gitmick/kton-examples/blob/main/examples/03-reproduce/README.md">example 03</a>. <b>Esc</b> or the browser <b>Back</b> button returns to the overview.</div>
+  <div class="titlerow"><img src="logo.png" alt="plankton"><h1>kton <small>· graph viewer</small></h1><span id="gear" title="settings">⚙</span></div>
+  <div id="settings" style="display:none"></div>
+  <div class="story">A provenance graph, assembled in your browser from one or more <b>plankton</b>/<b>nekton</b> registries (federated by content hash). Round nodes are <b>fotons</b> (recorded computations), squares are <b>claims</b> (signed statements about them); edges are lineage (<b>builds-on</b>) and attestation (<b>about</b>, <b>reproduces</b>, <b>reviewed-by</b>). Every node's <b>signature is re-verified here</b> (WASM, Ed25519/DSSE) against the registry's published keys - the <i>record-authentic</i> tier. Click a record to walk its pedigree; click a <b>file</b> to preview its bytes, re-hashed on the spot to confirm they match. Verify with a non-kton tool: <a href="https://github.com/gitmick/kton-examples/blob/main/examples/13-foreign-verify/README.md">kton example 13</a>; re-derive the bytes: <a href="https://github.com/gitmick/kton-examples/blob/main/examples/03-reproduce/README.md">example 03</a>. <b>Esc</b> or browser <b>Back</b> returns to the overview.</div>
   <div id="stats"></div>
 </header>
 <div id="main">
@@ -96,7 +132,8 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const PAL=["--a","--b","--c","--d","--e","--f"];
 const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
-let G=null, partColor={}, ex=null, filt=null;
+let G=null, partColor={}, ex=null, filt=null, LOC={}, autoPreview=!!localStorage.getItem("kton-autopreview");
+const PED_CAP=250; let LOD=false;   // explorer scale guards: cap a pedigree to PED_CAP nodes; drop labels/cull above ~220 rendered
 const pcol=p=>css(partColor[p]||"--dim");
 const clip=(s,n)=>s&&s.length>n?s.slice(0,n)+"…":s;
 
@@ -105,23 +142,147 @@ async function initWasm(){ if(_wasmReady) return;
   const go=new Go(); const wbuf=await (await fetch("graph.wasm")).arrayBuffer();
   const wasm=await WebAssembly.instantiate(wbuf,go.importObject); go.run(wasm.instance); _wasmReady=true; }
 function showErr(e){ $("#err").style.display="grid"; $("#err").textContent="Could not build the graph: "+(e&&e.message||e); }
+
+/* ===== file preview: a file node is a window onto its bytes ===== */
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+// hash(12) -> [uri], read from FileRef.uri carried on inputs/outputs (plankton --located); merged with claim-based G.locators
+function buildLoc(unionStr){ LOC={};
+  try{ for(const r of JSON.parse(unionStr)){ if(!r.envelope) continue;
+    let p; try{ p=JSON.parse(atob(r.envelope.payload)); }catch{ continue; }
+    const files=(p.subject||[]).concat((p.predicate&&p.predicate.inputs)||[]);
+    for(const s of files){ const d=s.digest&&(s.digest.sha256||s.digest["sha-256"]);
+      if(d&&s.uri){ const k=String(d).toLowerCase().slice(0,12); LOC[k]=[...new Set([...(LOC[k]||[]),...[].concat(s.uri)])]; } }
+  } }catch{}
+}
+function renderPreview(uri,bytes,partial){ const ext=(uri.split(/[?#]/)[0].split(".").pop()||"").toLowerCase();
+  if(["svg","png","jpg","jpeg","gif","webp","avif"].includes(ext)){
+    if(partial) return `<div class="kv">image file - a partial slice can't be rendered; use ↗ to open the whole file.</div>`;
+    const type=ext==="svg"?"image/svg+xml":ext==="jpg"?"image/jpeg":"image/"+ext;
+    return `<img class="previmg" src="${URL.createObjectURL(new Blob([bytes],{type}))}">`; }
+  const text=new TextDecoder().decode(bytes);
+  if(ext==="csv"||ext==="tsv"){ const sep=ext==="tsv"?"\t":",";
+    const rows=text.replace(/\s+$/,"").split(/\r?\n/).slice(0,25).map(r=>r.split(sep));
+    return `<div class="prevscroll"><table class="prevt">${rows.map((r,i)=>"<tr>"+r.map(c=>`<${i?"td":"th"}>${esc(c)}</${i?"td":"th"}>`).join("")+"</tr>").join("")}</table></div>`; }
+  return `<pre class="prevpre">${esc(text.slice(0,6000))}${text.length>6000?"\n… (truncated)":""}</pre>`;
+}
+const PREVIEW_CAP=512*1024;        // bytes we fetch/show for a big file's partial preview
+const VERIFY_CAP =12*1024*1024;    // fetch-and-hash the WHOLE file (verifiable) only up to this size
+function humanSize(n){ if(n==null||!isFinite(n)) return "unknown size"; const u=["B","KB","MB","GB","TB"]; let i=0; while(n>=1024&&i<u.length-1){n/=1024;i++;} return (i?n.toFixed(1):n)+" "+u[i]; }
+async function headSize(uri){ try{ const r=await fetch(uri,{method:"HEAD"}); if(!r.ok) return null; const n=+r.headers.get("content-length"); return isFinite(n)&&n>0?n:null; }catch{ return null; } }
+// read at most `cap` bytes off the response, then abort the stream - so a 10 GB file never lands in memory.
+async function fetchCapped(uri,cap){ const ac=new AbortController(); const r=await fetch(uri,{signal:ac.signal}); if(!r.ok) throw new Error("HTTP "+r.status);
+  if(!r.body){ const all=new Uint8Array(await r.arrayBuffer()); return {bytes:all.length>cap?all.slice(0,cap):all, truncated:all.length>cap}; }
+  const rd=r.body.getReader(); const chunks=[]; let total=0, truncated=false;
+  for(;;){ const {done,value}=await rd.read(); if(done) break; chunks.push(value); total+=value.length; if(total>=cap){ truncated=true; try{ac.abort();}catch{} break; } }
+  const out=new Uint8Array(Math.min(total,cap)); let off=0; for(const c of chunks){ if(off>=out.length) break; const take=Math.min(c.length,out.length-off); out.set(c.subarray(0,take),off); off+=take; }
+  return {bytes:out, truncated};
+}
+async function previewFile(nodeId,uri,box){ box=box||$("#preview"); if(!box) return;
+  if(box.dataset.open){ box.innerHTML=""; delete box.dataset.open; return; }   // click again = close
+  box.dataset.open="1"; box.innerHTML='<div class="kv">fetching…</div>';
+  const X='<span class="pvx" title="close preview">×</span>';
+  const partialHead=(cap,size)=>`<div class="pvhead"><span class="badge vpart">◐ partial preview · first ${humanSize(cap)}${size!=null?" of "+humanSize(size):""}</span>${X}</div>`
+    +`<div class="kv">too large to hash in the browser - the recorded hash still covers the whole file. verify with <code>plankton verify</code> or re-download the bytes.</div>`;
+  try{
+    const size=await headSize(uri);
+    if(size!=null && size>VERIFY_CAP){                                   // known-large: pull only a slice, do NOT claim a hash match
+      const {bytes}=await fetchCapped(uri,PREVIEW_CAP);
+      box.innerHTML=partialHead(PREVIEW_CAP,size)+renderPreview(uri,bytes,true);
+    }else{                                                               // small / unknown: fetch up to the verify cap
+      const {bytes,truncated}=await fetchCapped(uri,VERIFY_CAP);
+      if(truncated){ box.innerHTML=partialHead(VERIFY_CAP,size)+renderPreview(uri,bytes,true); }   // no Content-Length but still huge
+      else{ const match=(await sha256hex(bytes)).startsWith(String(nodeId).toLowerCase());          // whole file present -> real content-verify
+        box.innerHTML=`<div class="pvhead"><span class="badge ${match?"vok":"vno"}">${match?"✓ content matches the recorded hash":"✗ bytes do not match the hash"}</span>${X}</div>`+renderPreview(uri,bytes); }
+    }
+    box.querySelector(".pvx").onclick=ev=>{ ev.stopPropagation(); box.innerHTML=""; delete box.dataset.open; };
+  }catch(e){ delete box.dataset.open; box.innerHTML='<div class="kv" style="color:var(--bad)">could not fetch the bytes: '+esc(e.message||String(e))+'</div>'; }
+}
+// the graph WASM drops a claim's object - the actual assertion ("final", "L0", the review sentence).
+// Recover it from the raw payloads and fold it into the node so it shows on the label and in the panel.
+let CLAIMS=[];   // structured claim facets for the overview claims-browser: {id,pred,value,part,by,subj}
+// The claim's human text/label now comes from the graph WASM itself (graph.go renders predicate.object
+// into node.text), so this no longer mutates nodes - it only reads the union for clean, STRUCTURED facet
+// values (a scalar value/level per claim), which the rendered text can't give as reliably.
+function buildClaimFacets(unionStr){ CLAIMS=[]; try{ const recs=JSON.parse(unionStr);
+  for(const r of recs){ const id=r&&r.claimId; if(!id||!r.envelope||!r.envelope.payload) continue;
+    let p; try{ p=JSON.parse(atob(r.envelope.payload)); }catch{ continue; }
+    const pd=p.predicate||{}, obj=pd.object;
+    const nid=String(id).replace(/^sha256:/,"").toLowerCase().slice(0,12); const n=G.byId.get(nid); if(!n) continue;
+    const pick=(obj&&typeof obj==="object")?(obj.value!=null?obj.value:(obj.level!=null?obj.level:null)):obj;
+    const s0=(p.subject||[])[0]||{}; const sh=(s0.digest&&s0.digest.sha256)||(typeof s0.hash==="string"?s0.hash.replace(/^sha256:/,""):"");
+    CLAIMS.push({ id:nid, pred:n.role, value:(pick!=null&&typeof pick!=="object")?String(pick):"", part:n.participant||"", by:pd.by||"", subj:String(sh||"").toLowerCase().slice(0,12) });
+  } }catch{} }
 function renderGraph(union,keys,names){
   G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
+  buildLoc(union);
   $("#err").style.display="none";
-  index(); showStats(); showOverview(false); history.replaceState({view:'overview'},"");
+  index(); buildClaimFacets(union); showStats(); showOverview(false); history.replaceState({view:'overview'},"");
   window.onpopstate=e=>{ const s=e.state||{view:'overview'}; if(s.view==='explorer'&&G.byId.has(s.center)) enterExplorer(s.center,s.mode,false); else showOverview(false); };
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$("#explorer").style.display!=='none') showOverview(); });
 }
+// the reader's own connected planktons - the SAME list the lens consults (localStorage "kton-planktons",
+// a JSON array or comma list of union.json URLs); unioned onto the delivered registry.
+function extraSources(){ try{ const v=localStorage.getItem("kton-planktons"); if(!v) return [];
+  try{ return JSON.parse(v); }catch{ return v.split(",").map(s=>s.trim()).filter(Boolean); } }catch{ return []; } }
+function regUrls(u){ const b=u.replace(/[^/]*$/,""); return {union:u, keys:b+"keys.json", names:b+"names.json"}; }
+async function fetchSrc(reg){ const recs=JSON.parse(await (await fetch(reg.union)).text());
+  let keys={},names={}; try{ keys=JSON.parse(await (await fetch(reg.keys)).text()); }catch{}
+  try{ names=JSON.parse(await (await fetch(reg.names)).text()); }catch{}
+  return {recs,keys,names}; }
 async function load(){
   try{
     await initWasm();
     const qs=new URLSearchParams(location.search);
-    if(!qs.get("union")){ showDropUI(); return; }          // no example named -> let anyone drop their own records
-    const union=await (await fetch(qs.get("union")||"union.json")).text();
-    const keys =await fetch(qs.get("keys")||"keys.json").then(r=>r.text()).catch(()=>"{}");
-    const names=await fetch(qs.get("names")||"names.json").then(r=>r.text()).catch(()=>"{}");
-    renderGraph(union,keys,names);
+    if(!qs.get("union")){ showDropUI(); return; }          // no registry named -> let anyone drop their own records
+    const prim=regUrls(qs.get("union"));                    // sibling keys.json/names.json, unless overridden
+    if(qs.get("keys")) prim.keys=qs.get("keys"); if(qs.get("names")) prim.names=qs.get("names");
+    const regs=[prim, ...extraSources().map(regUrls)];      // delivered + the reader's own connected planktons
+    const seen=new Set(), recs=[], keys={}, names={};
+    for(const reg of regs){ try{ const s=await fetchSrc(reg);   // union by content hash; dedup on foton/claim id
+      for(const r of s.recs){ const id=r&&(r.fotonId||r.claimId); if(id&&!seen.has(id)){ seen.add(id); recs.push(r); } }
+      Object.assign(keys,s.keys); Object.assign(names,s.names);
+    }catch(e){ /* an unreachable source is skipped, not fatal */ } }
+    const union=JSON.stringify(recs);
+    renderGraph(union, JSON.stringify(keys), JSON.stringify(names));
+    // ?focus=sha256:<hex> - the "lens" entry point: open straight onto one output's provenance
+    const focus=qs.get("focus");
+    if(focus){ const id=resolveFocus(union,focus);
+      if(id) enterExplorer(id,"both");                       // lineage (inputs) + attestations on it
+      else showErr("that output hash is not in the connected registries: "+focus); }
   }catch(e){ showErr(e); }
+}
+// settings: auto-preview toggle + the reader's additional kton sources
+function openSettings(){ const el=$("#settings"); const srcs=extraSources();
+  el.innerHTML=`<div class="sthead">settings <span class="stx" title="close">×</span></div>
+    <label class="strow"><input type="checkbox" id="autoprev" ${autoPreview?"checked":""}> auto-preview a file's bytes when you open its node</label>
+    <div class="stlbl">additional kton sources</div>
+    <div id="srclist">${srcs.length?srcs.map((s,i)=>`<div class="srcrow"><code>${clip(s,40)}</code><span class="srcx" data-i="${i}">remove</span></div>`).join(""):'<div class="stmuted">none - showing only the delivered registry</div>'}</div>
+    <div class="srcadd"><input id="srcurl" placeholder="https://…/union.json"><button id="srcaddbtn">add</button></div>
+    <div class="stmuted">Sources union in by content hash, so you may see more (or less) than the delivered graph. Stored in this browser only.</div>`;
+  el.style.display="block";
+  $("#autoprev").onchange=e=>{ autoPreview=e.target.checked; localStorage.setItem("kton-autopreview", autoPreview?"1":""); };
+  el.querySelector(".stx").onclick=()=>el.style.display="none";
+  el.querySelectorAll(".srcx").forEach(x=>x.onclick=()=>{ const a=extraSources(); a.splice(+x.dataset.i,1); localStorage.setItem("kton-planktons",JSON.stringify(a)); load().then(openSettings); });
+  $("#srcaddbtn").onclick=()=>{ const u=($("#srcurl").value||"").trim(); if(!u) return; const a=extraSources(); if(!a.includes(u)) a.push(u); localStorage.setItem("kton-planktons",JSON.stringify(a)); load().then(openSettings); };
+}
+// map an output hash (or a raw node id) to the graph node to centre on.
+// graph node ids are RAW hex (no "sha256:" prefix), so normalise both sides before comparing.
+function resolveFocus(union, focus){
+  const strip=s=>String(s||"").replace(/^sha256:/,"").toLowerCase();
+  const hx=strip(focus);
+  // graph node ids are SHORT (12 hex), so match a full hash by prefix
+  const nodeIdFor=full=>{ const h=strip(full); if(G.byId.has(h)) return h;
+    for(const n of G.nodes){ const nid=strip(n.id); if(nid.length>=6 && (h.startsWith(nid)||nid.startsWith(h))) return n.id; }
+    return null; };
+  try{
+    for(const r of JSON.parse(union)){                       // 1. the foton whose OUTPUT is this hash
+      const id=r.fotonId||r.claimId; if(!id||!r.envelope) continue;
+      let p; try{ p=JSON.parse(atob(r.envelope.payload)); }catch{ continue; }
+      for(const s of (p.subject||[]))
+        if(strip(s.digest&&(s.digest.sha256||s.digest["sha-256"]))===hx){ const nid=nodeIdFor(id); if(nid) return nid; }
+    }
+  }catch{}
+  return nodeIdFor(focus);                                   // 2. a node addressed directly by this hash
 }
 
 /* ===== load your own records: build the union in the browser, exactly like a multi-source read ===== */
@@ -232,9 +393,23 @@ function showOverview(push=true){
       <div class="mt">original dataset · external input</div><div class="rel">${c} step${c===1?"":"s"} build on it → start here</div></div>`;}).join("");
   $("#overview").innerHTML=`<div class="searchrow"><div style="position:relative"><input id="q" placeholder="search a record - participant, role, hash, or text…" autocomplete="off"><div id="results"></div></div><span style="color:var(--dim);font-size:12.5px">or start from a dataset / participant below</span></div>
     ${datasets.length?`<div class="h2">datasets - start a pedigree from the original data</div><div class="cards">${dsCards}</div>`:``}
-    <div class="h2" style="margin-top:18px">participants (grouped view - scales with the federation, not the record count)</div><div class="cards">${cards}</div>`;
+    <div class="h2" style="margin-top:18px">participants (grouped view - scales with the federation, not the record count)</div><div class="cards">${cards}</div>
+    <div class="h2" style="margin-top:18px">views - answer a question across the whole graph</div>
+    <div class="cfacets"><span class="fchip" id="vReview">⚠ fotons needing sign-off</span><span class="fchip" id="vRepro">↻ reproduction coverage</span>
+      <span class="cmt">or open any foton → <b style="color:var(--accent)">trace to roots · blast radius · trust card</b></span></div>
+    <div id="viewout" class="claimlist"></div>
+    ${CLAIMS.length?`<div class="h2" style="margin-top:18px">claims (${CLAIMS.length}) - filter by predicate, value, or signer</div>
+      <div class="cfacets">
+        <select id="fPred"><option value="">any predicate</option>${[...new Set(CLAIMS.map(c=>c.pred))].sort().map(v=>`<option>${v}</option>`).join("")}</select>
+        <select id="fVal"><option value="">any value</option>${[...new Set(CLAIMS.map(c=>c.value).filter(Boolean))].sort().map(v=>`<option>${v}</option>`).join("")}</select>
+        <select id="fSigner"><option value="">any signer</option>${[...new Set(CLAIMS.map(c=>c.part).filter(Boolean))].sort().map(v=>`<option>${v.replace('pfed-','')}</option>`).join("")}</select>
+        <span id="cCount" class="cmt"></span>
+      </div>
+      <div id="claimlist" class="claimlist"></div>`:``}`;
   $$("#overview .card[data-src]").forEach(el=>el.onclick=()=>enterExplorer(el.dataset.src,"desc"));
   $$("#overview .card[data-p]").forEach(el=>el.onclick=()=>enterExplorer(firstNodeOf(el.dataset.p),"both"));
+  if(CLAIMS.length){ ["fPred","fVal","fSigner"].forEach(f=>$("#"+f).onchange=renderClaims); renderClaims(); }
+  $("#vReview").onclick=()=>renderView("review"); $("#vRepro").onclick=()=>renderView("repro");   // stories 3,4
   const q=$("#q"),res=$("#results");
   q.oninput=()=>{ const s=q.value.trim().toLowerCase(); if(!s){res.style.display="none";return;}
     const hits=G.nodes.filter(n=>`${n.id} ${n.role} ${n.text||""} ${n.participant} ${n.by||""}`.toLowerCase().includes(s)).slice(0,40);
@@ -242,43 +417,117 @@ function showOverview(push=true){
     res.style.display="block"; res.querySelectorAll(".r[data-id]").forEach(r=>r.onclick=()=>enterExplorer(r.dataset.id,"both")); };
   document.addEventListener("click",e=>{ if(e.target!==q) res.style.display="none"; },true);
 }
+// the claims-browser: facet CLAIMS by predicate / value / signer, list the matches, click to open one in its subject's graph
+function renderClaims(){ const P=$("#fPred").value, V=$("#fVal").value, S=$("#fSigner").value;
+  const rows=CLAIMS.filter(c=>(!P||c.pred===P)&&(!V||c.value===V)&&(!S||c.part.replace('pfed-','')===S));
+  $("#cCount").textContent=rows.length+" / "+CLAIMS.length+" claims";
+  $("#claimlist").innerHTML=rows.map(c=>{ const subj=G.byId.get(c.subj); const sr=subj?subj.role:c.subj;
+    return `<div class="crow" data-id="${c.id}" data-subj="${c.subj}"><span class="cd" style="background:${pcol(c.part)}"></span><b>${c.part.replace('pfed-','')}</b> <span class="cpred">${c.pred}${c.value?": "+c.value:""}</span> <span class="cm">&rarr; ${clip(sr,28)}</span></div>`;
+  }).join("")||`<div class="crow cm">no claims match</div>`;
+  $$("#claimlist .crow[data-id]").forEach(el=>el.onclick=()=>{ const subj=el.dataset.subj, center=G.byId.has(subj)?subj:el.dataset.id;
+    enterExplorer(center,"both"); ex.sel=el.dataset.id; openNode(el.dataset.id); redraw(); });
+}
+// stories 3,4 - a whole-graph question answered as a list (absence / coverage over fotons)
+function renderView(kind){ const out=$("#viewout"); if(!out) return; if(out.dataset.k===kind){ out.innerHTML=""; out.dataset.k=""; return; } out.dataset.k=kind;
+  const fot=G.nodes.filter(n=>n.type==="foton"); let head, list;
+  if(kind==="review"){ list=fotonsLacking("reviewedBy","approve"); head=`<b>${list.length}</b> of ${fot.length} fotons have <b>no approval</b> — the sign-off worklist`; }
+  else { const conf=new Set(fotonsWith("reproduces").map(n=>n.id)); list=fot.filter(n=>!conf.has(n.id)); head=`<b>${conf.size}</b> reproduced · <b>${list.length}</b> not — showing the <b>unconfirmed</b>`; }
+  out.innerHTML=`<div class="cmt" style="margin:4px 0 8px">${head}</div>`
+    +list.slice(0,200).map(n=>`<div class="crow" data-id="${n.id}"><span class="cd" style="background:${pcol(n.participant)}"></span><b>${n.participant.replace('pfed-','')}</b> <span class="cpred">${n.role}</span> <span class="cm">${n.id}</span></div>`).join("")
+    +(list.length>200?`<div class="crow cm">…and ${list.length-200} more</div>`:"");
+  $$("#viewout .crow[data-id]").forEach(el=>el.onclick=()=>enterExplorer(el.dataset.id,"nbr"));   // land in a small local view
+}
 function firstNodeOf(part){ const ns=G.nodes.filter(n=>n.participant===part&&n.type!=="source");
   ns.sort((a,b)=>((G.in[b.id]||[]).length)-((G.in[a.id]||[]).length)); return (ns[0]||G.nodes.find(n=>n.participant===part)).id; }
 
 /* ===== EXPLORER (pedigree, layered DAG) ===== */
-function pedigree(id, mode){ const set=new Set([id]);
-  const walk=(start,adj,dir)=>{const st=[start];while(st.length){const x=st.pop();for(const e of (adj[x]||[])){const nb=dir==="out"?e.to:e.from;if(!set.has(nb)){set.add(nb);st.push(nb);}}}};
-  if(mode==="anc"||mode==="both") walk(id,G.out,"out");     // ancestors: what it builds on / is about
-  if(mode==="desc"||mode==="both") walk(id,G.in,"in");      // descendants: what builds on / reviews it
-  if(mode==="par") for(const e of (G.out[id]||[])) set.add(e.to);
-  if(mode==="chi") for(const e of (G.in[id]||[])) set.add(e.from);
-  return set;
+// Pedigree of `id` under `mode`, BFS by hop-distance from the centre, capped at `cap` nodes. In a densely
+// interconnected registry a full walk can pull the ENTIRE graph (measured: 2000/2000), which the layout and
+// canvas can't render smoothly - so we cap to the nearest `cap` nodes and record pedigree.trunc/.total for
+// the UI's "capped N of M · expand". The full reach is computed cheaply (traversal is fast; layout/draw isn't).
+function pedigree(id, mode, cap){ cap=cap||Infinity;
+  const build=(lim)=>{ const set=new Set([id]);
+    const dirs=[]; if(mode==="anc"||mode==="both") dirs.push([G.out,"out"]);   // ancestors: what it builds on / is about
+    if(mode==="desc"||mode==="both") dirs.push([G.in,"in"]);                    // descendants: what builds on / reviews it
+    if(mode==="nbr"){ for(const e of (G.out[id]||[])) if(set.size<lim) set.add(e.to); for(const e of (G.in[id]||[])) if(set.size<lim) set.add(e.from); }  // one hop, both ways
+    else if(mode==="par"){ for(const e of (G.out[id]||[])) if(set.size<lim) set.add(e.to); }
+    else if(mode==="chi"){ for(const e of (G.in[id]||[])) if(set.size<lim) set.add(e.from); }
+    else { let fr=[id]; while(fr.length&&set.size<lim){ const nx=[];              // BFS: nearest nodes first, so a cap keeps the LOCAL neighbourhood
+      for(const x of fr) for(const [adj,dir] of dirs) for(const e of (adj[x]||[])){ const nb=dir==="out"?e.to:e.from;
+        if(!set.has(nb)&&set.size<lim){ set.add(nb); nx.push(nb); } }
+      fr=nx; } }
+    // surface attestations ABOUT anything in view (+ each claim's other targets), within the same budget
+    for(const nid of [...set]) for(const e of (G.in[nid]||[])){ const f=G.byId.get(e.from);
+      if(f&&f.type==="claim"&&set.size<lim){ set.add(e.from); for(const oe of (G.out[e.from]||[])) if(set.size<lim) set.add(oe.to); } }
+    return set; };
+  const full=build(Infinity);
+  if(full.size<=cap){ pedigree.trunc=false; pedigree.total=full.size; return full; }
+  pedigree.trunc=true; pedigree.total=full.size; return build(cap);
+}
+
+// ===== navigation primitives (Cypher-shaped, over the existing adjacency) =====================
+// claimsOf(x): the claims asserted ABOUT x (incoming `about` edges).  ->  MATCH (x)<-[:ABOUT]-(c:Claim)
+function claimsOf(id){ const out=[]; for(const e of (G.in[id]||[])){ if(e.kind!=="about") continue; const c=G.byId.get(e.from); if(c&&c.type==="claim") out.push(c); } return out; }
+function claimMatch(c, pred, value){ const okP=!pred||(c.role||"").toLowerCase().includes(pred.toLowerCase());
+  const okV=!value||(c.text||"").toLowerCase().includes(value.toLowerCase()); return okP&&okV; }
+// reach(x, dir, kind, depth): nodes reachable along `kind` edges, dir 'up'=ancestors / 'down'=descendants, depth-bounded.
+function reach(id, dir, kind, depth){ const adj=dir==="up"?G.out:G.in, pick=e=>dir==="up"?e.to:e.from;
+  const seen=new Set([id]); let fr=[id], dd=0; depth=depth||Infinity;
+  while(fr.length&&dd<depth){ const nx=[]; for(const x of fr) for(const e of (adj[x]||[])){ if(kind&&e.kind!==kind) continue; const nb=pick(e); if(!seen.has(nb)){ seen.add(nb); nx.push(nb); } } fr=nx; dd++; }
+  return seen; }
+// longestPath(x): the deepest builds-on chain from x back to a root (a foton that builds on nothing).  ->  the lineage spine.
+function longestPath(id){ const memo={};
+  const dfs=x=>{ if(memo[x]) return memo[x]; memo[x]=[x]; let best=[x];
+    for(const e of (G.out[x]||[])){ if(e.kind!=="builds-on") continue; const p=dfs(e.to); if(p.length+1>best.length) best=[x,...p]; }
+    return memo[x]=best; };
+  return dfs(id); }
+// existence / absence over fotons: has(pred[,value]) or lacks - the coverage/worklist primitive.
+function fotonsWith(pred, value){ return G.nodes.filter(n=>n.type==="foton" && claimsOf(n.id).some(c=>claimMatch(c,pred,value))); }
+function fotonsLacking(pred, value){ return G.nodes.filter(n=>n.type==="foton" && !claimsOf(n.id).some(c=>claimMatch(c,pred,value))); }
+
+// enter the explorer on an ARBITRARY node set (a story result), bypassing the pedigree walk.
+function enterExplorerSet(centerId, ids, note){ $("#overview").style.display="none"; $("#explorer").style.display="block";
+  ex={center:centerId, sel:centerId, mode:"set", grouped:false, cap:Infinity, fixed:new Set(ids), note, view:{scale:1,tx:0,ty:0}, started:false};
+  drawControls(); layoutAndRun(); openNode(centerId); history.pushState({view:"explorer",center:centerId,mode:"both"},""); }
+// story 5 - aggregate the claims ABOUT a node into a trust card (approve/reject tally, reproduced?, roles).
+function trustCard(id){ const cs=claimsOf(id); if(!cs.length) return `<div class="kv">no claims about this record yet.</div>`;
+  const rev=cs.filter(c=>/reviewedBy/i.test(c.role));
+  const appr=rev.filter(c=>/approve|accept/i.test(c.text||"")).length, rej=rev.filter(c=>/reject/i.test(c.text||"")).length;
+  const repro=cs.some(c=>/reproduces/i.test(c.role));
+  const g={}; for(const c of cs){ const pred=(c.role||"").split(":").pop(); const v=(c.text||"").split(",")[0]||""; (g[pred]??={}); g[pred][v]=(g[pred][v]||0)+1; }
+  let rows=""; for(const pred in g){ const parts=Object.entries(g[pred]).map(([v,n])=>`${v||"—"}${n>1?" ×"+n:""}`).join(", "); rows+=`<div class="tcrow"><b>${esc(pred)}</b> · ${esc(parts)}</div>`; }
+  return `<div class="tcbanner"><span class="badge ${rej?"vno":appr?"vok":"vpart"}">${appr} approve · ${rej} reject</span> <span class="badge ${repro?"vok":"vpart"}">${repro?"✓ reproduced":"not reproduced"}</span></div>${rows}`;
 }
 function enterExplorer(centerId, mode, push=true){ $("#overview").style.display="none"; $("#explorer").style.display="block";
-  ex={center:centerId, sel:centerId, mode, grouped:false, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
+  ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
   if(push) history.pushState({view:'explorer',center:centerId,mode},""); }
-function drawControls(){ const modes=[["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
+function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
   $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview&nbsp;&nbsp;<span style="opacity:.55;font-weight:400">Esc</span></span>
     <div class="lbl">centre</div><div style="font-size:12.5px;color:${c.type==='source'?'#cfd8e6':'var(--accent)'}">${c.type==='source'?c.role:c.participant.replace('pfed-','')+" · "+c.role}</div>
+    ${ex.note?`<div class="lbl" style="color:var(--b);margin-top:4px;text-transform:none;letter-spacing:0">▸ ${ex.note}</div>`:``}
     <div class="lbl">pedigree (path explorer)</div><div class="arrows">${modes.map(m=>`<button data-m="${m[0]}" class="${ex.mode===m[0]?'on':''}">${m[1]}</button>`).join("")}</div>
     <div class="lbl">grouping</div><div class="fchips"><span class="fchip ${ex.grouped?'':'off'}" id="grpbtn">▣ group same-participant runs</span></div>
     <div class="lbl">filter · participant</div><div class="fchips">${G._parts.map(p=>`<span class="fchip ${filt.parts.has(p)?'':'off'}" data-fp="${p}"><span class="d" style="background:${pcol(p)}"></span>${p.replace('pfed-','')}</span>`).join("")}</div>
     <div class="lbl">filter · type</div><div class="fchips">${["foton","claim","source"].map(t=>`<span class="fchip ${filt.types.has(t)?'':'off'}" data-ft="${t}">${t}</span>`).join("")}</div>
     <div class="lbl" id="cnt"></div>`;
-  $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;drawControls();layoutAndRun();});
+  $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;ex.cap=PED_CAP;ex.fixed=null;ex.note="";drawControls();layoutAndRun();});   // re-cap + leave any story view
   $("#grpbtn").onclick=()=>{ex.grouped=!ex.grouped;drawControls();layoutAndRun();};
   $$("#controls [data-fp]").forEach(el=>el.onclick=()=>{const p=el.dataset.fp;filt.parts.has(p)?filt.parts.delete(p):filt.parts.add(p);drawControls();layoutAndRun();});
   $$("#controls [data-ft]").forEach(el=>el.onclick=()=>{const t=el.dataset.ft;filt.types.has(t)?filt.types.delete(t):filt.types.add(t);drawControls();layoutAndRun();});
 }
 function layoutAndRun(){
-  const set=pedigree(ex.center, ex.mode);
+  const set=ex.fixed?(pedigree.trunc=false,pedigree.total=ex.fixed.size,ex.fixed):pedigree(ex.center, ex.mode, ex.cap||PED_CAP);
   let nodes=[...set].map(id=>G.byId.get(id)).filter(n=>n.id===ex.center||(filt.parts.has(n.participant)&&filt.types.has(n.type)));
   const keep=new Set(nodes.map(n=>n.id));
   let edges=G.edges.filter(e=>keep.has(e.from)&&keep.has(e.to));
   if(ex.grouped){ const g=groupRuns(nodes,edges); nodes=g.nodes; edges=g.edges; }
   ex.nodes=nodes; ex.edges=edges; ex._byId=new Map(nodes.map(n=>[n.id,n]));
   layerLayout(ex.nodes, ex.edges, ex._byId);
-  $("#cnt").textContent=`${ex.nodes.length} nodes · ${ex.edges.length} links`;
+  $("#cnt").innerHTML=`${ex.nodes.length} nodes · ${ex.edges.length} links`
+    +(pedigree.trunc?` · <b style="color:var(--b)">capped ${ex.cap||PED_CAP} of ${pedigree.total}</b>`
+        +`<div class="fchips" style="margin-top:6px"><span class="fchip" id="expand">expand +400 ▸</span><span class="fchip" id="expandall">show all ${pedigree.total}</span></div>`:``);
+  if(pedigree.trunc){ $("#expand").onclick=()=>{ ex.cap=(ex.cap||PED_CAP)+400; layoutAndRun(); };
+    $("#expandall").onclick=()=>{ ex.cap=Infinity; layoutAndRun(); }; }
   fitView(); if(!ex.started) startRender(); redraw();
 }
 // groupRuns: contract each CONNECTED RUN of same-participant nodes into one group node, preserving
@@ -329,10 +578,14 @@ const RW=8;
 function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
   ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height); ctx.setTransform(v.scale,0,0,v.scale,v.tx,v.ty);
+  LOD = ex.nodes.length>220;                                       // level-of-detail: above this, drop labels + cull off-screen
+  const M=70, wx0=(0-v.tx)/v.scale-M, wy0=(0-v.ty)/v.scale-M, wx1=(cv.width-v.tx)/v.scale+M, wy1=(cv.height-v.ty)/v.scale+M;
+  const vis=n=>n&&n.x>=wx0&&n.x<=wx1&&n.y>=wy0&&n.y<=wy1;
   for(const e of ex.edges){ const f=ex._byId.get(e.from),t=ex._byId.get(e.to); if(!f||!t)continue;
+    if(LOD&&!vis(f)&&!vis(t)) continue;                            // skip edges wholly off-screen
     const [L,R]= f._d>=t._d?[t,f]:[f,t]; const rel=e.kind!=="builds-on";
-    edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
-  for(const n of ex.nodes) nodeDraw(ctx,n);
+    edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
+  for(const n of ex.nodes){ if(LOD&&!vis(n)) continue; nodeDraw(ctx,n); }
 }
 function edgeArrow(ctx,a,b,color,dash,lbl){ const x1=a.x+RW,y1=a.y,x2=b.x-RW-4,y2=b.y,mx=(x1+x2)/2;
   ctx.strokeStyle=color;ctx.lineWidth=1.3;ctx.setLineDash(dash?[5,4]:[]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2);ctx.stroke();ctx.setLineDash([]);
@@ -352,7 +605,9 @@ function nodeDraw(ctx,n){ const sel=n.id===ex.center;
     const r=data?RW*1.15:RW*0.7;ctx.beginPath();ctx.arc(n.x,n.y,r,0,7);ctx.fill();ctx.stroke(); if(data||sel)label(ctx,n,n.role,r); return; }
   ctx.fillStyle=pcol(n.participant);ctx.strokeStyle=n.verified?css("--ok"):css("--bad");ctx.lineWidth=sel?3:2;
   if(n.type==="foton"){ctx.beginPath();ctx.arc(n.x,n.y,RW,0,7);ctx.fill();ctx.stroke();}else{const w=RW*1.7;rrect(ctx,n.x-w/2,n.y-w/2,w,w,3);ctx.fill();ctx.stroke();}
-  label(ctx,n,`${n.participant.replace('pfed-','')} · ${n.role}`,RW);
+  // claims: append the assertion (from the WASM's rendered object text) so verdicts/roles read off the graph
+  const val=(n.type==="claim"&&n.text)?": "+clip(n.text,16):"";
+  if(!LOD||n.id===ex.center||n.id===ex.sel) label(ctx,n,`${n.participant.replace('pfed-','')} · ${n.role}${val}`,RW);
 }
 function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio||1;
   const s2w=(sx,sy)=>[(sx*DPR-ex.view.tx)/ex.view.scale,(sy*DPR-ex.view.ty)/ex.view.scale];
@@ -367,11 +622,13 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
   window.onmouseup=()=>{ if(drag&&!drag.moved){ ex.sel=drag.n.id; openNode(drag.n.id); redraw(); } if(pan)cv.style.cursor="grab"; drag=null;pan=null; };
   cv.ondblclick=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){recentre(n.id);} };
 }
-function recentre(id, push=true){ ex.center=id; ex.sel=id; drawControls(); layoutAndRun(); openNode(id);
+function recentre(id, push=true){ ex.center=id; ex.sel=id; ex.cap=PED_CAP; ex.fixed=null; ex.note=""; drawControls(); layoutAndRun(); openNode(id);
   if(push) history.pushState({view:'explorer',center:id,mode:ex.mode},""); }
-function fileRow(f){ const uris=(G.locators||{})[f.hash]||[], isNode=G.byId.has(f.hash);
+function fileRow(f,isOut){ const uris=[...new Set([...(LOC[f.hash]||[]), ...((G.locators||{})[f.hash]||[])])], isNode=G.byId.has(f.hash);
   return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${f.hash}"`:``}>${f.name||"(unnamed)"} <span class="m">${f.hash}</span>`+
-    uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")+`</div>`; }
+    (uris.length?`<span class="rc pvrow${isOut?" pvout":""}" data-h="${f.hash}" data-u="${encodeURIComponent(uris[0])}">⤢ preview</span>`:``)+
+    uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")+`</div>`+
+    (uris.length?`<div class="frow-prev" id="pv-${f.hash}"></div>`:``); }
 function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(id);
   if(gn&&gn.type==="group"){
     p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
@@ -386,7 +643,7 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
   const lk=(o,kind)=>{const c=o.type==="source"?"#cfd8e6":pcol(o.participant);
     return `<div class="nav" data-id="${o.id}"><span class="d" style="background:${c}"></span>${o.type==="source"?o.role:o.participant.replace('pfed-','')+" · "+o.role} <span style="color:var(--dim)">(${kind})</span></div>`;};
   const link=(e)=>lk(G.byId.get(e.from),e.kind);
-  const uris=(G.locators||{})[n.id]||[];
+  const uris=[...new Set([...(LOC[n.id]||[]), ...((G.locators||{})[n.id]||[])])];
   const meta=isSrc?`<div class="kv">external input - referenced by content hash; not a signed record.</div>`
     :`<div class="kv">signer <code>${n.signer||"?"}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
   p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
@@ -394,14 +651,24 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
     <div class="role">${isSrc?("source · "+n.kind):(n.type+" · "+n.role)}</div>
     ${n.id!==ex.center?`<span class="rc" onclick="recentre('${n.id}')">⌖ re-centre pedigree here</span>`:``}
     <div class="kv">id <code>${n.id}</code></div>${(n.by&&!isSrc)?`<div class="kv">by <code>${n.by}</code></div>`:``}${meta}
-    ${uris.length?`<h4>located at</h4>${uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")}`:``}
-    ${(n.inputs&&n.inputs.length)?`<h4>inputs (${n.inputs.length})</h4>${n.inputs.map(fileRow).join("")}`:``}
-    ${(n.outputs&&n.outputs.length)?`<h4>outputs (${n.outputs.length})</h4>${n.outputs.map(fileRow).join("")}`:``}
+    ${n.type==="foton"?`<h4>navigate</h4><div class="navrow"><span class="rc" id="nvSpine">⤴ trace to roots</span><span class="rc" id="nvImpact">⤵ blast radius</span><span class="rc" id="nvCard">🛡 trust card</span></div><div id="navout"></div>`:``}
+    ${uris.length?`<h4>file</h4><span class="rc" id="pvbtn">⤢ preview</span>${uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")}<div id="preview"></div>`:``}
+    ${(n.inputs&&n.inputs.length)?`<h4>inputs (${n.inputs.length})</h4>${n.inputs.map(f=>fileRow(f,false)).join("")}`:``}
+    ${(n.outputs&&n.outputs.length)?`<h4>outputs (${n.outputs.length})</h4>${n.outputs.map(f=>fileRow(f,true)).join("")}`:``}
     ${ins.length?`<h4>${isSrc?"used by":"built on / reviewed by"} (${ins.length})</h4>${ins.map(link).join("")}`:``}
     ${n.text?`<div class="txt">${n.text.replace(/</g,"&lt;")}</div>`:``}`;
   p.querySelectorAll(".nav[data-id],.frow.nav[data-id]").forEach(el=>el.onclick=()=>{ ex.sel=el.dataset.id; openNode(el.dataset.id); redraw(); });
+  const pvb=p.querySelector("#pvbtn"); if(pvb) pvb.onclick=e=>{ e.stopPropagation(); previewFile(n.id, uris[0]); };
+  p.querySelectorAll(".pvrow").forEach(b=>b.onclick=e=>{ e.stopPropagation(); previewFile(b.dataset.h, decodeURIComponent(b.dataset.u), $("#pv-"+b.dataset.h)); });
+  const nvS=$("#nvSpine"), nvI=$("#nvImpact"), nvC=$("#nvCard");                                    // stories 1,2,5
+  if(nvS) nvS.onclick=()=>{ const pa=longestPath(n.id); enterExplorerSet(n.id, pa, `lineage spine · ${pa.length-1} steps to root`); };
+  if(nvI) nvI.onclick=()=>{ const near=reach(n.id,"down","builds-on",3), all=reach(n.id,"down","builds-on",Infinity);
+    enterExplorerSet(n.id, [...near], `blast radius · ${near.size-1} within 3 hops (${all.size-1} downstream total)`); };
+  if(nvC) nvC.onclick=()=>{ const o=$("#navout"); o.innerHTML=o.innerHTML?"":trustCard(n.id); };
+  if(autoPreview){ const b=p.querySelector("#pvbtn")||p.querySelector(".pvrow.pvout")||p.querySelector(".pvrow"); if(b) b.click(); }  // prefer the OUTPUT - usually the interesting artifact
   p.classList.add("open");
 }
+$("#gear").onclick=()=>{ const el=$("#settings"); if(el.style.display==="block") el.style.display="none"; else openSettings(); };
 load();
 </script>
 </body>

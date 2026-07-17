@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="270" viewBox="0 0 440 270" font-family="system-ui,sans-serif">
+<rect width="440" height="270" fill="#ffffff"/>
+<text x="220" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#1a2230">Predicted concentration&#8211;time, drug mABC</text>
+<line x1="58" y1="222" x2="410" y2="222" stroke="#4a5568"/>
+<line x1="58" y1="42" x2="58" y2="222" stroke="#4a5568"/>
+<text x="234" y="252" text-anchor="middle" font-size="11" fill="#4a5568">time (h)</text>
+<text x="20" y="132" text-anchor="middle" font-size="11" fill="#4a5568" transform="rotate(-90 20 132)">conc (mg/L)</text>
+<path d="M58 205 C115 62, 155 58, 205 100 S330 195, 410 212" fill="none" stroke="#2b6cb0" stroke-width="2.2"/>
+<circle cx="120" cy="72" r="3.2" fill="#2b6cb0"/><circle cx="205" cy="100" r="3.2" fill="#2b6cb0"/><circle cx="310" cy="172" r="3.2" fill="#2b6cb0"/>
+</svg>

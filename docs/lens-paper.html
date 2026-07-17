@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Population PK of mABC — a lensed paper</title>
+<style>
+  :root{ --ink:#1a2230; --ink2:#3d4658; --muted:#6b7686; --line:#e3e7ee; --bg:#f6f7f9; --accent:#2b6cb0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:17px/1.62 "Iowan Old Style","Palatino Linotype",Georgia,serif;-webkit-font-smoothing:antialiased}
+  .page{max-width:780px;margin:0 auto;background:#fff;padding:56px 60px 80px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06),0 12px 40px rgba(20,30,50,.06);min-height:100vh}
+  h1,h2,.eyebrow,.byline,figcaption,.note,.foot,.legend{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  .eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:11.5px;font-weight:640;color:var(--accent)}
+  h1{font-size:27px;line-height:1.18;letter-spacing:-.01em;margin:.25em 0 .1em;color:var(--ink)}
+  .byline{color:var(--muted);font-size:13.5px;margin:.2em 0 0}
+  .note{margin:22px 0 4px;background:#f0f5fb;border:1px solid #d5e3f2;border-radius:10px;padding:13px 16px;font-size:13.5px;color:var(--ink2)}
+  .note b{color:var(--accent)}
+  .note ul{margin:7px 0 0;padding-left:18px} .note li{margin:2px 0}
+  h2{font-size:16px;letter-spacing:.01em;margin:34px 0 6px;color:var(--ink)}
+  p{margin:.7em 0}
+  .abstract{font-size:15.5px;color:var(--ink2);border-left:3px solid var(--line);padding-left:16px}
+  .figrow{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:22px 0 6px}
+  @media (max-width:640px){.figrow{grid-template-columns:1fr}}
+  figure{margin:0;text-align:center}
+  figure img{max-width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+  figcaption{font-size:12.5px;color:var(--muted);margin-top:7px;text-align:left}
+  figcaption b{color:var(--ink2)}
+  .foot{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:#f0f2f5;padding:.05em .35em;border-radius:4px}
+</style>
+</head>
+<body>
+  <article class="page">
+    <span class="eyebrow">Pharmacometrics · worked example</span>
+    <h1>Population pharmacokinetics of drug mABC: base and covariate models, reproduced and reviewed</h1>
+    <div class="byline">A. Analyst · QC (independent) · P. Lead (review) · CRO Pharmacometrics · 2026</div>
+
+    <div class="note">
+      Every figure carries a <b>plankton lens</b> — the logo in its corner. Click it to open the
+      <b>kton world</b>: where the figure came from, re-verified in your browser. Because the whole
+      analysis is one federated graph, different figures open <b>different walks</b> of it:
+      <ul>
+        <li><b>Figures&nbsp;1–2</b> descend from the <b>base</b> fit — and that fit carries QC's
+          independent <b>reproduction</b> (a second colour on the graph).</li>
+        <li><b>Figures&nbsp;3–4</b> descend from the <b>covariate</b> (final) model — which carries the
+          <b>reviewer's sign-off</b> and its <code>model-role: final</code>.</li>
+        <li>All four converge on one <b>analysis dataset</b> → <code>clean.R</code> → the raw data. In
+          the viewer, switch <b>ancestors / descendants / both</b> and filter by participant to see it.</li>
+      </ul>
+    </div>
+
+    <p class="abstract">A one-compartment base model and a weight-on-clearance covariate model were fit
+    to sparse concentration–time data for drug mABC. Diagnostics and predictive checks are shown below.
+    None of it asks for trust: each figure's bytes re-hash to a recorded output, each producing record
+    is signed, the base fit was independently reproduced, and the final model was reviewed — all visible
+    by clicking the lens.</p>
+
+    <h2>1. Base model — fit and goodness of fit</h2>
+    <div class="figrow">
+      <figure>
+        <img class="lens" src="lens-paper/figures/fig-conc.svg" alt="Concentration–time, base model" width="440">
+        <figcaption><b>Figure 1.</b> Concentration–time, base model.</figcaption>
+      </figure>
+      <figure>
+        <img class="lens" src="lens-paper/figures/fig-gof.svg" alt="Goodness of fit, base model" width="440">
+        <figcaption><b>Figure 2.</b> Observed vs predicted (base). Its lens descends to the base fit —
+          where QC's reproduction sits.</figcaption>
+      </figure>
+    </div>
+
+    <h2>2. Covariate model — the final model</h2>
+    <div class="figrow">
+      <figure>
+        <img class="lens" src="lens-paper/figures/fig-forest.svg" alt="Parameter forest, covariate model" width="440">
+        <figcaption><b>Figure 3.</b> Parameter estimates, 95% CI (final). Its lens carries the reviewer's
+          sign-off and <code>model-role: final</code>.</figcaption>
+      </figure>
+      <figure>
+        <img class="lens" src="lens-paper/figures/fig-vpc.svg" alt="Visual predictive check, covariate model" width="440">
+        <figcaption><b>Figure 4.</b> Visual predictive check (final model).</figcaption>
+      </figure>
+    </div>
+
+    <h2>3. Reproducibility</h2>
+    <p>The base fit was re-run independently by QC; the recorded output matched byte-for-byte (an
+    <code>L0</code> reproduction). The final model was accepted by the reviewer. Both attestations are
+    signed claims attached to the same graph nodes the figures descend from — open any lens and walk
+    to them.</p>
+
+    <div class="foot">
+      Rendered with the kton lens · a figure with no logo is simply unknown to the connected planktons.
+      The registry for this paper is delivered alongside it (<code>lens-paper/data/</code>); your own
+      connected planktons, if any, are consulted too — so you may see more, or less, than the author shipped.
+    </div>
+  </article>
+
+  <script src="lens.js"
+          data-planktons="lens-paper/data/union.json"
+          data-viewer="viewer.html"
+          data-logo="logo.png"></script>
+</body>
+</html>
