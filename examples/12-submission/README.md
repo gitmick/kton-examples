@@ -149,12 +149,18 @@ seven conditions hold **over the corpus it was handed** - no more:
   foton** (its inputs are the spectrum plus the checked results), the gate requires that foton to have
   `prov:used` the env-spectrum the fit declares, **and** it requires the carried tally to be a *full*
   pass - `membersFulfilled == membersTotal`. A `2/3` environment carries `membersFulfilled=2` and fails
-  the branch (verified: tamper the tally to 2/3 and `env-qualified` goes dark). A *forged* `3/3` on a
-  failing check is caught by the regulator's own re-run (Act 8a re-runs `spectrum check` and **aborts**
-  on a partial pass) - the regulator never takes "3/3" on the sponsor's word, it recomputes it. Strip
-  the fulfilment entirely and the branch also fails. (The deeper fix - a kernel-emitted, signature-bound
-  outcome triple so the SPARQL alone rejects a forged tally without the re-run - is a plankton roadmap
-  item; today the re-run is the zero-trust half.)
+  the branch (verified: tamper the tally to 2/3 and `env-qualified` goes dark). A *forged* `3/3` is
+  caught by the regulator in Act 8a two ways. The kernel `spectrum check` recomputes the tally itself and
+  aborts on a partial pass (exit 0 only on `N==M`), so a forged count over honest results fails. But for
+  a **via-normalizer (L1) member** that check *follows the sponsor's recorded normalize fotons* - so a
+  genuinely-unqualified environment (a covariate result of `6.66` where the reference is `6.00`, honestly
+  hashed) plus **one lying normalize foton** claiming it converges to the reference form would score
+  "fulfilled" (**spectrum-launder**). The close: for the L1 member the regulator **re-executes the
+  qualified normalizer itself** on both the reference and the candidate and demands byte-equality
+  (mirrors the reproduction re-run in step 1b) - an unqualified candidate does not normalize to the
+  reference form under the real tool. Strip the fulfilment entirely and the branch also fails. (A
+  kernel-emitted, signature-bound outcome triple so the SPARQL alone rejects a forged tally without any
+  re-run remains a plankton roadmap item; today the regulator's re-execution is the zero-trust half.)
 
 ### Carry your closure - the one principle behind three of these
 

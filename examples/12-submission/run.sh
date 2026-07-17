@@ -225,10 +225,19 @@ for n in norm-a norm-b; do sh "$T/strip-banner.sh" "$F/$n.in" > "$F/$n.recheck"
 plankton spectrum check "$F/normalizer.spectrum.json" --candidate "norm-a=$(plankton hash "$F/norm-a.recheck")" --candidate "norm-b=$(plankton hash "$F/norm-b.recheck")" >/dev/null 2>&1 || { echo "normalizer NOT qualified -> abort"; exit 1; }
 sh "$T/strip-banner.sh" "$F/run1.ext" > "$F/re.ref.canon"; sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/re.qc.canon"
 if cmp -s "$F/re.ref.canon" "$F/re.qc.canon"; then echo "qualified; both fit outputs re-normalize to an identical L1 form"; else echo "regulator re-normalization DIFFERS -> abort"; exit 1; fi
-# zero-trust re-derivation of the tally: the regulator RE-RUNS the check itself; a partial pass exits
-# non-zero and ABORTS. This is what makes a forged N==M on the qualification harmless - the regulator
-# never takes the sponsor's word for "3/3", it recomputes it. (spectrum check exits 0 only on N==M.)
-echo -n "  2. environment fulfils spectrum:    "; if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1; then echo "fully fulfilled"; else echo "NOT fully fulfilled -> abort"; exit 1; fi
+# zero-trust re-derivation of the tally: the kernel spectrum-check recomputes N/M itself (exit 0 only on
+# N==M), so a forged "3/3" on the qualification is harmless. But for the L1 (via-normalizer) member the
+# check FOLLOWS the sponsor's recorded normalize fotons - so a genuinely-unqualified environment (say a
+# covariate result of 6.66 where the reference is 6.00, honestly hashed) plus ONE lying normalize foton
+# claiming that candidate converges to the reference canonical form would still score "fulfilled"
+# (spectrum-launder). Zero-trust closure (mirrors step 1b): for the via-normalizer member the regulator
+# RE-EXECUTES the qualified normalizer ITSELF on BOTH the reference and the candidate and demands
+# byte-equality - an unqualified candidate does not normalize to the reference form under the real tool.
+# (L0 members are already a genuine byte-identity check: both sides must back a real foton output.)
+echo -n "  2. environment fulfils spectrum:    "
+sh "$T/strip-banner.sh" "$F/test-covariate.ref"  > "$F/re.cov.ref.canon"
+sh "$T/strip-banner.sh" "$F/test-covariate.cand" > "$F/re.cov.cand.canon"
+if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1 && cmp -s "$F/re.cov.ref.canon" "$F/re.cov.cand.canon"; then echo "fully fulfilled (regulator re-normalized the L1 member)"; else echo "NOT fully fulfilled -> abort"; exit 1; fi
 echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -q '\bVALID\b'; then echo "VALID"; else echo "INVALID -> abort"; exit 1; fi
 # BIND the envelope to the id the gate uses: re-derive fit.dsse.json's foton id with the kernel (a
 # fresh throwaway registry recomputes it from the bytes) and assert it EQUALS $FIT. Without this, the
