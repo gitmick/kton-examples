@@ -6,8 +6,9 @@ environment, who reviewed it, and who submitted it. Every earlier example shows 
 obligation in a regulated submission, and at the end a single **SPARQL query decides whether the
 submission may be released**.
 
-Everything really executes: the `pmxtools` tests and the fit run in **real R**, the normalizer is real
-`sed`, reproduction and spectrum-fulfilment are real `plankton` queries, and the release gate is real
+Everything really executes: the `pmxtools` tests and the fit run in **real R**, the banner-normalizer is
+a real, env-pinned, separately-qualified tool the regulator **re-runs itself**, reproduction and
+spectrum-fulfilment are real `plankton` queries, and the release gate is real
 SPARQL over the exported RDF. Only **NONMEM** (proprietary) and **cosign keyless** (interactive - the
 real flow is [example 08](../08-sigstore-github/)) are honest stand-ins, and even those run real
 commands that produce the bytes we hash.
@@ -41,7 +42,12 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
    (the banner), so `plankton reproduces --via <normalizer>` returns **L1**; QC signs an `nk:reproduces`
    claim that **links the two runs** (the analyst's output, `reproducedBy` QC's re-run foton), so the
    reproduction is a visible edge between the two fotons - not two unlinked runs. A tampered `.ext`
-   would return none - the check is pure hashing.
+   would return none - the check is pure hashing. The **normalizer is itself a pinned, qualified tool**:
+   a free-text `--cmd "sh strip-banner.sh"` pins nothing (a substituted script that collapses a
+   genuinely-different run to a matching form carries the same string), so every normalize foton is
+   authored `--environment <normalizer-spectrum> --env-ref <image>`, and that spectrum is qualified by
+   its own reference corpus (banner-laden -> canonical pairs it must reproduce). The `--via <normalizer>`
+   potential now commits to *which* qualified normalizer ran, not just a command string.
 5. **The review scope** (04/05/11). `nekton seed` opens a scope; two independent reviewers each sign a
    `gxp:reviewed=pass` (with report PDF evidence), chained `prev -> prev` and sealed by one **head**.
    Editing any earlier claim breaks the chain. A general approval reuses schema.org
@@ -54,7 +60,12 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
    parties - the FIT is a *shared node*, not a copy.
 8. **The regulator verifies, then runs the release gate** (06). Every check the regulator runs is
    mechanical over content-addressed records - re-reproduce, re-check the spectrum, re-verify
-   signatures, re-walk the head. Then it exports the RDF and runs the gate.
+   signatures, re-walk the head. It even **re-runs the banner-normalizer itself** in the pinned
+   environment: first proving that normalizer is the qualified tool (its re-run reproduces the
+   normalizer-spectrum's reference corpus), then re-normalizing the two fit outputs with it and
+   demanding byte-equality - so the L1 match never rests on the sponsor's recorded normalize fotons. A
+   substituted normalizer is caught twice (it fails to qualify, and the fake collapse never happens under
+   the real one). Then it exports the RDF and runs the gate.
 
 ## The release gate
 

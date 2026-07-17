@@ -5,7 +5,8 @@
 # environment, who reviewed it (typed sign-offs with evidence), and who submitted it. Every example in
 # this repo shows up here as a real obligation in the workflow.
 #
-# Everything really executes: the pmxtools tests and the fit run in real R, the normalizer is real sed,
+# Everything really executes: the pmxtools tests and the fit run in real R, the banner-normalizer is a
+# real, env-pinned, separately-qualified tool (the regulator re-runs it to close the composition chain),
 # reproduction and spectrum-fulfilment are real plankton queries, and the release gate is a real SPARQL
 # query over the exported RDF. Only NONMEM (proprietary) and cosign keyless (interactive, see example
 # 08) are honest stand-ins - and even those run real commands that produce the bytes we hash.
@@ -44,7 +45,28 @@ done
 
 echo; echo "########## ACT 1 - qualify the toolchain + environment (examples 09/10, real R) ##########"
 export PLANKTON_DIR="$W/cro/plankton" NEKTON_DIR="$W/cro/nekton"
+# The banner-normalizer is itself a TOOL, and L1 reproduction is only as trustworthy as WHICH normalizer
+# ran. A free-text `--cmd "sh strip-banner.sh"` pins nothing: a substituted script that collapses a
+# genuinely-different run to a matching canonical form would carry the same command string. So the
+# normalizer is env-pinned (--environment a qualified normalizer-spectrum + --env-ref the exact image)
+# and qualified by its OWN reference corpus - known (banner-laden -> canonical) pairs it must reproduce.
 NORMCMD="sh tools/strip-banner.sh"
+NORMREF="oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef"
+declare -A NREF
+for n in norm-a norm-b; do
+  printf "1;banner build 2026\nID,TIME,DV\n%s,0,0\n" "$n" > "$F/$n.in"
+  sh "$T/strip-banner.sh" "$F/$n.in" > "$F/$n.canon"
+  NREF[$n]=$(plankton hash "$F/$n.canon")
+done
+plankton spectrum define --id "strip-banner-1.0" --of "POSIX sh + strip-banner.sh 1.0 in the pmxtools image (banner normalizer)" \
+  --member "norm-a=${NREF[norm-a]}" --member "norm-b=${NREF[norm-b]}" -o "$F/normalizer.spectrum.json" >/dev/null 2>&1
+NENV=$(plankton hash "$F/normalizer.spectrum.json")
+echo "  normalizer-spectrum id (NENV) = $NENV  (the banner normalizer is a qualified, env-pinned tool)"
+# author the reference-corpus normalizations bound to the qualified env, so the members resolve as real
+# foton outputs (spectrum check demands both sides back a computation) and share the env-pinned potential.
+for n in norm-a norm-b; do
+  plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/$n.in" --out "$F/$n.canon" --sign "$(key analyst).key" --add >/dev/null
+done
 declare -A REF
 for t in test-onecomp test-twocomp test-covariate; do
   printf "x\n1\n2\n3\n" > "$F/$t.csv"
@@ -59,8 +81,8 @@ Rscript "$T/pmxtest.R" "$F/test-covariate.csv" banner > "$F/test-covariate.cand"
 plankton author --cmd "Rscript tools/test-covariate.R" --in "$F/test-covariate.csv" --out "$F/test-covariate.cand" --sign "$(key qc).key" --add >/dev/null
 sh "$T/strip-banner.sh" "$F/test-covariate.ref"  > "$F/cov.ref.canon"
 sh "$T/strip-banner.sh" "$F/test-covariate.cand" > "$F/cov.cand.canon"
-plankton author --cmd "$NORMCMD" --kind normalize --in "$F/test-covariate.ref"  --out "$F/cov.ref.canon"  --sign "$(key analyst).key" --add >/dev/null
-plankton author --cmd "$NORMCMD" --kind normalize --in "$F/test-covariate.cand" --out "$F/cov.cand.canon" --sign "$(key analyst).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/test-covariate.ref"  --out "$F/cov.ref.canon"  --sign "$(key analyst).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/test-covariate.cand" --out "$F/cov.cand.canon" --sign "$(key analyst).key" --add >/dev/null
 POT=$(python3 -c "import json,base64,glob;
 import os
 best=None
@@ -140,8 +162,8 @@ QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analys
 echo "  QC re-ran the fit -> $QCFIT (same action key as the analyst's, independent signer + output)"
 sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"
-plankton author --cmd "$NORMCMD" --kind normalize --in "$F/run1.ext"    --out "$F/fit.ref.canon" --sign "$(key qc).key" --add >/dev/null
-plankton author --cmd "$NORMCMD" --kind normalize --in "$F/run1-qc.ext" --out "$F/fit.qc.canon" --sign "$(key qc).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/run1.ext"    --out "$F/fit.ref.canon" --sign "$(key qc).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/run1-qc.ext" --out "$F/fit.qc.canon" --sign "$(key qc).key" --add >/dev/null
 echo -n "  plankton reproduces (raw): "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" || true
 echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
 # QC signs the reproduction as a claim that CONNECTS the two runs: subject = the analyst's output,
@@ -190,6 +212,19 @@ export PLANKTON_DIR="$W/agency/plankton" NEKTON_DIR="$W/agency/nekton"
 # claim only draws the reproducedBy EDGE in the graph - it is NOT what the gate trusts. Without this hard
 # gate a QC re-run that genuinely differs would still ship on the strength of its own signed L1 label.
 echo -n "  1. reproduction re-check (L1):      "; if plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT"; then :; else echo "  does not reproduce -> abort"; exit 1; fi
+# The kernel L1 check above READS the sponsor's recorded normalize fotons - a malicious normalizer could
+# have collapsed a genuinely-different QC run to a matching canonical form, and their fotons would still
+# carry the env-pinned potential. Zero-trust closure: the regulator RE-RUNS the banner-normalizer ITSELF.
+# First it proves that normalizer IS the qualified tool (its own re-run reproduces the normalizer-spectrum's
+# reference corpus in the pinned env); then it re-normalizes the two fit outputs with that same tool and
+# demands byte-equality. A substituted normalizer is caught twice: it fails to qualify, and the fake
+# collapse never happens under the real one. (Honest stand-in for pulling NORMREF: really runs strip-banner.)
+echo -n "  1b. normalizer qualified + re-run:  "
+for n in norm-a norm-b; do sh "$T/strip-banner.sh" "$F/$n.in" > "$F/$n.recheck"
+  plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/$n.in" --out "$F/$n.recheck" --sign "$(key reviewer).key" --add >/dev/null; done
+plankton spectrum check "$F/normalizer.spectrum.json" --candidate "norm-a=$(plankton hash "$F/norm-a.recheck")" --candidate "norm-b=$(plankton hash "$F/norm-b.recheck")" >/dev/null 2>&1 || { echo "normalizer NOT qualified -> abort"; exit 1; }
+sh "$T/strip-banner.sh" "$F/run1.ext" > "$F/re.ref.canon"; sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/re.qc.canon"
+if cmp -s "$F/re.ref.canon" "$F/re.qc.canon"; then echo "qualified; both fit outputs re-normalize to an identical L1 form"; else echo "regulator re-normalization DIFFERS -> abort"; exit 1; fi
 # zero-trust re-derivation of the tally: the regulator RE-RUNS the check itself; a partial pass exits
 # non-zero and ABORTS. This is what makes a forged N==M on the qualification harmless - the regulator
 # never takes the sponsor's word for "3/3", it recomputes it. (spectrum check exits 0 only on N==M.)
