@@ -70,6 +70,19 @@ log (above) plus a consumer freshness check, laid out in the protocol's
 [Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/trust.md) (section 3, "freshness")
 and made real in [example 08](../08-sigstore-github/).
 
+**Boundary - sealing is tamper-evidence, not append-control.** What the sealed chain guarantees is that
+no link can be *silently dropped or edited*: remove an inconvenient reject and the published head no
+longer matches; change any earlier claim and its id changes, breaking the next `prev`. What it does
+**not** do is control *who may append*. Anyone who can sign a well-formed claim naming this scope and the
+current head as its `prev` can extend the chain - so mirroring a hostile peer can advance the head to a
+claim the chair never signed. "The head moved" is therefore not "the chair signed it": a consumer must
+still check *who* signed each link. Restricting who may extend a scope is a separate **authority** layer,
+not a property of the chain - because in kton legitimacy comes from an authority the verdict commits to,
+never from the chain or a bare key, and a self-vouched claim proves nothing. That enrolment-authority
+step (the scope commits to an authorized signer set, vouched by a trust root) is the roadmap item in the
+[authority-hook design](../articles/design-authority-hook-and-rsa.md) and the Trust chapter's
+completeness section; it is not implemented here.
+
 **6. See the tamper-evidence.** A claim whose `prev` points nowhere is refused, a gap is treated as
 tampering:
 
