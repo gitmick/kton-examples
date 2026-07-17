@@ -1,8 +1,10 @@
 # The release gate as ONE query over the merged submission graph (foton PROV lineage + every
-# attestation as a nanopublication). It is bound to THIS submission: ?fit (the estimation activity),
-# ?env (the environment the fit declares - derived from the fit, not asserted), and ?head (the signed
-# submission head) come in as query bindings, so every condition must be ABOUT this submission - an
-# unrelated pass/qualify/review elsewhere in the graph cannot satisfy the gate. Each UNION branch
+# attestation as a nanopublication). This file is STANDARD SPARQL - it parses and runs unmodified in
+# any compliant engine (no #TRUSTED# string surgery, no whole-store-union dependency; see release.py).
+# It is bound to THIS submission: ?fit (the estimation activity) and ?head (the signed submission head)
+# are supplied as query bindings; ?env is DERIVED from the graph (?fit nk:environment ?env). The trust
+# root is DATA (?a a nk:TrustedAuthority), not a placeholder. So every condition is ABOUT this
+# submission - an unrelated pass/qualify/review elsewhere cannot satisfy the gate. Each UNION branch
 # yields one satisfied release-condition label; the harness passes only if every required one appears.
 PREFIX gxp:  <https://kton.dev/v/gxp/>
 PREFIX pmx:  <https://kton.dev/v/pmx/>
@@ -13,6 +15,10 @@ PREFIX prov: <http://www.w3.org/ns/prov#>
 
 SELECT DISTINCT ?condition WHERE {
   {
+    # ?env is DERIVED FROM THE GRAPH: the fit declares its environment as a triple (nk:environment,
+    # emitted by `plankton export --rdf` from the foton's COVERED protocol descriptor). No out-of-band
+    # base64 decode of the DSSE - a pure SPARQL consumer binds it here (rdf-interop F2).
+    ?fit nk:environment ?env .
     ?env gxp:validation-performed ?o . ?o nk:outcome "pass" .
     BIND("tool-validated" AS ?condition)
   } UNION {
@@ -20,6 +26,7 @@ SELECT DISTINCT ?condition WHERE {
     # fulfilment foton that actually consumed that env-spectrum - a re-derivable spectrum check,
     # not a bare "3/3" assertion. A qualifies-as with no fulfilment, or one whose fulfilment foton
     # never took this spectrum as input, does not satisfy the gate.
+    ?fit nk:environment ?env .
     ?x nk:qualifies-as ?bag .
     ?bag lab:id ?env .
     ?bag lab:fulfilment ?chk .
@@ -45,21 +52,23 @@ SELECT DISTINCT ?condition WHERE {
     BIND("submission-signed" AS ?condition)
   } UNION {
     # NOT two distinct KEYS (three sock-puppet keys would pass), but two distinct PRINCIPALS, each
-    # bound to its signing key by a sec:controller binding that is ITSELF signed by an authority in the
-    # verifier's OWN trust root (#TRUSTED#, injected by release.py and a COVERED input of the verdict).
-    # A self-issued binding - or a ring of mutual attestations (K2 vouches K3, K3 vouches K2) - is not
-    # signed by a trusted authority, so it never counts. This is example 07's rule applied: a binding is
-    # only worth the authority that signed it.
+    # bound to its signing key by a sec:controller binding that is ITSELF signed by an authority the
+    # verifier trusts. The trust root is DATA: release.py asserts `<authority> a nk:TrustedAuthority`
+    # for each keyid in the verifier's OWN root (a COVERED input of the verdict), so the query matches
+    # `?a a nk:TrustedAuthority` as an ordinary graph pattern - no query-string placeholder. A
+    # self-issued binding - or a ring of mutual attestations (K2 vouches K3, K3 vouches K2) - is not
+    # signed by a trusted authority, so it never counts. Example 07's rule: a binding is only worth the
+    # authority that signed it.
     GRAPH ?g1 { ?fit gxp:reviewed ?o1 . ?o1 nk:outcome "pass" . } ?g1 prov:wasAttributedTo ?r1 .
     BIND(STRAFTER(STR(?r1), "kton.dev/agent/") AS ?kid1)
     GRAPH ?gb1 { ?k1 sec:controller ?cb1 . ?cb1 ?cbp1 ?p1 . } ?gb1 prov:wasAttributedTo ?a1 .
     FILTER(STRSTARTS(STRAFTER(STR(?k1), "kton.dev/o/"), ?kid1))
-    FILTER(?a1 IN (#TRUSTED#))
+    ?a1 a nk:TrustedAuthority .
     GRAPH ?g2 { ?fit gxp:reviewed ?o2 . ?o2 nk:outcome "pass" . } ?g2 prov:wasAttributedTo ?r2 .
     BIND(STRAFTER(STR(?r2), "kton.dev/agent/") AS ?kid2)
     GRAPH ?gb2 { ?k2 sec:controller ?cb2 . ?cb2 ?cbp2 ?p2 . } ?gb2 prov:wasAttributedTo ?a2 .
     FILTER(STRSTARTS(STRAFTER(STR(?k2), "kton.dev/o/"), ?kid2))
-    FILTER(?a2 IN (#TRUSTED#))
+    ?a2 a nk:TrustedAuthority .
     FILTER(?p1 != ?p2)
     # FOUR-EYES: a review is only "independent" if the reviewer is NOT the model's author.
     # (1) KEY granularity is the load-bearing check: the reviewer's SIGNING KEY must differ from the key
@@ -77,7 +86,7 @@ SELECT DISTINCT ?condition WHERE {
     BIND(STRAFTER(STR(?rauthor), "kton.dev/agent/") AS ?kidA)
     GRAPH ?gba { ?ka sec:controller ?cba . ?cba ?cbpa ?pauthor . } ?gba prov:wasAttributedTo ?aa .
     FILTER(STRSTARTS(STRAFTER(STR(?ka), "kton.dev/o/"), ?kidA))
-    FILTER(?aa IN (#TRUSTED#))
+    ?aa a nk:TrustedAuthority .
     FILTER(?p1 != ?pauthor)
     FILTER(?p2 != ?pauthor)
     FILTER NOT EXISTS { ?fit gxp:reviewed ?of . ?of nk:outcome "fail" . }

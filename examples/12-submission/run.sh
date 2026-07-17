@@ -206,13 +206,21 @@ echo    "  5. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
 
 echo; echo "########## ACT 8b - the release decision, recorded as a reproducible attested foton ########"
-# --trust-keys: the regulator attributes each foton to the key that ACTUALLY signed it (verified),
+# The gate's INPUT is the NEKTON itself (the raw signed claims) + the plankton fotons - not a derived
+# RDF file. The RDF export is a STEP INSIDE the decision's computation, not its input: feeding the
+# verdict a submission.ttl/attestations.trig would hang it off two rootless files (a trail gap that
+# breaks the graph); feeding it the registries keeps the verdict connected to the actual records it
+# judged. So: nekton (+ plankton) IN -> export to RDF + run release.rq (the cmd) -> verdict OUT.
+NEKTON_DIR="$W/agency/nekton"     nekton   export "$F/agency-nekton.json"
+PLANKTON_DIR="$W/agency/plankton" plankton export "$F/agency-plankton.json"
+# --trust-keys: the RDF export attributes each foton to the key that ACTUALLY signed it (verified),
 # never the self-declared keyid - a relabelled attribution is dropped (nk:signerVerified false), so the
-# gate can never read a forged signer as an established author/reviewer.
+# gate can never read a forged signer as an established author/reviewer. These RDF files are the gate's
+# working intermediate (what rdflib parses), re-derivable from the two registry bundles above.
 plankton export --rdf --trust-keys "$W/keys" -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf --trust-keys "$W/keys" > "$F/submission.ttl"
 : > "$F/attestations.trig"
 for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub --trust-keys "$W/keys" "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
-echo "  exported submission.ttl + attestations.trig - the corpus the decision is made over"
+echo "  nekton + plankton registries bundled (the gate's INPUT); RDF is the export step inside the decision"
 # The verifier's OWN trust root: the authorities whose sec:controller vouchers it accepts (here the two
 # org authorities). This is what stops the sock-puppet forgery - three self-issued (or ring-signed) keys
 # are not vouched by a trusted authority, so they never count as reviewers. The trust root is written to
@@ -221,19 +229,20 @@ echo "  exported submission.ttl + attestations.trig - the corpus the decision is
 AUTH_CRO=$(keyid16 cro-org); AUTH_SPONSOR=$(keyid16 sponsor-org)
 printf 'trusted-authority %s  (CN=cro-org)\ntrusted-authority %s  (CN=sponsor-org)\n' "$AUTH_CRO" "$AUTH_SPONSOR" > "$F/trust-root.txt"
 if python3 -c "import rdflib" 2>/dev/null; then
-  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$F/fit.dsse.json" "$FIT" "$HEAD" "$AUTH_CRO" "$AUTH_SPONSOR" | tee "$F/verdict.txt"
+  python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$FIT" "$HEAD" "$AUTH_CRO" "$AUTH_SPONSOR" | tee "$F/verdict.txt"
   [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "  !! GATE REGRESSION: the capstone gate did NOT return COMPLETE (release.py exited non-zero)"; exit 1; }
-  # The decision is NOT a free-floating query: the agency records it as a FOTON. Its inputs are the
-  # exact corpus it consumed (submission.ttl + attestations.trig, by hash) and the gate logic
-  # (release.rq); its output is the verdict. So the decision is content-addressed and REPRODUCIBLE -
-  # re-run the gate over the same inputs and you get the same verdict (L0) - and it NAMES its own
-  # evidence set (its input list). The regulator signs its OWN verdict over the sources it chose.
+  # The decision is NOT a free-floating query: the agency records it as a FOTON whose INPUTS are the raw
+  # registries it judged (the nekton claims + the plankton fotons, by hash) and the gate logic
+  # (release.rq), under trust-root.txt; the export-to-RDF is a STEP of its command, not a rootless input.
+  # So the verdict stays connected to the actual records in the graph, is content-addressed, and is
+  # REPRODUCIBLE - re-run the export+gate over the same two registry bundles and you get the same verdict
+  # (L0). The regulator signs its OWN verdict over the sources it chose.
   export PLANKTON_DIR="$W/agency/plankton"
-  VERDICT=$(plankton author --cmd "release gate: release.rq over the submission graph under trust-root.txt" \
-    --in "$F/submission.ttl" --in "$F/attestations.trig" --in "release.rq" --in "$F/trust-root.txt" --out "$F/verdict.txt" \
+  VERDICT=$(plankton author --cmd "release gate: export agency plankton+nekton to RDF, run release.rq over the merged graph under trust-root.txt -> verdict" \
+    --in "$F/agency-plankton.json" --in "$F/agency-nekton.json" --in "release.rq" --in "$F/trust-root.txt" --out "$F/verdict.txt" \
     --sign "$(key reviewer).key" --add | awk '/indexed foton/{print $3}')
   echo "  release decision recorded as foton $VERDICT"
-  echo "    signed by the agency; its inputs ARE its corpus; re-run over them -> same verdict (L0)"
+  echo "    signed by the agency; its inputs ARE the nekton+plankton registries; re-run the export+gate -> same verdict (L0)"
 else
   echo "  (the release gate needs rdflib: 'pip install rdflib' - skipping)"
 fi

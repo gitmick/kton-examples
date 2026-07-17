@@ -1,39 +1,45 @@
 #!/usr/bin/env python3
 # Run the release gate (release.rq) over the merged submission RDF, BOUND to this submission so the
 # conditions must be about it, not merely present in the graph. The regulator's entry point is the
-# signed submission head; from the fit it DERIVES the environment (reads the fit's own protocol
-# descriptor - not the sponsor's word). Prints a checklist and a verdict, then re-runs the gate bound
-# to an unrelated hash to show it is submission-specific.
-# Usage: release.py submission.ttl attestations.trig release.rq fit.dsse.json fitHash headHash
-import sys, json, base64
+# signed submission head; the fit's environment is read FROM THE GRAPH (the nk:environment triple
+# plankton export emits from the fit's COVERED descriptor - no out-of-band DSSE decode). Prints a
+# checklist and a verdict, then re-runs the gate bound to an unrelated hash to show it is
+# submission-specific.
+# Usage: release.py submission.ttl attestations.trig release.rq fitHash headHash [trustedKeyid ...]
+import sys
 import rdflib
 
-ttl, trig, query_path, fit_env_path, fit_hash, head_hash = sys.argv[1:7]
+ttl, trig, query_path, fit_hash, head_hash = sys.argv[1:6]
 # the verifier's OWN trust root: the authorities (by keyid) whose sec:controller vouchers it accepts.
 # These are a COVERED input of the verdict-foton (run.sh writes trust-root.txt and --in's it), so a run
 # with a friendlier trust root is a DIFFERENT verdict id and cannot be passed off as this one.
-trusted_keyids = sys.argv[7:]
-
-# derive the environment the fit declares, from the fit envelope's own descriptor (COVERED in it).
-# Act 7 has already HARD-GATED that this envelope's foton id == fit_hash (run.sh re-derives the id with
-# the kernel and exits on mismatch), so reading env from this envelope is reading it from the attested
-# fit - not the sponsor's word, and not an unverified file. (Without that binding a doctored envelope
-# could inject any env; that binding runs, and the gate refuses to proceed if it fails.)
-env = json.loads(base64.b64decode(json.load(open(fit_env_path))["payload"]))["predicate"]["protocol"]["descriptor"]["environment"]
+trusted_keyids = sys.argv[6:]
 PK = "https://kton.dev/o/"
 AG = "https://kton.dev/agent/"
+NK_TRUSTED = rdflib.URIRef("https://kton.dev/v/TrustedAuthority")
 def iri(h): return rdflib.URIRef(PK + h.replace("sha256:", ""))
 
-ds = rdflib.Dataset(default_union=True)
-ds.parse(ttl, format="turtle")
-ds.parse(trig, format="trig")
-# inject the trust root as the IN-list the reviews branch filters on (an empty root -> no reviewer is
-# authority-vouched -> the two-independent-reviews condition cannot be satisfied by any key count).
-trusted_iris = ", ".join("<%s%s>" % (AG, k) for k in trusted_keyids)
-query = open(query_path).read().replace("#TRUSTED#", trusted_iris or "<urn:kton:no-trusted-authority>")
+# PORTABLE loading (rdf-interop F1): a COMPLIANT SPARQL engine matches a bare triple pattern only
+# against the DEFAULT graph, so we do NOT rely on rdflib's non-standard default_union. We parse the
+# nanopubs into their named graphs (the reviews branch needs graph identity to tie a review to its
+# signer) AND ALSO merge every named-graph triple into the default graph, so bare patterns resolve in
+# any engine (Jena included). This is a load-time choice; the query itself is stock SPARQL.
+ds = rdflib.Dataset()  # default_union stays FALSE
+ds.parse(ttl, format="turtle")   # plankton lineage -> default graph
+ds.parse(trig, format="trig")    # each nanopub -> its own named graph
+dg = ds.default_context
+for (s, p, o, _g) in list(ds.quads((None, None, None, None))):
+    dg.add((s, p, o))            # merge named-graph triples into the default graph
+# the trust root as DATA, not a query-string placeholder (rdf-interop F3): each trusted authority IS a
+# nk:TrustedAuthority, so the query matches `?a a nk:TrustedAuthority` as an ordinary pattern. An empty
+# root asserts nothing -> no reviewer is authority-vouched -> two-independent-reviews cannot be met.
+for k in trusted_keyids:
+    dg.add((rdflib.URIRef(AG + k), rdflib.RDF.type, NK_TRUSTED))
 
-def satisfied(fit, head, envh):
-    b = {"fit": iri(fit), "env": iri(envh), "head": iri(head)}
+query = open(query_path).read()  # runs UNMODIFIED - no string surgery
+
+def satisfied(fit, head):
+    b = {"fit": iri(fit), "head": iri(head)}
     return {str(r.condition) for r in ds.query(query, initBindings=b)}
 
 REQUIRED = [
@@ -46,7 +52,7 @@ REQUIRED = [
     ("submission-signed",       "the submission head is signed by a verifiable identity (nk:submitted)"),
 ]
 
-got = satisfied(fit_hash, head_hash, env)
+got = satisfied(fit_hash, head_hash)
 print("  release checklist (SPARQL bound to this submission):")
 for key, desc in REQUIRED:
     print(f"    [{'x' if key in got else ' '}] {desc}")
@@ -55,7 +61,7 @@ print(f"  RELEASE: {'COMPLETE - the submission may be accepted' if ok else 'BLOC
 
 # the gate is submission-specific: bind it to an unrelated hash and it blocks
 bogus = "0" * 64
-n = len(satisfied(bogus, bogus, bogus))
+n = len(satisfied(bogus, bogus))
 print(f"  (same gate bound to an unrelated hash: {n}/7 conditions -> BLOCKED; conditions are not free-floating)")
 
 # Exit non-zero if the gate did not return COMPLETE, so run.sh (and any CI) fails loudly on a
