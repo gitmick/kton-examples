@@ -36,6 +36,35 @@ and a twenty-line standard-crypto check confirms it - a kton record needs no kto
 only the signer's public key. (This is also the readability answer: the payload is one `base64 -d | jq`
 from human-readable; no bespoke format to learn.)
 
+## Verify with OpenSSL (no Python, no kton)
+
+kton stores a public key as **raw 32-byte hex**; OpenSSL wants it as an Ed25519 **SPKI** key. That is a
+fixed 12-byte DER prefix + the key - no tooling, just a prefix:
+
+```
+# 1. raw hex pubkey -> an Ed25519 PEM (the 302a3005...2100 prefix is the SPKI header for Ed25519)
+printf -- "-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----\n" \
+  "$(printf '302a300506032b6570032100%s' "$(cat signer.pub)" | xxd -r -p | base64 -w0)" > signer.pem
+
+# 2. reconstruct the exact bytes DSSE signs (the PAE) and the raw signature, from the envelope
+python3 - signer  <<'PY'   # (the one binary step - PAE has length prefixes; any language does it)
+import json,base64,sys
+e=json.load(open("record.dsse.json")); p=base64.b64decode(e["payload"]); t=e["payloadType"].encode()
+open("pae.bin","wb").write(b"DSSEv1 %d %b %d %b"%(len(t),t,len(p),p))
+open("sig.bin","wb").write(base64.b64decode(e["signatures"][0]["sig"]))
+PY
+
+# 3. verify - pure OpenSSL, no kton, no cryptography library
+openssl pkeyutl -verify -pubin -inkey signer.pem -rawin -in pae.bin -sigfile sig.bin
+# -> Signature Verified Successfully   (tamper one byte of pae.bin and it fails)
+```
+
+That is the whole trust root: the signature covers the PAE, the PAE is the payload, and OpenSSL is a
+tool no one associates with kton. Note kton's **keyid** (`sha256(pubkey)[:16]`) is only a display
+fingerprint - it is *not* the Sigstore keyid convention; cross-tool identity is by the public key
+itself. For the full **Sigstore/cosign keyless** path (a Fulcio cert + a Rekor transparency-log entry
+instead of a bare key), see [example 08](../08-sigstore-github/) - that is where cosign belongs.
+
 ## Run it yourself
 
 ```
