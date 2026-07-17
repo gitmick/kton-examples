@@ -144,6 +144,7 @@ const PAL=["--a","--b","--c","--d","--e","--f"];
 const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 let G=null, partColor={}, ex=null, filt=null, LOC={}, autoPreview=!!localStorage.getItem("kton-autopreview");
 const PED_CAP=250; let LOD=false;   // explorer scale guards: cap a pedigree to PED_CAP nodes; drop labels/cull above ~220 rendered
+const RECORD_CAP=20000;             // load-time safety valve: bound the whole-graph BUILD so a huge union.json (100k records, ~100MB) cannot hang the tab. Above this, the overview is capped and the reader is pointed at ?focus=<hash> for a single pedigree.
 const pcol=p=>css(partColor[p]||"--dim");
 const clip=(s,n)=>s&&s.length>n?s.slice(0,n)+"…":s;
 
@@ -252,18 +253,24 @@ async function load(){
     const prim=regUrls(qs.get("union"));                    // sibling keys.json/names.json, unless overridden
     if(qs.get("keys")) prim.keys=qs.get("keys"); if(qs.get("names")) prim.names=qs.get("names");
     const regs=[prim, ...extraSources().map(regUrls)];      // delivered + the reader's own connected planktons
-    const seen=new Set(), recs=[], keys={}, names={};
+    const seen=new Set(), recs=[], keys={}, names={}; let total=0;
     for(const reg of regs){ try{ const s=await fetchSrc(reg);   // union by content hash; dedup on foton/claim id
-      for(const r of s.recs){ const id=r&&(r.fotonId||r.claimId); if(id&&!seen.has(id)){ seen.add(id); recs.push(r); } }
+      for(const r of s.recs){ const id=r&&(r.fotonId||r.claimId); if(id&&!seen.has(id)){ seen.add(id); total++; if(recs.length<RECORD_CAP) recs.push(r); } }
       Object.assign(keys,s.keys); Object.assign(names,s.names);
     }catch(e){ /* an unreachable source is skipped, not fatal */ } }
+    const truncated=total>recs.length;
     const union=JSON.stringify(recs);
     renderGraph(union, JSON.stringify(keys), JSON.stringify(names));
+    // Bound the graph BUILD, not just the render: above RECORD_CAP records we cap the overview and tell
+    // the reader to open ONE pedigree (the whole-registry force graph is unreadable at that size anyway).
+    // (The fetch still downloads the whole static union.json; true streaming needs server-side paging.)
+    if(truncated){ const st=$("#stats"); if(st) st.insertAdjacentHTML("beforeend",
+      `<span class="bad">large registry: ${total.toLocaleString()} records, showing ${RECORD_CAP.toLocaleString()} - open one output's pedigree with <code>?focus=&lt;hash&gt;</code></span>`); }
     // ?focus=sha256:<hex> - the "lens" entry point: open straight onto one output's provenance
     const focus=qs.get("focus");
     if(focus){ const id=resolveFocus(union,focus);
       if(id) enterExplorer(id,"both");                       // lineage (inputs) + attestations on it
-      else showErr("that output hash is not in the connected registries: "+focus); }
+      else showErr("that output hash is not in the connected registries"+(truncated?" (or beyond the "+RECORD_CAP.toLocaleString()+"-record cap - narrow the source)":"")+": "+focus); }
   }catch(e){ showErr(e); }
 }
 // settings: auto-preview toggle + the reader's additional kton sources
