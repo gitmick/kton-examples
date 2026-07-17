@@ -99,6 +99,15 @@ const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim
 let G=null, partColor={}, ex=null, filt=null;
 const pcol=p=>css(partColor[p]||"--dim");
 const clip=(s,n)=>s&&s.length>n?s.slice(0,n)+"…":s;
+// esc: HTML-escape any record-derived string before it goes into innerHTML. Record fields (by,
+// participant, role, name, signer, text, …) are attacker-controlled - a `by` of
+// `<img src=x onerror=alert(1)>` would otherwise execute. Escapes the 5 significant chars, covering
+// both element-text and quoted-attribute contexts.
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clipe=(s,n)=>esc(clip(s,n));
+// safeUri: only allow http(s)/ipfs locator URIs into an href; anything else (javascript:, data:, …)
+// renders as inert text so a signed "located at" claim cannot smuggle a script URL into a link.
+const safeUri=u=>/^(https?|ipfs):/i.test(String(u||""))?String(u):"";
 
 let _wasmReady=false;
 async function initWasm(){ if(_wasmReady) return;
@@ -238,7 +247,7 @@ function showOverview(push=true){
   const q=$("#q"),res=$("#results");
   q.oninput=()=>{ const s=q.value.trim().toLowerCase(); if(!s){res.style.display="none";return;}
     const hits=G.nodes.filter(n=>`${n.id} ${n.role} ${n.text||""} ${n.participant} ${n.by||""}`.toLowerCase().includes(s)).slice(0,40);
-    res.innerHTML=hits.map(n=>`<div class="r" data-id="${n.id}"><span style="color:${pcol(n.participant)}">${n.participant.replace('pfed-','')}</span> · ${n.type} · ${n.role} <span class="m">${clip(n.headline||n.id,44)}</span></div>`).join("")||`<div class="r m">no match</div>`;
+    res.innerHTML=hits.map(n=>`<div class="r" data-id="${esc(n.id)}"><span style="color:${pcol(n.participant)}">${esc(n.participant.replace('pfed-',''))}</span> · ${esc(n.type)} · ${esc(n.role)} <span class="m">${clipe(n.headline||n.id,44)}</span></div>`).join("")||`<div class="r m">no match</div>`;
     res.style.display="block"; res.querySelectorAll(".r[data-id]").forEach(r=>r.onclick=()=>enterExplorer(r.dataset.id,"both")); };
   document.addEventListener("click",e=>{ if(e.target!==q) res.style.display="none"; },true);
 }
@@ -370,35 +379,35 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
 function recentre(id, push=true){ ex.center=id; ex.sel=id; drawControls(); layoutAndRun(); openNode(id);
   if(push) history.pushState({view:'explorer',center:id,mode:ex.mode},""); }
 function fileRow(f){ const uris=(G.locators||{})[f.hash]||[], isNode=G.byId.has(f.hash);
-  return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${f.hash}"`:``}>${f.name||"(unnamed)"} <span class="m">${f.hash}</span>`+
-    uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")+`</div>`; }
+  return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${esc(f.hash)}"`:``}>${esc(f.name||"(unnamed)")} <span class="m">${esc(f.hash)}</span>`+
+    uris.map(u=>safeUri(u)?`<a class="uri" href="${esc(safeUri(u))}" target="_blank" rel="noopener">↗ ${clipe(u,46)}</a>`:`<span class="uri m">↗ ${clipe(u,46)} (unsafe uri)</span>`).join("")+`</div>`; }
 function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(id);
   if(gn&&gn.type==="group"){
     p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
-      <div class="who" style="color:${pcol(gn.participant)}">${gn.participant}</div>
-      <div class="role">group · ${gn.count} same-participant records in a run</div>
+      <div class="who" style="color:${pcol(gn.participant)}">${esc(gn.participant)}</div>
+      <div class="role">group · ${esc(gn.count)} same-participant records in a run</div>
       <span class="rc" onclick="ex.grouped=false;drawControls();layoutAndRun();">▣ ungroup</span>
-      <h4>records (${gn.count})</h4>${gn.members.map(m=>`<div class="nav" data-id="${m.id}"><span class="d" style="background:${pcol(m.participant)}"></span>${m.type} · ${m.role} <span style="color:var(--dim)">${m.verified?'✓':''}</span></div>`).join("")}`;
+      <h4>records (${esc(gn.count)})</h4>${gn.members.map(m=>`<div class="nav" data-id="${esc(m.id)}"><span class="d" style="background:${pcol(m.participant)}"></span>${esc(m.type)} · ${esc(m.role)} <span style="color:var(--dim)">${m.verified?'✓':''}</span></div>`).join("")}`;
     p.querySelectorAll(".nav[data-id]").forEach(el=>el.onclick=()=>{ex.grouped=false;ex.sel=el.dataset.id;drawControls();layoutAndRun();openNode(el.dataset.id);});
     p.classList.add("open"); return;
   }
   const n=G.byId.get(id),ins=(G.in[id]||[]),outs=(G.out[id]||[]),isSrc=n.type==="source"||n.type==="ref";
   const lk=(o,kind)=>{const c=o.type==="source"?"#cfd8e6":pcol(o.participant);
-    return `<div class="nav" data-id="${o.id}"><span class="d" style="background:${c}"></span>${o.type==="source"?o.role:o.participant.replace('pfed-','')+" · "+o.role} <span style="color:var(--dim)">(${kind})</span></div>`;};
+    return `<div class="nav" data-id="${esc(o.id)}"><span class="d" style="background:${c}"></span>${o.type==="source"?esc(o.role):esc(o.participant.replace('pfed-',''))+" · "+esc(o.role)} <span style="color:var(--dim)">(${esc(kind)})</span></div>`;};
   const link=(e)=>lk(G.byId.get(e.from),e.kind);
   const uris=(G.locators||{})[n.id]||[];
   const meta=isSrc?`<div class="kv">external input - referenced by content hash; not a signed record.</div>`
-    :`<div class="kv">signer <code>${n.signer||"?"}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
+    :`<div class="kv">signer <code>${esc(n.signer||"?")}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
   p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
-    <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?n.role:n.participant}</div>
-    <div class="role">${isSrc?("source · "+n.kind):(n.type+" · "+n.role)}</div>
-    ${n.id!==ex.center?`<span class="rc" onclick="recentre('${n.id}')">⌖ re-centre pedigree here</span>`:``}
-    <div class="kv">id <code>${n.id}</code></div>${(n.by&&!isSrc)?`<div class="kv">by <code>${n.by}</code></div>`:``}${meta}
-    ${uris.length?`<h4>located at</h4>${uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")}`:``}
+    <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?esc(n.role):esc(n.participant)}</div>
+    <div class="role">${isSrc?("source · "+esc(n.kind)):(esc(n.type)+" · "+esc(n.role))}</div>
+    ${n.id!==ex.center?`<span class="rc" onclick="recentre('${esc(n.id)}')">⌖ re-centre pedigree here</span>`:``}
+    <div class="kv">id <code>${esc(n.id)}</code></div>${(n.by&&!isSrc)?`<div class="kv">by <code>${esc(n.by)}</code></div>`:``}${meta}
+    ${uris.length?`<h4>located at</h4>${uris.map(u=>safeUri(u)?`<a class="uri" href="${esc(safeUri(u))}" target="_blank" rel="noopener">↗ ${clipe(u,46)}</a>`:`<span class="uri m">↗ ${clipe(u,46)} (unsafe uri)</span>`).join("")}`:``}
     ${(n.inputs&&n.inputs.length)?`<h4>inputs (${n.inputs.length})</h4>${n.inputs.map(fileRow).join("")}`:``}
     ${(n.outputs&&n.outputs.length)?`<h4>outputs (${n.outputs.length})</h4>${n.outputs.map(fileRow).join("")}`:``}
     ${ins.length?`<h4>${isSrc?"used by":"built on / reviewed by"} (${ins.length})</h4>${ins.map(link).join("")}`:``}
-    ${n.text?`<div class="txt">${n.text.replace(/</g,"&lt;")}</div>`:``}`;
+    ${n.text?`<div class="txt">${esc(n.text)}</div>`:``}`;
   p.querySelectorAll(".nav[data-id],.frow.nav[data-id]").forEach(el=>el.onclick=()=>{ ex.sel=el.dataset.id; openNode(el.dataset.id); redraw(); });
   p.classList.add("open");
 }
