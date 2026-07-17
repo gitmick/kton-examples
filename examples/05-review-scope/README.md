@@ -83,24 +83,28 @@ step (the scope commits to an authorized signer set, vouched by a trust root) is
 [authority-hook design](../articles/design-authority-hook-and-rsa.md) and the Trust chapter's
 completeness section; it is not implemented here.
 
-**6. See the tamper-evidence.** A claim whose `prev` points nowhere is refused, a gap is treated as
-tampering:
+**6. See the tamper-evidence.** A claim whose `prev` points nowhere does not extend the chain. It is
+**persisted** - its `prev` might resolve from another peer later, so the substrate treats it as
+*incomplete, not invalid* (the same rule federation needs) - but it **never joins the scope**, so it is
+never the head:
 
 ```
 # a forged claim naming this scope but a prev that does not exist
 printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$SCOPE" > bad.spec.json
-nekton claim bad.spec.json chair.key --add
-# error: prev sha256:deadbeef... does not resolve in scope ... (chain gap / tamper)
+nekton claim bad.spec.json chair.key --add    # persisted (deferred), NOT part of the chain
+nekton head "$SCOPE"                            # head UNCHANGED - the forged link never resolved in
 ```
 
-Change any earlier claim and its id changes, which breaks the next `prev`, which changes the head.
-Anyone holding the published head can detect it.
+The tamper-evidence is the same by a cleaner mechanism: change or drop any earlier claim and its
+successors' `prev` no longer resolves, so they fall out of the chain and the head *changes*. Anyone
+holding the published head can detect it, because that id no longer reproduces.
 
-**This fatality is a property of the *sealed scope*, a deliberately closed world.** It is NOT a general
-rule: outside a sealed scope, on the open substrate, an unresolved reference is merely *incomplete*, not
-invalid (a record referencing something you cannot yet see is still valid on its own hash and
-signature). The scope buys a closed world on purpose - do not read "a dangling link is rejected" as
-holding everywhere, or federation breaks.
+**This is the open-substrate rule, not a special sealed-scope fatality.** An unresolved reference is
+*incomplete*, not invalid (a record referencing something you cannot yet see is still valid on its own
+hash and signature); it simply does not resolve into a scope until its dependency arrives. The sealed
+scope's guarantee is that a *resolved* chain is complete and tamper-evident - not that a dangling link is
+rejected on the spot. Do not read "a dangling link is rejected" as holding anywhere, or federation
+breaks.
 
 ## Or just run the whole thing
 
