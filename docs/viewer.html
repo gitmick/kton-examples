@@ -446,18 +446,19 @@ function firstNodeOf(part){ const ns=G.nodes.filter(n=>n.participant===part&&n.t
 // canvas can't render smoothly - so we cap to the nearest `cap` nodes and record pedigree.trunc/.total for
 // the UI's "capped N of M · expand". The full reach is computed cheaply (traversal is fast; layout/draw isn't).
 function pedigree(id, mode, cap){ cap=cap||Infinity;
+  const lineage = mode==="lin"||mode==="imp";                                   // pure derivation DAG: builds-on edges only, no claims
+  const kf = lineage ? "builds-on" : null;
   const build=(lim)=>{ const set=new Set([id]);
-    const dirs=[]; if(mode==="anc"||mode==="both") dirs.push([G.out,"out"]);   // ancestors: what it builds on / is about
-    if(mode==="desc"||mode==="both") dirs.push([G.in,"in"]);                    // descendants: what builds on / reviews it
+    const dirs=[]; if(mode==="anc"||mode==="both"||mode==="lin") dirs.push([G.out,"out"]);   // ancestors / what it builds on
+    if(mode==="desc"||mode==="both"||mode==="imp") dirs.push([G.in,"in"]);                    // descendants / what builds on it
     if(mode==="nbr"){ for(const e of (G.out[id]||[])) if(set.size<lim) set.add(e.to); for(const e of (G.in[id]||[])) if(set.size<lim) set.add(e.from); }  // one hop, both ways
     else if(mode==="par"){ for(const e of (G.out[id]||[])) if(set.size<lim) set.add(e.to); }
     else if(mode==="chi"){ for(const e of (G.in[id]||[])) if(set.size<lim) set.add(e.from); }
-    else { let fr=[id]; while(fr.length&&set.size<lim){ const nx=[];              // BFS: nearest nodes first, so a cap keeps the LOCAL neighbourhood
-      for(const x of fr) for(const [adj,dir] of dirs) for(const e of (adj[x]||[])){ const nb=dir==="out"?e.to:e.from;
+    else { let fr=[id]; while(fr.length&&set.size<lim){ const nx=[];              // BFS: nearest first, so a cap keeps the LOCAL neighbourhood
+      for(const x of fr) for(const [adj,dir] of dirs) for(const e of (adj[x]||[])){ if(kf&&e.kind!==kf) continue; const nb=dir==="out"?e.to:e.from;   // lineage: follow ALL parents (fan-in), builds-on only
         if(!set.has(nb)&&set.size<lim){ set.add(nb); nx.push(nb); } }
       fr=nx; } }
-    // surface attestations ABOUT anything in view (+ each claim's other targets), within the same budget
-    for(const nid of [...set]) for(const e of (G.in[nid]||[])){ const f=G.byId.get(e.from);
+    if(!lineage) for(const nid of [...set]) for(const e of (G.in[nid]||[])){ const f=G.byId.get(e.from);   // surface claims about anything in view (not for pure lineage)
       if(f&&f.type==="claim"&&set.size<lim){ set.add(e.from); for(const oe of (G.out[e.from]||[])) if(set.size<lim) set.add(oe.to); } }
     return set; };
   const full=build(Infinity);
@@ -475,20 +476,10 @@ function reach(id, dir, kind, depth){ const adj=dir==="up"?G.out:G.in, pick=e=>d
   const seen=new Set([id]); let fr=[id], dd=0; depth=depth||Infinity;
   while(fr.length&&dd<depth){ const nx=[]; for(const x of fr) for(const e of (adj[x]||[])){ if(kind&&e.kind!==kind) continue; const nb=pick(e); if(!seen.has(nb)){ seen.add(nb); nx.push(nb); } } fr=nx; dd++; }
   return seen; }
-// longestPath(x): the deepest builds-on chain from x back to a root (a foton that builds on nothing).  ->  the lineage spine.
-function longestPath(id){ const memo={};
-  const dfs=x=>{ if(memo[x]) return memo[x]; memo[x]=[x]; let best=[x];
-    for(const e of (G.out[x]||[])){ if(e.kind!=="builds-on") continue; const p=dfs(e.to); if(p.length+1>best.length) best=[x,...p]; }
-    return memo[x]=best; };
-  return dfs(id); }
 // existence / absence over fotons: has(pred[,value]) or lacks - the coverage/worklist primitive.
 function fotonsWith(pred, value){ return G.nodes.filter(n=>n.type==="foton" && claimsOf(n.id).some(c=>claimMatch(c,pred,value))); }
 function fotonsLacking(pred, value){ return G.nodes.filter(n=>n.type==="foton" && !claimsOf(n.id).some(c=>claimMatch(c,pred,value))); }
 
-// enter the explorer on an ARBITRARY node set (a story result), bypassing the pedigree walk.
-function enterExplorerSet(centerId, ids, note){ $("#overview").style.display="none"; $("#explorer").style.display="block";
-  ex={center:centerId, sel:centerId, mode:"set", grouped:false, cap:Infinity, fixed:new Set(ids), note, view:{scale:1,tx:0,ty:0}, started:false};
-  drawControls(); layoutAndRun(); openNode(centerId); history.pushState({view:"explorer",center:centerId,mode:"both"},""); }
 // story 5 - aggregate the claims ABOUT a node into a trust card (approve/reject tally, reproduced?, roles).
 function trustCard(id){ const cs=claimsOf(id); if(!cs.length) return `<div class="kv">no claims about this record yet.</div>`;
   const rev=cs.filter(c=>/reviewedBy/i.test(c.role));
@@ -498,8 +489,8 @@ function trustCard(id){ const cs=claimsOf(id); if(!cs.length) return `<div class
   let rows=""; for(const pred in g){ const parts=Object.entries(g[pred]).map(([v,n])=>`${v||"—"}${n>1?" ×"+n:""}`).join(", "); rows+=`<div class="tcrow"><b>${esc(pred)}</b> · ${esc(parts)}</div>`; }
   return `<div class="tcbanner"><span class="badge ${rej?"vno":appr?"vok":"vpart"}">${appr} approve · ${rej} reject</span> <span class="badge ${repro?"vok":"vpart"}">${repro?"✓ reproduced":"not reproduced"}</span></div>${rows}`;
 }
-function enterExplorer(centerId, mode, push=true){ $("#overview").style.display="none"; $("#explorer").style.display="block";
-  ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
+function enterExplorer(centerId, mode, push=true, note=""){ $("#overview").style.display="none"; $("#explorer").style.display="block";
+  ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, note, view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
   if(push) history.pushState({view:'explorer',center:centerId,mode},""); }
 function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
   $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview&nbsp;&nbsp;<span style="opacity:.55;font-weight:400">Esc</span></span>
@@ -510,13 +501,13 @@ function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],[
     <div class="lbl">filter · participant</div><div class="fchips">${G._parts.map(p=>`<span class="fchip ${filt.parts.has(p)?'':'off'}" data-fp="${p}"><span class="d" style="background:${pcol(p)}"></span>${p.replace('pfed-','')}</span>`).join("")}</div>
     <div class="lbl">filter · type</div><div class="fchips">${["foton","claim","source"].map(t=>`<span class="fchip ${filt.types.has(t)?'':'off'}" data-ft="${t}">${t}</span>`).join("")}</div>
     <div class="lbl" id="cnt"></div>`;
-  $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;ex.cap=PED_CAP;ex.fixed=null;ex.note="";drawControls();layoutAndRun();});   // re-cap + leave any story view
+  $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;ex.cap=PED_CAP;ex.note="";drawControls();layoutAndRun();});   // re-cap + leave any story view
   $("#grpbtn").onclick=()=>{ex.grouped=!ex.grouped;drawControls();layoutAndRun();};
   $$("#controls [data-fp]").forEach(el=>el.onclick=()=>{const p=el.dataset.fp;filt.parts.has(p)?filt.parts.delete(p):filt.parts.add(p);drawControls();layoutAndRun();});
   $$("#controls [data-ft]").forEach(el=>el.onclick=()=>{const t=el.dataset.ft;filt.types.has(t)?filt.types.delete(t):filt.types.add(t);drawControls();layoutAndRun();});
 }
 function layoutAndRun(){
-  const set=ex.fixed?(pedigree.trunc=false,pedigree.total=ex.fixed.size,ex.fixed):pedigree(ex.center, ex.mode, ex.cap||PED_CAP);
+  const set=pedigree(ex.center, ex.mode, ex.cap||PED_CAP);
   let nodes=[...set].map(id=>G.byId.get(id)).filter(n=>n.id===ex.center||(filt.parts.has(n.participant)&&filt.types.has(n.type)));
   const keep=new Set(nodes.map(n=>n.id));
   let edges=G.edges.filter(e=>keep.has(e.from)&&keep.has(e.to));
@@ -622,7 +613,7 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
   window.onmouseup=()=>{ if(drag&&!drag.moved){ ex.sel=drag.n.id; openNode(drag.n.id); redraw(); } if(pan)cv.style.cursor="grab"; drag=null;pan=null; };
   cv.ondblclick=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){recentre(n.id);} };
 }
-function recentre(id, push=true){ ex.center=id; ex.sel=id; ex.cap=PED_CAP; ex.fixed=null; ex.note=""; drawControls(); layoutAndRun(); openNode(id);
+function recentre(id, push=true){ ex.center=id; ex.sel=id; ex.cap=PED_CAP; ex.note=""; drawControls(); layoutAndRun(); openNode(id);
   if(push) history.pushState({view:'explorer',center:id,mode:ex.mode},""); }
 function fileRow(f,isOut){ const uris=[...new Set([...(LOC[f.hash]||[]), ...((G.locators||{})[f.hash]||[])])], isNode=G.byId.has(f.hash);
   return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${f.hash}"`:``}>${f.name||"(unnamed)"} <span class="m">${f.hash}</span>`+
@@ -646,12 +637,13 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
   const uris=[...new Set([...(LOC[n.id]||[]), ...((G.locators||{})[n.id]||[])])];
   const meta=isSrc?`<div class="kv">external input - referenced by content hash; not a signed record.</div>`
     :`<div class="kv">signer <code>${n.signer||"?"}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
+  const linN=n.type==="foton"?reach(n.id,"up","builds-on",Infinity).size-1:0, impN=n.type==="foton"?reach(n.id,"down","builds-on",Infinity).size-1:0;  // counts on the buttons
   p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
     <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?n.role:n.participant}</div>
     <div class="role">${isSrc?("source · "+n.kind):(n.type+" · "+n.role)}</div>
     ${n.id!==ex.center?`<span class="rc" onclick="recentre('${n.id}')">⌖ re-centre pedigree here</span>`:``}
     <div class="kv">id <code>${n.id}</code></div>${(n.by&&!isSrc)?`<div class="kv">by <code>${n.by}</code></div>`:``}${meta}
-    ${n.type==="foton"?`<h4>navigate</h4><div class="navrow"><span class="rc" id="nvSpine">⤴ trace to roots</span><span class="rc" id="nvImpact">⤵ blast radius</span><span class="rc" id="nvCard">🛡 trust card</span></div><div id="navout"></div>`:``}
+    ${n.type==="foton"?`<h4>navigate</h4><div class="navrow"><span class="rc" id="nvSpine" title="every foton this was built from, back to raw inputs - all parents, not one path">⤴ trace inputs · ${linN}</span><span class="rc" id="nvImpact" title="every foton downstream that depends on this">⤵ blast radius · ${impN}</span><span class="rc" id="nvCard" title="who attested to this: reviews, reproductions, roles">🛡 trust card</span></div><div id="navout"></div>`:``}
     ${uris.length?`<h4>file</h4><span class="rc" id="pvbtn">⤢ preview</span>${uris.map(u=>`<a class="uri" href="${u}" target="_blank" rel="noopener">↗ ${clip(u,46)}</a>`).join("")}<div id="preview"></div>`:``}
     ${(n.inputs&&n.inputs.length)?`<h4>inputs (${n.inputs.length})</h4>${n.inputs.map(f=>fileRow(f,false)).join("")}`:``}
     ${(n.outputs&&n.outputs.length)?`<h4>outputs (${n.outputs.length})</h4>${n.outputs.map(f=>fileRow(f,true)).join("")}`:``}
@@ -661,9 +653,8 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
   const pvb=p.querySelector("#pvbtn"); if(pvb) pvb.onclick=e=>{ e.stopPropagation(); previewFile(n.id, uris[0]); };
   p.querySelectorAll(".pvrow").forEach(b=>b.onclick=e=>{ e.stopPropagation(); previewFile(b.dataset.h, decodeURIComponent(b.dataset.u), $("#pv-"+b.dataset.h)); });
   const nvS=$("#nvSpine"), nvI=$("#nvImpact"), nvC=$("#nvCard");                                    // stories 1,2,5
-  if(nvS) nvS.onclick=()=>{ const pa=longestPath(n.id); enterExplorerSet(n.id, pa, `lineage spine · ${pa.length-1} steps to root`); };
-  if(nvI) nvI.onclick=()=>{ const near=reach(n.id,"down","builds-on",3), all=reach(n.id,"down","builds-on",Infinity);
-    enterExplorerSet(n.id, [...near], `blast radius · ${near.size-1} within 3 hops (${all.size-1} downstream total)`); };
+  if(nvS) nvS.onclick=()=>enterExplorer(n.id,"lin",true,`inputs — ${linN} foton${linN===1?"":"s"} this was built from (every parent, fan-in included)`);
+  if(nvI) nvI.onclick=()=>enterExplorer(n.id,"imp",true,`blast radius — ${impN} foton${impN===1?"":"s"} build on this`);
   if(nvC) nvC.onclick=()=>{ const o=$("#navout"); o.innerHTML=o.innerHTML?"":trustCard(n.id); };
   if(autoPreview){ const b=p.querySelector("#pvbtn")||p.querySelector(".pvrow.pvout")||p.querySelector(".pvrow"); if(b) b.click(); }  // prefer the OUTPUT - usually the interesting artifact
   p.classList.add("open");
