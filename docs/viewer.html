@@ -498,11 +498,13 @@ function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],[
     ${ex.note?`<div class="lbl" style="color:var(--b);margin-top:4px;text-transform:none;letter-spacing:0">▸ ${ex.note}</div>`:``}
     <div class="lbl">pedigree (path explorer)</div><div class="arrows">${modes.map(m=>`<button data-m="${m[0]}" class="${ex.mode===m[0]?'on':''}">${m[1]}</button>`).join("")}</div>
     <div class="lbl">grouping</div><div class="fchips"><span class="fchip ${ex.grouped?'':'off'}" id="grpbtn">▣ group same-participant runs</span></div>
+    ${(ex.mode==="lin"||ex.mode==="imp")?`<div class="lbl">lineage</div><div class="fchips"><span class="fchip ${ex.collapse===false?'off':''}" id="collbtn">⋯ collapse linear runs</span></div>`:``}
     <div class="lbl">filter · participant</div><div class="fchips">${G._parts.map(p=>`<span class="fchip ${filt.parts.has(p)?'':'off'}" data-fp="${p}"><span class="d" style="background:${pcol(p)}"></span>${p.replace('pfed-','')}</span>`).join("")}</div>
     <div class="lbl">filter · type</div><div class="fchips">${["foton","claim","source"].map(t=>`<span class="fchip ${filt.types.has(t)?'':'off'}" data-ft="${t}">${t}</span>`).join("")}</div>
     <div class="lbl" id="cnt"></div>`;
   $$("#controls .arrows button").forEach(b=>b.onclick=()=>{ex.mode=b.dataset.m;ex.cap=PED_CAP;ex.note="";drawControls();layoutAndRun();});   // re-cap + leave any story view
   $("#grpbtn").onclick=()=>{ex.grouped=!ex.grouped;drawControls();layoutAndRun();};
+  { const cb=$("#collbtn"); if(cb) cb.onclick=()=>{ex.collapse=(ex.collapse===false);drawControls();layoutAndRun();}; }
   $$("#controls [data-fp]").forEach(el=>el.onclick=()=>{const p=el.dataset.fp;filt.parts.has(p)?filt.parts.delete(p):filt.parts.add(p);drawControls();layoutAndRun();});
   $$("#controls [data-ft]").forEach(el=>el.onclick=()=>{const t=el.dataset.ft;filt.types.has(t)?filt.types.delete(t):filt.types.add(t);drawControls();layoutAndRun();});
 }
@@ -512,6 +514,9 @@ function layoutAndRun(){
   const keep=new Set(nodes.map(n=>n.id));
   let edges=G.edges.filter(e=>keep.has(e.from)&&keep.has(e.to));
   if(ex.grouped){ const g=groupRuns(nodes,edges); nodes=g.nodes; edges=g.edges; }
+  if((ex.mode==="lin"||ex.mode==="imp") && ex.collapse!==false){        // lineage skeleton: keep the centre + any ATTESTED node (a landmark), collapse the rest
+    const keepIds=new Set([ex.center,ex.sel]); for(const nn of nodes) if(claimsOf(nn.id).length) keepIds.add(nn.id);
+    const c=collapseRuns(nodes,edges,keepIds); nodes=c.nodes; edges=c.edges; }
   ex.nodes=nodes; ex.edges=edges; ex._byId=new Map(nodes.map(n=>[n.id,n]));
   layerLayout(ex.nodes, ex.edges, ex._byId);
   $("#cnt").innerHTML=`${ex.nodes.length} nodes · ${ex.edges.length} links`
@@ -520,6 +525,23 @@ function layoutAndRun(){
   if(pedigree.trunc){ $("#expand").onclick=()=>{ ex.cap=(ex.cap||PED_CAP)+400; layoutAndRun(); };
     $("#expandall").onclick=()=>{ ex.cap=Infinity; layoutAndRun(); }; }
   fitView(); if(!ex.started) startRender(); redraw();
+}
+// collapseRuns: contract maximal chains of PASS-THROUGH fotons (exactly one parent + one child within the
+// view) into a single "×N steps" edge, so a long lineage shows its SKELETON - sources, merges, forks, and
+// the node you're on - not every intermediate step. A node with >1 input (a merge/fan-in) is always kept.
+function collapseRuns(nodes, edges, keep){
+  const E=edges.map(e=>({from:e.from,to:e.to,kind:e.kind,steps:e.steps||1}));
+  const alive=new Set(nodes.map(n=>n.id));
+  const deg=()=>{ const o={},i={}; for(const e of E){ if(e.dead)continue; (o[e.from]??=[]).push(e); (i[e.to]??=[]).push(e); } return [o,i]; };
+  let changed=true;
+  while(changed){ changed=false; const [o,i]=deg();
+    for(const n of nodes){ const id=n.id; if(!alive.has(id)||keep.has(id)||n.type!=="foton") continue;
+      const oe=(o[id]||[]), ie=(i[id]||[]);
+      if(oe.length===1 && ie.length===1 && oe[0].kind==="builds-on" && ie[0].kind==="builds-on"){   // pass-through: splice it out
+        ie[0].dead=true; oe[0].dead=true; alive.delete(id);
+        E.push({from:ie[0].from, to:oe[0].to, kind:"builds-on", steps:ie[0].steps+oe[0].steps});
+        changed=true; break; } } }
+  return { nodes:nodes.filter(n=>alive.has(n.id)), edges:E.filter(e=>!e.dead) };
 }
 // groupRuns: contract each CONNECTED RUN of same-participant nodes into one group node, preserving
 // lineage. a-a-b-a-a-b-b -> a-b-a-b (two 'a' runs stay separate because a 'b' sits between them).
@@ -575,7 +597,8 @@ function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
   for(const e of ex.edges){ const f=ex._byId.get(e.from),t=ex._byId.get(e.to); if(!f||!t)continue;
     if(LOD&&!vis(f)&&!vis(t)) continue;                            // skip edges wholly off-screen
     const [L,R]= f._d>=t._d?[t,f]:[f,t]; const rel=e.kind!=="builds-on";
-    edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
+    const lbl=(e.steps>1)?`⋯ ${e.steps} steps`:((!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:"");
+    edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,lbl); }
   for(const n of ex.nodes){ if(LOD&&!vis(n)) continue; nodeDraw(ctx,n); }
 }
 function edgeArrow(ctx,a,b,color,dash,lbl){ const x1=a.x+RW,y1=a.y,x2=b.x-RW-4,y2=b.y,mx=(x1+x2)/2;
