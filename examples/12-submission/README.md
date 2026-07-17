@@ -95,6 +95,11 @@ verdict (L0) - and it **names its own evidence set** (its input list). A regulat
 sponsor's verdict; it re-derives its *own* verdict-foton over the sources it chose. (A verdict without
 its corpus would be a configuration, not a statement.)
 
+The corpus it names here is a *pre-exported* RDF snapshot (`submission.ttl` + `attestations.trig`). The
+stronger form takes the **nekton records directly** (by hash) and runs the RDF export **inside** the gate
+foton, so its input is the signed evidence itself rather than a derivation of it - one fewer out-of-band
+step to trust, and the verdict's input edges then point straight at the attestations it counted.
+
 ## What the gate proves, and what it assumes
 
 The gate is deliberately honest about its boundaries (this is the substrate's whole stance; see the

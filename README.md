@@ -44,8 +44,8 @@ two.)
 | 08 | `sigstore-github` | sign a record with your GitHub identity (Sigstore keyless: Fulcio + Rekor) |
 | 09 | `environment` | the whole arc: local run -> pinned docker -> a spectrum (one foton per R test) -> verify the image qualifies |
 | 10 | `tool-spectrum` | really run an R test suite twice, and see in the graph which tests reproduce identically (L0) vs only after a normalizer (L1) |
-| 11 | `review-template` | author reviews from a template (approve/reject + file comment), federate the template, and test review completeness with SPARQL |
-| 12 | `submission` | capstone: a regulated popPK submission across three orgs, verified by the agency with zero trust, gated by a SPARQL release query |
+| 11 | `review-template` | author reviews from a template (approve/reject + file comment), federate the template, and test review completeness with SPARQL — strongest when the check is a foton (nekton in, verdict out) |
+| 12 | `submission` | capstone: a regulated popPK submission across three orgs, verified by the agency with zero trust, gated by a SPARQL release query the agency records as a verdict-foton |
 | 13 | `foreign-verify` | a kton record verified by a non-kton tool (standard DSSE + Ed25519, no kton code) - records are copyable between tools |
 | 14 | `fetch` | resolve a content hash to its bytes via a signed `dcat:downloadURL`, re-hash on arrival, reject a forged mirror - the content-present verification tier |
 

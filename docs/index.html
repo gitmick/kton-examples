@@ -186,7 +186,8 @@
       <p>The classical way to author a claim: a template. Three reviewers each approve a foton
       (approve/reject reusing schema.org, a comment as a file), nothing overwritten. The template is
       registered as a federated record, and a SPARQL query over the exported RDF tests that the review
-      is complete - every required reviewer approved, no rejects.</p>
+      is complete - every required reviewer approved, no rejects. It is first-class when that check runs
+      as a foton: the nekton (the signed reviews) in, the verdict out, recorded in the graph.</p>
       <div class="links"><a href="viewer.html?union=data/11-review-template/union.json&keys=data/11-review-template/keys.json&names=data/11-review-template/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/11-review-template/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
@@ -194,7 +195,8 @@
       <p>Everything at once. A CRO builds a popPK model, a sponsor reviews and submits it, and the agency
       re-verifies the whole thing - reproduction, a qualified environment, a signed model tree, typed
       sign-offs with evidence - across three registries with no shared server. It ends with a single
-      SPARQL <b>release gate</b> that decides whether the submission may be accepted. Real R throughout.</p>
+      SPARQL <b>release gate</b> that decides whether the submission may be accepted - which the agency
+      records as a <b>verdict-foton</b> (its inputs the exact evidence, its output the decision). Real R throughout.</p>
       <div class="links"><a href="viewer.html?union=data/12-submission/union.json&keys=data/12-submission/keys.json&names=data/12-submission/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/12-submission/README.md">read &rarr;</a></div>
     </div>
     <div class="card">

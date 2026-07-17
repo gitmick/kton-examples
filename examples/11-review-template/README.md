@@ -85,6 +85,16 @@ REVIEW COMPLETE: True  (approvals=3/3, rejects=0)
 A missing approval or any single reject flips it to incomplete - the query is the gate. (The SPARQL
 step needs `rdflib`: `pip install rdflib`.)
 
+**Make the gate itself a record.** As shown here the query runs *out-of-band* - an `rdflib` step over a
+pre-exported RDF file, so nothing about "we checked completeness" is recorded. It becomes first-class
+when the check is authored as a plankton **foton**: its inputs are the **nekton itself** (the signed
+review records, by hash) plus [`completeness.rq`](completeness.rq), the RDF export runs **inside** the
+gate, and the verdict is its **output**. Then "we ran a SPARQL query over the nekton" is content-addressed
+and reproducible - re-run over the same review hashes and you get the same verdict - and it appears in the
+graph as a node whose input edges name the exact reviews it counted. Feeding a *pre-exported* `.ttl`
+instead would leave the export as a trusted step outside the record, one hop from the signed claims.
+Example 12 records its release gate as a foton this way.
+
 **Boundary (honest):** this counts *distinct signing keys*, not verified enrolled reviewers - three
 sock-puppet keys would satisfy "3/3". Turning a threshold count into a real required-set check needs a
 sealed enrolment (who the required reviewers are) plus their `sec:controller` identities, vouched by an
