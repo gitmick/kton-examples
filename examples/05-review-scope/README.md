@@ -1,110 +1,112 @@
-# 05 - review scope
+# 05 - a review is its own (sub)nekton
 
-A single signed claim (example 04) says one thing. A **review** is usually a *sequence* of decisions
-that must hang together and be tamper-evident as a whole. A **scope** is that: a chain of claims where
-each one covers the previous, so one **head** id seals the entire history. Edit any earlier claim and
-the head no longer matches.
+A single signed claim (example 04) says one thing. A **review** is a *conversation*: a sequence of
+decisions that must hang together, be handed over whole, and whose rejections cannot be silently
+stripped. Think of a nekton as a **context - a "talk"**: the things that belong to one conversation,
+kept together. A review is such a context, and here it is **literally its own registry**, so you can
+hand it over whole to someone who verifies it **two ways**: (1) the sub-nekton resolves to its head *on
+its own* - a valid seedchain, no other attestations attached; (2) if the parent is public, the parent's
+**close** claim pins that seed and head. You **open** the review by seeding it *from* a public scope, you
+**hold** it as a chain (each claim covers the previous, so one **head** seals the history), and you
+**close** it by writing a **claim back to the parent** naming the review and its head.
 
-Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) This is the
-fiddliest example, each claim points at the previous one by id. Every command below captures the id it
-needs into a shell variable, so you can still paste them straight through.
+Closing is **not a new verb**. It is an ordinary claim - the same shape as a verdict - and the predicate
+is the only thing that says "closed". The kernel gains nothing: SPEC §7.4 already reserves parent→child
+registration and sealing as *convention, checked by consumers*, over the seed/chain grammar it does
+mandate.
+
+Assumes `nekton` is on your PATH. Each claim points at the previous by id, so every command captures the
+id it needs into a shell variable.
 
 ## Walk through it, one command at a time
 
-**1. An identity and a registry.**
+**1. Two identities, two stores.** The board owns the public record; the chair runs the review. The
+review gets **its own registry** - that is what lets you hand it over on its own.
 
 ```
-nekton keygen chair
-export NEKTON_DIR=./nekton-data
+nekton keygen board ; nekton keygen chair
+PUB_DIR=./public ; REV_DIR=./review
 ```
 
-**2. Open a scope with a seed, and capture the scope id.** The seed's id *is* the scope id.
+**2. The public record - a standing parent scope**, in the public store.
 
 ```
-SCOPE=$(nekton seed drug-review --sign chair.key --by "CN=Chair" --add \
-        | grep -oE 'sha256:[0-9a-f]+' | head -1)
-echo "$SCOPE"                    # sha256:...
+PUB=$(NEKTON_DIR=$PUB_DIR nekton seed public-record --sign board.key --by "CN=Board" --add \
+      | grep -oE 'sha256:[0-9a-f]+' | tail -1)     # a seed prints its parent hash first, so take the LAST
 ```
 
-**3. Chain the first claim under the scope.** Every scoped claim names the scope and a `prev`; for the
-first, `prev` is the scope id itself. We splice in `$SCOPE`, then capture the new claim's id as `$C1`.
+**3. Open the review as its OWN nekton, seeded FROM the public scope.** The `--parent` link rides
+*inside* the signed seed, so it cannot be stripped without changing the review's identity - from any
+copy of the review you can find its parent.
 
 ```
-cat > c1.spec.json <<JSON
-{ "subject":[{"uri":"urn:doc:protocol"}], "predicate":"pav:reviewedBy",
-  "object":{"value":"protocol approved"}, "by":"CN=Chair", "when":"2026-07-16T00:00:00Z",
-  "scope":"$SCOPE", "prev":"$SCOPE" }
+REV=$(NEKTON_DIR=$REV_DIR nekton seed drug-review --parent "$PUB" --sign chair.key --by "CN=Chair" --add \
+      | grep -oE 'sha256:[0-9a-f]+' | tail -1)
+```
+
+**4. Hold the review: chain the claims inside the review's store.** Every scoped claim names the scope
+and a `prev`; for the first, `prev` is the scope id itself.
+
+```
+# c1: prev = $REV ; c2: prev = $C1 ; ... ; then read the sealed head
+NEKTON_DIR=$REV_DIR nekton head "$REV"        # head: sha256:...  (the tip that seals the whole chain)
+```
+
+**5. Hand it over, and verify it alone (leg 1).** The review store is self-contained. Give someone only
+that store - `cp -r`, `nekton mirror`, or a fetch by hash - and they verify the seedchain with no parent
+and no other attestations:
+
+```
+NEKTON_DIR=$HANDED nekton head "$REV"
+# resolves to the same head, 0 unresolved -> a valid, COMPLETE seedchain on its own
+```
+
+**6. Close it: a claim to the PARENT (leg 2).** An ordinary claim whose `subject` is the review scope,
+whose `object` is its sealed head, scoped **into** the public record. Swap the predicate for a verdict and
+it *is* a verdict - one shape, two meanings.
+
+```
+cat > close.spec.json <<JSON
+{ "subject":[{"hash":"$REV"}], "predicate":"https://kton.dev/v/closed",
+  "object":{"hash":"$HEAD"}, "by":"CN=Board", "when":"2026-07-16T00:00:00Z",
+  "scope":"$PUB", "prev":"$PUB" }
 JSON
-C1=$(nekton claim c1.spec.json chair.key --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
-echo "$C1"                       # sha256:...
+NEKTON_DIR=$PUB_DIR nekton claim close.spec.json board.key --add
+NEKTON_DIR=$PUB_DIR nekton about "$REV"    # -> predicate=.../closed  by=CN=Board  (closed at $HEAD)
 ```
 
-**4. Chain the second claim onto the first.** Same shape, but now `prev` is `$C1`.
+That is the whole contract: the review travels as one bounded context and **self-verifies** (leg 1); the
+public parent **binds** its seed and head (leg 2), so the head the recipient resolved is the authoritative
+one - which is what defeats a rewind to a shorter, cleaner chain. Over a public parent, leg 2 is a SPARQL
+check ("a `nk:closed` claim whose subject is `$REV` and object is `$HEAD`") - the release gate of
+[example 12](../12-submission/). You hand over one review, not a pile of a hundred unrelated attestations.
 
-```
-cat > c2.spec.json <<JSON
-{ "subject":[{"uri":"urn:doc:results"}], "predicate":"pav:reviewedBy",
-  "object":{"value":"results approved"}, "by":"CN=Chair", "when":"2026-07-16T00:01:00Z",
-  "scope":"$SCOPE", "prev":"$C1" }
-JSON
-C2=$(nekton claim c2.spec.json chair.key --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
-```
+## The boundaries - what "closed" does and does not settle
 
-**5. Seal it: read the head.**
+**The head proves integrity, not currency.** A published head is tamper-evident, but by itself it does
+not prove it is the *latest*: an earlier, shorter chain (a **rewind**) verifies just as cleanly.
+Anchoring the parent's close in a transparency log (`kton anchor`, example 08) time-orders it so a rewind
+is undeniable; confirming you hold the latest anchored close is a consumer **freshness** step.
 
-```
-nekton head "$SCOPE"
-# head:  sha256:...   (2 claim(s) chained)
-```
+**Sealing is tamper-evidence, not append-control - and the substrate is append-only.** The chain
+guarantees no *committed* link is silently dropped or edited (remove an inconvenient reject and the head
+stops matching). It does **not** stop anyone from signing a well-formed claim that extends the review.
+That is fine: what closes the conversation is the **parent's record**, which pins the head at close time.
+A claim added *after* that head is a valid claim that is simply **outside** the closed review - "you can
+still add, but look it up, it is over." Try it: extend the review after the close and its *live* head
+moves, but the parent still pins `closed@HEAD`, so the addendum is visibly post-close.
 
-The **head** is the tip of the chain. Publish that one id (paste it in a report, an email, anywhere)
-and the whole review is fixed: it transitively commits to every earlier link, because each claim's id
-is computed over its contents *including* its `prev`. Optionally, `kton anchor` posts the head to a
-public transparency log (Sigstore/Rekor) so that not even the chair can backdate it, `kton` is the
-cockpit tool that adds network features on top of the two kernels; you do not need it here.
+**Who may close, and whether the review was conducted honestly, are behind kton's boundary.** *Who* may
+write the close is trust policy - here the board, the parent's authority; a scope's `responsible` set
+(SPEC §7.4) names it. And whether every input was captured and whether a signer *saw what they signed* is
+a validated system's job (a transactional trail + a validated UI) - kton **documents** the review and
+makes tampering, rewinds and post-close additions *detectable*; it does not *conduct* the review.
 
-**Boundary - the head proves integrity, not currency.** A published head is tamper-evident, but by
-itself it does not prove it is the *latest* head: an earlier, shorter chain (a **rewind**) verifies just
-as cleanly. Knowing you hold the current head is a separate step - anchoring the head in a transparency
-log (above) plus a consumer freshness check, laid out in the protocol's
-[Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/trust.md) (section 3, "freshness")
-and made real in [example 08](../08-sigstore-github/).
-
-**Boundary - sealing is tamper-evidence, not append-control.** What the sealed chain guarantees is that
-no link can be *silently dropped or edited*: remove an inconvenient reject and the published head no
-longer matches; change any earlier claim and its id changes, breaking the next `prev`. What it does
-**not** do is control *who may append*. Anyone who can sign a well-formed claim naming this scope and the
-current head as its `prev` can extend the chain - so mirroring a hostile peer can advance the head to a
-claim the chair never signed. "The head moved" is therefore not "the chair signed it": a consumer must
-still check *who* signed each link. Restricting who may extend a scope is a separate **authority** layer,
-not a property of the chain - because in kton legitimacy comes from an authority the verdict commits to,
-never from the chain or a bare key, and a self-vouched claim proves nothing. That enrolment-authority
-step (the scope commits to an authorized signer set, vouched by a trust root) is the roadmap item in the
-[authority-hook design](../articles/design-authority-hook-and-rsa.md) and the Trust chapter's
-completeness section; it is not implemented here.
-
-**6. See the tamper-evidence.** A claim whose `prev` points nowhere does not extend the chain. It is
-**persisted** - its `prev` might resolve from another peer later, so the substrate treats it as
-*incomplete, not invalid* (the same rule federation needs) - but it **never joins the scope**, so it is
-never the head:
-
-```
-# a forged claim naming this scope but a prev that does not exist
-printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$SCOPE" > bad.spec.json
-nekton claim bad.spec.json chair.key --add    # persisted (deferred), NOT part of the chain
-nekton head "$SCOPE"                            # head UNCHANGED - the forged link never resolved in
-```
-
-The tamper-evidence is the same by a cleaner mechanism: change or drop any earlier claim and its
-successors' `prev` no longer resolves, so they fall out of the chain and the head *changes*. Anyone
-holding the published head can detect it, because that id no longer reproduces.
-
-**This is the open-substrate rule, not a special sealed-scope fatality.** An unresolved reference is
-*incomplete*, not invalid (a record referencing something you cannot yet see is still valid on its own
-hash and signature); it simply does not resolve into a scope until its dependency arrives. The sealed
-scope's guarantee is that a *resolved* chain is complete and tamper-evident - not that a dangling link is
-rejected on the spot. Do not read "a dangling link is rejected" as holding anywhere, or federation
-breaks.
+**A dangling `prev` never joins the chain.** A claim naming this scope but with a `prev` that resolves
+nowhere is **persisted** - its `prev` might arrive from another peer later, so the substrate treats it as
+*incomplete, not invalid* - but it never joins the scope, so it is never the head. This is the
+open-substrate rule (the same one federation needs), not a special sealed-scope fatality: a resolved
+chain is complete and tamper-evident; a dangling link is deferred, not rejected on the spot.
 
 ## Or just run the whole thing
 
