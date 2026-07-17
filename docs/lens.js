@@ -16,6 +16,7 @@
  *   green  ring - verified here (signature re-checked) AND your bytes are the recorded bytes
  *   amber  ring - known & content matches, but this browser can't do Ed25519 (open to verify)
  *   grey   ring - known by hash, shown without a key to verify against
+ *   ↻N counter - reproduced: N independent fotons produced these exact bytes (the more, the stronger the corroboration)
  */
 (function () {
   "use strict";
@@ -47,8 +48,11 @@
   }
 
   /* ---------- connected planktons: load each registry, index every file it knows ----------------- */
-  var IDX = {};   // hash -> { rec, reg:{union,keys,names}, keys }
+  var IDX = {};   // hash -> { outs:[{rec,reg,keys}], ins:[...] } - EVERY producer, not just the first
   function regUrls(union) { var b = union.replace(/[^/]*$/, ""); return { union: union, keys: b + "keys.json", names: b + "names.json" }; }
+  // distinct producing fotons of a hash (same bytes from N fotons = reproduction) - dedup across registries by id
+  function distinctProducers(outs) { var seen = {}, out = []; (outs || []).forEach(function (e) { var id = e.rec.fotonId || e.rec.claimId; if (id && !seen[id]) { seen[id] = 1; out.push(e); } }); return out; }
+  function distinctSigners(list) { var s = {}; (list || []).forEach(function (e) { var sg = e.rec.envelope && e.rec.envelope.signatures && e.rec.envelope.signatures[0] && e.rec.envelope.signatures[0].keyid; if (sg) s[sg] = 1; }); return Object.keys(s).length; }
   // the reader's OWN connected planktons (e.g. set in Teams), unioned onto whatever the embedding delivers:
   // the same file may then resolve to MORE (you know things the sender did not ship) or LESS (it points at
   // a plankton you are not connected to). Stored as a JSON array or comma list under localStorage "kton-planktons".
@@ -64,11 +68,17 @@
       union.forEach(function (r) {
         if (!r || !r.envelope) return;
         var p; try { p = JSON.parse(atob(r.envelope.payload)); } catch (e) { return; }
-        var files = (p.subject || []).concat((p.predicate && p.predicate.inputs) || []);   // outputs AND inputs
-        files.forEach(function (s) {
-          var d = s.digest && (s.digest.sha256 || s.digest["sha-256"]);
-          if (d && !IDX["sha256:" + d.toLowerCase()]) IDX["sha256:" + d.toLowerCase()] = { rec: r, reg: reg, keys: keys };
-        });
+        function add(s, role) {                                            // role: "outs" (produced) | "ins" (consumed) | "refs" (a claim's subject)
+          var d = s.digest && (s.digest.sha256 || s.digest["sha-256"]); if (!d) return;
+          var key = "sha256:" + d.toLowerCase(), e = IDX[key] || (IDX[key] = { outs: [], ins: [], refs: [] });
+          e[role].push({ rec: r, reg: reg, keys: keys });                  // collect EVERY producer - N fotons that made the same bytes all count (reproduction)
+        }
+        if (r.fotonId) {                                                   // a FOTON: its subjects are OUTPUTS it produced; predicate.inputs are what it consumed
+          (p.subject || []).forEach(function (s) { add(s, "outs"); });
+          ((p.predicate && p.predicate.inputs) || []).forEach(function (s) { add(s, "ins"); });
+        } else {                                                           // a CLAIM: its subject is what it is ABOUT - a reference, NOT a production
+          (p.subject || []).forEach(function (s) { add(s, "refs"); });
+        }
       });
     }
   }
@@ -82,6 +92,9 @@
 .lens-badge:hover{transform:scale(1.12);box-shadow:0 3px 12px rgba(0,0,0,.36)}\
 .lens-badge:focus-visible{outline:2px solid #3a45cf;outline-offset:2px}\
 .lens-ok{--lc:#12b886} .lens-av{--lc:#e0932a} .lens-un{--lc:#9aa4b2}\
+.lens-rep{position:absolute;right:5px;bottom:31px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;\
+  background:#12b886;color:#fff;font:700 10px/17px ui-sans-serif,system-ui,sans-serif;text-align:center;\
+  box-shadow:0 1px 4px rgba(0,0,0,.35);pointer-events:none;z-index:3}\
 .lens-tip{position:absolute;right:8px;bottom:44px;max-width:280px;background:#0f131a;color:#e8ebf2;\
   font:12px/1.5 ui-sans-serif,system-ui,sans-serif;padding:8px 11px;border-radius:9px;box-shadow:0 6px 22px rgba(0,0,0,.4);\
   opacity:0;pointer-events:none;transform:translateY(4px);transition:.14s;z-index:3}\
@@ -120,18 +133,23 @@
     return { cmd: proto.cmd, by: (names && names[kid]) || kid, ins: ((p.predicate || {}).inputs || []).map(function (i) { return i.name; }).filter(Boolean) };
   }
 
-  function attach(img, hash, hit, state, names) {
+  function attach(img, hash, hit, state, names, nprod, nsign) {
     var wrap = document.createElement("span"); wrap.className = "lens-wrap";
     img.parentNode.insertBefore(wrap, img); wrap.appendChild(img);
     var b = document.createElement("button");
     b.className = "lens-badge lens-" + state; b.style.backgroundImage = "url(" + CFG.logo + ")";
     b.setAttribute("aria-label", "provenance available - open the kton world");
     var ped = pedigree(hit.rec, names);
+    var repro = nprod > 1;                                        // same bytes produced by >1 foton = reproduced/corroborated
     var tip = document.createElement("div"); tip.className = "lens-tip";
     var vline = state === "ok" ? '<span class="v">✓ verified here</span>' : state === "av" ? '<span class="m">● known · open to verify</span>' : '<span class="m">● known by hash</span>';
-    tip.innerHTML = vline + '<br><b>' + (ped.by || "?") + '</b>' + (ped.cmd ? '<br><span class="m">via</span> ' + ped.cmd : "") + (ped.ins && ped.ins.length ? '<br><span class="m">from</span> ' + ped.ins.join(", ") : "") + '<br><span class="m">click to dig into where it came from</span>';
+    var repline = repro ? '<span class="v">↻ reproduced · ' + nprod + ' fotons' + (nsign > 1 ? ' · ' + nsign + ' signers' : '') + '</span><br>' : '';
+    tip.innerHTML = repline + vline + '<br><b>' + (ped.by || "?") + '</b>' + (ped.cmd ? '<br><span class="m">via</span> ' + ped.cmd : "") + (ped.ins && ped.ins.length ? '<br><span class="m">from</span> ' + ped.ins.join(", ") : "") + '<br><span class="m">click to dig into where it came from</span>';
     b.onclick = function () { openWorld(hit, hash); };
-    wrap.appendChild(b); wrap.appendChild(tip);
+    wrap.appendChild(b);
+    if (repro) { var rp = document.createElement("span"); rp.className = "lens-rep"; rp.textContent = "↻" + nprod;
+      rp.title = nprod + " independent fotons produced these exact bytes (reproduced)"; wrap.appendChild(rp); }
+    wrap.appendChild(tip);
   }
 
   async function run() {
@@ -147,10 +165,12 @@
       var hash, bytes = null;
       if (/^sha256:[0-9a-f]{64}$/i.test(src)) { hash = src.toLowerCase(); }
       else { try { bytes = await (await fetch(src)).arrayBuffer(); hash = await sha256(bytes); } catch (e) { continue; } }
-      var hit = IDX[hash]; if (!hit) continue;                  // unknown to every connected plankton -> no badge
+      var entry = IDX[hash]; if (!entry) continue;              // unknown to every connected plankton -> no badge
+      var prods = distinctProducers(entry.outs);               // every foton that OUTPUT these exact bytes = a reproduction
+      var hit = prods[0] || entry.ins[0] || entry.refs[0];      // prefer a PRODUCER (where it came from); else consumer; else a claim ref
       var names = namesCache[hit.reg.names]; if (names === undefined) { try { names = await (await fetch(hit.reg.names)).json(); } catch (e) { names = {}; } namesCache[hit.reg.names] = names; }
       var v = bytes ? await verifySig(hit.rec, hit.keys) : null;  // content already matches (hash came from the bytes)
-      attach(img, hash, hit, v === true ? "ok" : v === false ? "un" : "av", names);
+      attach(img, hash, hit, v === true ? "ok" : v === false ? "un" : "av", names, prods.length, distinctSigners(prods));
     }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
