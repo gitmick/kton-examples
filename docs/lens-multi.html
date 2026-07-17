@@ -35,7 +35,9 @@
       The plot below has a <b>plankton lens</b>. Because these exact bytes were produced by <b>three
       independent fotons</b> — the analyst's run, QC's re-run, and an external lab's — its badge shows
       <b>↻3</b>: the figure isn't just verifiable, it's <b>corroborated</b>. Hover the lens for
-      "reproduced · 3 fotons · 3 signers"; click it to open the kton world.
+      "reproduced · 3 fotons · 3 signers"; click it to open the kton world. The badge is resolved by
+      <b>hashing the plot and fetching one small index file</b> from a static mirror — <b>the whole
+      registry is never loaded</b>, so this scales to any number of records.
     </div>
 
     <p class="abstract">A concentration–time profile for a test compound. Nothing here asks for trust:
@@ -55,7 +57,10 @@
     </div>
   </article>
 
+  <!-- data-mirror: the badge is resolved by HASH from a static content-addressed mirror (never loads a
+       whole union); data-planktons is kept only for the clickable deep-dive (the viewer loads it on click). -->
   <script src="lens.js"
+          data-mirror="lens-multi/mirror"
           data-planktons="lens-multi/data/union.json"
           data-viewer="viewer.html"
           data-logo="logo.png"></script>

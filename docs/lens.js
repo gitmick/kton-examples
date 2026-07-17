@@ -26,6 +26,7 @@
     viewer: S.getAttribute("data-viewer") || "viewer.html",
     logo: S.getAttribute("data-logo") || "logo.png",
     selector: S.getAttribute("data-selector") || "img.lens,img[data-kton]",
+    mirror: S.getAttribute("data-mirror") || "",   // a STATIC content-addressed mirror: fetch by hash, never load a whole union
   };
 
   /* ---------- crypto: SHA-256 (universal) + Ed25519/DSSE (like example 13, where supported) ------- */
@@ -81,6 +82,28 @@
         }
       });
     }
+  }
+
+  /* ---------- LAZY mode: a static content-addressed mirror (the rainbow table of executions) ---------
+   * Never loads a union. For a file hash H: GET output/sha256/H -> [producer foton ids], then GET each
+   * object by id. Every object is re-hashable to its id, so the mirror can withhold but cannot forge.
+   * Scales to any number of records - you fetch only the hashes you look at. */
+  var mkeys = null, mnames = null;
+  function shard(h) { h = String(h).replace(/^sha256:/, "").toLowerCase(); return h.slice(0, 2) + "/" + h; }  // 2-hex prefix, matches build_mirror.py
+  async function mget(path) { try { var r = await fetch(CFG.mirror.replace(/\/$/, "") + "/" + path); return r.ok ? await r.json() : null; } catch (e) { return null; } }
+  async function mObject(id) { return mget("objects/sha256/" + shard(id) + ".json"); }
+  async function lazyLookup(hash) {
+    var prodIds = await mget("output/sha256/" + shard(hash) + ".json");   // the rainbow-table lookup: who executed these bytes?
+    if (!prodIds || !prodIds.length) return null;
+    var ids = prodIds.filter(function (v, i, a) { return a.indexOf(v) === i; });
+    var rec = await mObject(ids[0]); if (!rec) return null;               // the primary producer's record (for verify + pedigree)
+    var signers = {};
+    for (var i = 0; i < ids.length; i++) {                               // count distinct signers across producers (a few small fetches)
+      var r = i === 0 ? rec : await mObject(ids[i]);
+      var kid = r && r.envelope && r.envelope.signatures && r.envelope.signatures[0] && r.envelope.signatures[0].keyid;
+      if (kid) signers[kid] = 1;
+    }
+    return { rec: rec, nprod: ids.length, nsign: Object.keys(signers).length };
   }
 
   /* ---------- the lens badge + the "kton world" overlay ------------------------------------------- */
@@ -157,7 +180,10 @@
     var imgs = [].slice.call(document.querySelectorAll(CFG.selector));
     if (!imgs.length) return;
     inject();
-    await loadPlanktons();
+    var LAZY = !!CFG.mirror;
+    if (LAZY) { mkeys = await mget("keys.json") || {}; mnames = await mget("names.json") || {}; }  // (at scale these become indexes too)
+    else await loadPlanktons();
+    var openReg = CFG.planktons.length ? regUrls(CFG.planktons[0]) : null;   // for the clickable deep-dive (viewer loads it on click)
     var namesCache = {};
     for (var i = 0; i < imgs.length; i++) {
       var img = imgs[i];
@@ -165,12 +191,20 @@
       var hash, bytes = null;
       if (/^sha256:[0-9a-f]{64}$/i.test(src)) { hash = src.toLowerCase(); }
       else { try { bytes = await (await fetch(src)).arrayBuffer(); hash = await sha256(bytes); } catch (e) { continue; } }
-      var entry = IDX[hash]; if (!entry) continue;              // unknown to every connected plankton -> no badge
-      var prods = distinctProducers(entry.outs);               // every foton that OUTPUT these exact bytes = a reproduction
-      var hit = prods[0] || entry.ins[0] || entry.refs[0];      // prefer a PRODUCER (where it came from); else consumer; else a claim ref
-      var names = namesCache[hit.reg.names]; if (names === undefined) { try { names = await (await fetch(hit.reg.names)).json(); } catch (e) { names = {}; } namesCache[hit.reg.names] = names; }
+      var hit, names, nprod, nsign;
+      if (LAZY) {                                                // fetch by hash from the mirror - no union ever loaded
+        var L = await lazyLookup(hash); if (!L) continue;
+        hit = { rec: L.rec, reg: openReg || { union: "", keys: "", names: "" }, keys: mkeys };
+        names = mnames; nprod = L.nprod; nsign = L.nsign;
+      } else {
+        var entry = IDX[hash]; if (!entry) continue;             // unknown to every connected plankton -> no badge
+        var prods = distinctProducers(entry.outs);              // every foton that OUTPUT these exact bytes = a reproduction
+        hit = prods[0] || entry.ins[0] || entry.refs[0];        // prefer a PRODUCER (where it came from); else consumer; else a claim ref
+        names = namesCache[hit.reg.names]; if (names === undefined) { try { names = await (await fetch(hit.reg.names)).json(); } catch (e) { names = {}; } namesCache[hit.reg.names] = names; }
+        nprod = prods.length; nsign = distinctSigners(prods);
+      }
       var v = bytes ? await verifySig(hit.rec, hit.keys) : null;  // content already matches (hash came from the bytes)
-      attach(img, hash, hit, v === true ? "ok" : v === false ? "un" : "av", names, prods.length, distinctSigners(prods));
+      attach(img, hash, hit, v === true ? "ok" : v === false ? "un" : "av", names, nprod, nsign);
     }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
