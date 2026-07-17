@@ -34,7 +34,7 @@ nekton head "$SCOPE"
 echo "-- a claim with a dangling prev is persisted but does NOT join the sealed chain --"
 printf '{"subject":[{"uri":"urn:doc:x"}],"predicate":"pav:reviewedBy","object":{"value":"forged"},"by":"CN=Chair","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}' "$SCOPE" > .work/bad.spec.json
 nekton claim .work/bad.spec.json "$PWD/.work/keys/chair.key" --add >/dev/null 2>&1
-echo -n "  head after the forged link (UNCHANGED - it never joined): "; nekton head "$SCOPE" | grep -oE 'head:.*|sha256:[0-9a-f]+' | head -1
+echo -n "  head after the forged link (UNCHANGED - it never joined): "; nekton head "$SCOPE" | awk '/^head:/{print $2}'
 
 echo ""
 snapshot 05-review-scope "$PWD/.work/keys" --reg "$NEKTON_DIR"
