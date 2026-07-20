@@ -51,8 +51,8 @@ echo; echo "############ STAGE C: normalize the volatile test (real sed), then c
 # BOTH raws with the SAME descriptor, so both share one normalizer potential.
 sh tests/normalize.sh "$W/test-predict.ref.out"  > "$W/predict.ref.canon"
 sh tests/normalize.sh "$W/test-predict.cand.out" > "$W/predict.cand.canon"
-plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "$W/test-predict.ref.out"  --out "$W/predict.ref.canon"  --sign "$W/keys/author.key" --add -o "$W/nr.foton.json" >/dev/null
-plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "$W/test-predict.cand.out" --out "$W/predict.cand.canon" --sign "$W/keys/author.key" --add -o "$W/nc.foton.json" >/dev/null
+plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "tests/normalize.sh" --in "$W/test-predict.ref.out"  --out "$W/predict.ref.canon"  --sign "$W/keys/author.key" --add -o "$W/nr.foton.json" >/dev/null
+plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "tests/normalize.sh" --in "$W/test-predict.cand.out" --out "$W/predict.cand.canon" --sign "$W/keys/author.key" --add -o "$W/nc.foton.json" >/dev/null
 POT=$(python3 -c "import json,base64;print(json.loads(base64.b64decode(json.load(open('$W/nr.foton.json'))['payload']))['predicate']['protocol']['ref'])")
 echo "  normalizer potential: $POT"
 # the potential is not a separate object: it is this shared protocol ref, REGISTERED via its

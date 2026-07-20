@@ -51,9 +51,12 @@ echo "  recorded. But a pin only proves SAMENESS - it does not say the image is 
 echo; echo "############ STAGE 3: specify a spectrum = the pkg test suite, ONE FOTON PER TEST ############"
 echo "  define the qualified environment structurally: the exact-version test results it must reproduce."
 for t in test-glm test-summary test-predict; do
-  printf "%s: PASS\n" "$t" > "$t.result"          # the gold result of this test at the pinned versions
+  printf 'd <- readLines("%s.fixture"); cat("%s: PASS\\n")\n' "$t" "$t" > "$t.R"  # the test script (like fit.R)
   echo "fixture-$t" > "$t.fixture"
-  plankton author --cmd "Rscript tests/$t.R" --in "$t.fixture" --out "$t.result" \
+  printf "%s: PASS\n" "$t" > "$t.result"          # the gold result at the pinned versions (illustrative stand-in)
+  # bind the test SCRIPT itself as a covered input - a foton whose --cmd names a script but does not --in
+  # it would not actually pin the code that produced the result.
+  plankton author --cmd "Rscript $t.R $t.fixture" --in "$t.R" --in "$t.fixture" --out "$t.result" \
     --sign keys/author.key --add >/dev/null
   echo "  reference foton: $t -> $(plankton hash "$t.result")"
 done

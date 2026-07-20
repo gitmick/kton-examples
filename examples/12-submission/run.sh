@@ -65,24 +65,28 @@ echo "  normalizer-spectrum id (NENV) = $NENV  (the banner normalizer is a quali
 # author the reference-corpus normalizations bound to the qualified env, so the members resolve as real
 # foton outputs (spectrum check demands both sides back a computation) and share the env-pinned potential.
 for n in norm-a norm-b; do
-  plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/$n.in" --out "$F/$n.canon" --sign "$(key analyst).key" --add >/dev/null
+  plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/$n.in" --out "$F/$n.canon" --sign "$(key analyst).key" --add >/dev/null
 done
 declare -A REF
 for t in test-onecomp test-twocomp test-covariate; do
   printf "x\n1\n2\n3\n" > "$F/$t.csv"
   if [ "$t" = "test-covariate" ]; then Rscript "$T/pmxtest.R" "$F/$t.csv" banner > "$F/$t.ref"; else Rscript "$T/pmxtest.R" "$F/$t.csv" > "$F/$t.ref"; fi
-  plankton author --cmd "Rscript tools/$t.R" --in "$F/$t.csv" --out "$F/$t.ref" --sign "$(key analyst).key" --add >/dev/null
+  # the code that RAN is tools/pmxtest.R (parameterized by the fixture), so bind IT as a covered input -
+  # a foton whose --cmd named a script but did not --in it would not actually pin the code that produced
+  # the result (edit the script, same foton). The covariate fixture adds the volatile "banner" arg.
+  TCMD="Rscript tools/pmxtest.R $t.csv"; [ "$t" = "test-covariate" ] && TCMD="Rscript tools/pmxtest.R $t.csv banner"
+  plankton author --cmd "$TCMD" --in "tools/pmxtest.R" --in "$F/$t.csv" --out "$F/$t.ref" --sign "$(key analyst).key" --add >/dev/null
   REF[$t]=$(plankton hash "$F/$t.ref")
 done
 # the covariate test carries a volatile banner -> its candidate run differs -> normalizer gives L1.
 # The candidate (docker) run is AUTHORED as its own foton too - it is a real computation, so recording
 # only its hash for the spectrum check would leave a rootless file (a trail gap).
 Rscript "$T/pmxtest.R" "$F/test-covariate.csv" banner > "$F/test-covariate.cand"
-plankton author --cmd "Rscript tools/test-covariate.R" --in "$F/test-covariate.csv" --out "$F/test-covariate.cand" --sign "$(key qc).key" --add >/dev/null
+plankton author --cmd "Rscript tools/pmxtest.R test-covariate.csv banner" --in "tools/pmxtest.R" --in "$F/test-covariate.csv" --out "$F/test-covariate.cand" --sign "$(key qc).key" --add >/dev/null
 sh "$T/strip-banner.sh" "$F/test-covariate.ref"  > "$F/cov.ref.canon"
 sh "$T/strip-banner.sh" "$F/test-covariate.cand" > "$F/cov.cand.canon"
-plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/test-covariate.ref"  --out "$F/cov.ref.canon"  --sign "$(key analyst).key" --add >/dev/null
-plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/test-covariate.cand" --out "$F/cov.cand.canon" --sign "$(key analyst).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/test-covariate.ref"  --out "$F/cov.ref.canon"  --sign "$(key analyst).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/test-covariate.cand" --out "$F/cov.cand.canon" --sign "$(key analyst).key" --add >/dev/null
 POT=$(python3 -c "import json,base64,glob;
 import os
 best=None
@@ -162,8 +166,8 @@ QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analys
 echo "  QC re-ran the fit -> $QCFIT (same action key as the analyst's, independent signer + output)"
 sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"
-plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/run1.ext"    --out "$F/fit.ref.canon" --sign "$(key qc).key" --add >/dev/null
-plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/run1-qc.ext" --out "$F/fit.qc.canon" --sign "$(key qc).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/run1.ext"    --out "$F/fit.ref.canon" --sign "$(key qc).key" --add >/dev/null
+plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/run1-qc.ext" --out "$F/fit.qc.canon" --sign "$(key qc).key" --add >/dev/null
 echo -n "  plankton reproduces (raw): "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" || true
 echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
 # QC signs the reproduction as a claim that CONNECTS the two runs: subject = the analyst's output,
@@ -221,7 +225,7 @@ echo -n "  1. reproduction re-check (L1):      "; if plankton reproduces "$(plan
 # collapse never happens under the real one. (Honest stand-in for pulling NORMREF: really runs strip-banner.)
 echo -n "  1b. normalizer qualified + re-run:  "
 for n in norm-a norm-b; do sh "$T/strip-banner.sh" "$F/$n.in" > "$F/$n.recheck"
-  plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "$F/$n.in" --out "$F/$n.recheck" --sign "$(key reviewer).key" --add >/dev/null; done
+  plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/$n.in" --out "$F/$n.recheck" --sign "$(key reviewer).key" --add >/dev/null; done
 plankton spectrum check "$F/normalizer.spectrum.json" --candidate "norm-a=$(plankton hash "$F/norm-a.recheck")" --candidate "norm-b=$(plankton hash "$F/norm-b.recheck")" >/dev/null 2>&1 || { echo "normalizer NOT qualified -> abort"; exit 1; }
 sh "$T/strip-banner.sh" "$F/run1.ext" > "$F/re.ref.canon"; sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/re.qc.canon"
 if cmp -s "$F/re.ref.canon" "$F/re.qc.canon"; then echo "qualified; both fit outputs re-normalize to an identical L1 form"; else echo "regulator re-normalization DIFFERS -> abort"; exit 1; fi
