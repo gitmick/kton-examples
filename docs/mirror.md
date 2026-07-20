@@ -1,6 +1,6 @@
 # Static realization of the federation API — the mirror as files-by-hash
 
-> Draft design note (kton-examples). Companion to **`plankton/docs/federation.md`**, which defines the
+> Design note (kton-examples). Companion to **`plankton/docs/federation.md`**, which defines the
 > concepts (resolve-by-hash, selective publication, the small federation API, append-only sync, mirroring).
 > This note shows that API is realizable as **pure static files** — no server software — and works out what
 > it costs to store, serve, and publish at world scale. Reference implementation: `viewer/build_mirror.py`,
