@@ -92,18 +92,29 @@
   function shard(h) { h = String(h).replace(/^sha256:/, "").toLowerCase(); return h.slice(0, 2) + "/" + h; }  // 2-hex prefix, matches build_mirror.py
   async function mget(path) { try { var r = await fetch(CFG.mirror.replace(/\/$/, "") + "/" + path); return r.ok ? await r.json() : null; } catch (e) { return null; } }
   async function mObject(id) { return mget("objects/sha256/" + shard(id) + ".json"); }
+  // list an APPEND-ONLY marker prefix -> producer ids. Reading = list the prefix; appending = drop one file
+  // (nothing is ever rewritten). Here via directory autoindex (http.server/nginx/apache); an object-storage
+  // host would use its LIST API. ↻N is just the count of markers - free from the listing, no content fetched.
+  async function listMarkers(kind, hash) {
+    try {
+      var r = await fetch(CFG.mirror.replace(/\/$/, "") + "/" + kind + "/sha256/" + shard(hash) + "/");
+      if (!r.ok) return [];
+      var html = await r.text(), ids = [], re = /href="([0-9a-f]{64})\.json"/gi, m;
+      while ((m = re.exec(html))) ids.push("sha256:" + m[1]);
+      return ids.filter(function (v, i, a) { return a.indexOf(v) === i; });
+    } catch (e) { return []; }
+  }
   async function lazyLookup(hash) {
-    var prodIds = await mget("output/sha256/" + shard(hash) + ".json");   // the rainbow-table lookup: who executed these bytes?
-    if (!prodIds || !prodIds.length) return null;
-    var ids = prodIds.filter(function (v, i, a) { return a.indexOf(v) === i; });
+    var ids = await listMarkers("output", hash);                          // who executed these bytes? (↻N is just the marker count)
+    if (!ids.length) return null;
     var rec = await mObject(ids[0]); if (!rec) return null;               // the primary producer's record (for verify + pedigree)
-    var signers = {};
-    for (var i = 0; i < ids.length; i++) {                               // count distinct signers across producers (a few small fetches)
-      var r = i === 0 ? rec : await mObject(ids[i]);
-      var kid = r && r.envelope && r.envelope.signatures && r.envelope.signatures[0] && r.envelope.signatures[0].keyid;
-      if (kid) signers[kid] = 1;
+    var nsign = 0;
+    if (ids.length <= 24) {                                               // signer count from the tiny markers (skip when hugely reproduced)
+      var s = {};
+      for (var i = 0; i < ids.length; i++) { var mk = await mget("output/sha256/" + shard(hash) + "/" + ids[i].replace(/^sha256:/, "") + ".json"); if (mk && mk.by) s[mk.by] = 1; }
+      nsign = Object.keys(s).length;
     }
-    return { rec: rec, nprod: ids.length, nsign: Object.keys(signers).length };
+    return { rec: rec, nprod: ids.length, nsign: nsign };
   }
 
   /* ---------- the lens badge + the "kton world" overlay ------------------------------------------- */

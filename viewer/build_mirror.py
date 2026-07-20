@@ -1,55 +1,66 @@
 #!/usr/bin/env python3
-"""build_mirror.py - turn a union.json into a STATIC, content-addressed mirror.
+"""build_mirror.py - turn records into a STATIC, APPEND-ONLY, content-addressed mirror.
 
-A mirror is just files-by-hash, so it serves off any CDN/S3/IPFS/Pages with no server
-compute and scales to any number of records - a client fetches only the hashes it needs
-and re-hashes every object it gets back (the mirror can withhold, but cannot forge):
+Objects are immutable and named by their content hash. The reverse index (who produced /
+consumed / attested a hash) is a directory of one immutable MARKER per producer - so a new
+foton just DROPS a marker; nothing is ever rewritten. That inherits plankton's drift:
+idempotent, order-independent, no coordination. Reading = list the prefix.
 
-  objects/sha256/<id>.json      the record itself (foton or claim), keyed by its content id
-  output/sha256/<hash>.json     -> [foton ids that OUTPUT these bytes]   (producers; the lens's core lookup)
-  input/sha256/<hash>.json      -> [foton ids that CONSUME it]           (downstream)
-  about/sha256/<hash>.json      -> [claim ids ABOUT this subject]        (attestations)
-  keys.json / names.json        copied for verification / labels
+  objects/sha256/<ab>/<id>.json         the record itself (immutable), 2-hex sharded
+  output/sha256/<ab>/<hash>/<pid>.json  one marker per foton that OUTPUT these bytes  (the rainbow table)
+  input/sha256/<ab>/<hash>/<pid>.json   one marker per foton that CONSUMED it
+  about/sha256/<ab>/<hash>/<pid>.json   one marker per claim ABOUT this subject
+  keys.json / names.json                copied (batch build only)
 
-Usage: build_mirror.py <union.json> <out-dir>
+A marker's filename is the producer id; its tiny body is {"by": <signer keyid>} so the
+count (↻N) is free from the listing and signers need only small marker reads, not full objects.
+
+Usage:
+  build_mirror.py <union.json> <out-dir>          full build   (also copies keys/names)
+  build_mirror.py --add <records.json> <out-dir>  append new records (idempotent; no rewrite)
 """
 import json, os, sys, base64
 
-union_path, out_dir = sys.argv[1], sys.argv[2]
-recs = json.load(open(union_path))
+args = sys.argv[1:]
+add_mode = "--add" in args
+if add_mode: args.remove("--add")
+recs_path, out_dir = args[0], args[1]
+recs = json.load(open(recs_path))
 strip = lambda h: (h or "").replace("sha256:", "").lower()
+shard = lambda h: h[:2] + "/" + h
 
-def write(sub, key, data):
-    # shard by 2-hex prefix (like git's .git/objects/ab/…) so no directory holds millions of files.
-    # On object storage (S3/R2/IPFS) keys are flat with no count limit, so this only helps filesystem/git hosts.
-    d = os.path.join(out_dir, sub, "sha256", key[:2]); os.makedirs(d, exist_ok=True)
-    json.dump(data, open(os.path.join(d, key + ".json"), "w"), separators=(",", ":"))
+def put(path, data):
+    """write once - never overwrite (append-only / idempotent). returns True if newly written."""
+    if os.path.exists(path): return False
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    json.dump(data, open(path, "w"), separators=(",", ":"))
+    return True
 
-outmap, inmap, aboutmap = {}, {}, {}
+def obj_path(rid):        return os.path.join(out_dir, "objects", "sha256", shard(strip(rid)) + ".json")
+def marker(kind, h, pid): return os.path.join(out_dir, kind, "sha256", h[:2], h, strip(pid) + ".json")
+
+n_obj = n_mark = 0
 for r in recs:
     rid = r.get("fotonId") or r.get("claimId")
     if not rid or not r.get("envelope"): continue
-    write("objects", strip(rid), r)                                   # the record, by its content id
+    if put(obj_path(rid), r): n_obj += 1
     try: p = json.loads(base64.b64decode(r["envelope"]["payload"]))
     except Exception: continue
-    def dig(s): return strip(((s.get("digest") or {}).get("sha256")) or "")
-    if r.get("fotonId"):                                              # a FOTON: subjects are OUTPUTS, predicate.inputs are consumed
+    signer = (r["envelope"].get("signatures") or [{}])[0].get("keyid", "")
+    dig = lambda s: strip((s.get("digest") or {}).get("sha256") or "")
+    if r.get("fotonId"):                                          # FOTON: subjects=OUTPUTS, predicate.inputs=consumed
         for s in p.get("subject", []) or []:
-            h = dig(s);  outmap.setdefault(h, set()).add(rid) if h else None
-        for s in ((p.get("predicate") or {}).get("inputs") or []):
-            h = dig(s);  inmap.setdefault(h, set()).add(rid) if h else None
-    else:                                                            # a CLAIM: subject is what it is ABOUT
+            h = dig(s); n_mark += 1 if (h and put(marker("output", h, rid), {"by": signer})) else 0
+        for s in (p.get("predicate", {}) or {}).get("inputs", []) or []:
+            h = dig(s); n_mark += 1 if (h and put(marker("input", h, rid), {"by": signer})) else 0
+    else:                                                        # CLAIM: subject=what it is ABOUT
         for s in p.get("subject", []) or []:
-            h = dig(s);  aboutmap.setdefault(h, set()).add(rid) if h else None
+            h = dig(s); n_mark += 1 if (h and put(marker("about", h, rid), {"by": signer})) else 0
 
-for h, ids in outmap.items():   write("output", h, sorted(ids))
-for h, ids in inmap.items():    write("input",  h, sorted(ids))
-for h, ids in aboutmap.items(): write("about",  h, sorted(ids))
+if not add_mode:
+    base = os.path.dirname(recs_path)
+    for f in ("keys.json", "names.json"):
+        src = os.path.join(base, f)
+        if os.path.exists(src): json.dump(json.load(open(src)), open(os.path.join(out_dir, f), "w"), separators=(",", ":"))
 
-base = os.path.dirname(union_path)
-for f in ("keys.json", "names.json"):
-    src = os.path.join(base, f)
-    if os.path.exists(src): json.dump(json.load(open(src)), open(os.path.join(out_dir, f), "w"), separators=(",", ":"))
-
-print("mirror -> %s  (%d objects, %d output-hashes, %d input-hashes, %d about-subjects)"
-      % (out_dir, len(recs), len(outmap), len(inmap), len(aboutmap)))
+print("%s: +%d objects, +%d markers  ->  %s" % ("add" if add_mode else "build", n_obj, n_mark, out_dir))
