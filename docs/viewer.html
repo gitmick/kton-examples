@@ -1,14 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>kton · graph viewer</title>
 <link rel="icon" type="image/png" href="logo.png">
+<link rel="stylesheet" href="kton.css">
 <style>
-  :root { --bg:#0f1420; --panel:#151b29; --ink:#e7ecf5; --dim:#8b97ad; --line:#2a3346;
-          --a:#38bdf8; --b:#f5b642; --c:#34d399; --d:#c084fc; --e:#fb7185; --f:#2dd4bf;
-          --ok:#34d399; --bad:#f87171; --edge:#3b465e; --about:#7c9cff; --accent:#7c9cff; }
+  /* surface, chrome + the teal accent come from kton.css (this page locks data-theme=dark). Only the
+     graph's data-visualisation palette stays local, where the hues carry meaning (foton/claim/edge kinds). */
+  :root { --a:#38bdf8; --b:#f5b642; --c:#34d399; --d:#c084fc; --e:#fb7185; --f:#2dd4bf;
+          --ok:#34d399; --bad:#f87171; --edge:#3b465e; --about:#7c9cff; }
   * { box-sizing:border-box; }
   html,body { margin:0; height:100%; background:var(--bg); color:var(--ink);
               font:14px/1.55 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif; overflow:hidden; }
@@ -119,7 +121,7 @@
 </head>
 <body>
 <header>
-  <div class="titlerow"><img src="logo.png" alt="plankton"><h1>kton <small>· graph viewer</small></h1><span id="about" title="what is this?">ⓘ about</span><span id="gear" title="settings">⚙</span></div>
+  <div class="titlerow"><img src="logo.png" alt="kton"><h1>kton <small>· graph viewer</small></h1><span id="about" title="what is this?">ⓘ about</span><span id="gear" title="settings">⚙</span></div>
   <div id="settings" style="display:none"></div>
   <div class="story" id="story">A provenance graph, assembled in your browser from one or more <b>plankton</b>/<b>nekton</b> registries (federated by content hash). Round nodes are <b>fotons</b> (recorded computations), squares are <b>claims</b> (signed statements about them); edges are lineage (<b>builds-on</b>) and attestation (<b>about</b>, <b>reproduces</b>, <b>reviewed-by</b>). Every node's <b>signature is re-verified here</b> (WASM, Ed25519/DSSE) against the registry's published keys - the <i>record-authentic</i> tier. Click a record to walk its pedigree; click a <b>file</b> to preview its bytes, re-hashed on the spot to confirm they match. Verify with a non-kton tool: <a href="https://github.com/gitmick/kton-examples/blob/main/examples/13-foreign-verify/README.md">kton example 13</a>; re-derive the bytes: <a href="https://github.com/gitmick/kton-examples/blob/main/examples/03-reproduce/README.md">example 03</a>. <b>Esc</b> or browser <b>Back</b> returns to the overview.</div>
   <div id="stats"></div>

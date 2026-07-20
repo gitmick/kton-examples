@@ -1,0 +1,72 @@
+/* kton.css — the shared brand system for every kton web surface.
+   ONE palette, ONE accent (teal, "plankton in the water column"), ONE type pairing, ONE logo
+   treatment. Pages opt into a surface with <html data-theme="…">:
+     (nothing)        dark by default, follows the OS to light  — the homepage/tool surface
+     data-theme="dark"   locked dark   — the graph viewer
+     data-theme="light"  locked light  — the lens / explainer pages that overlay paper-like content
+   The accent + type + logo stay identical across all of them; only the surface changes. Every token a
+   page referenced before (--line, --dim, --ink2, --fg, --card, --ok …) is defined here, so a page just
+   links this file and drops its own :root. Data-visualisation colours (graph node/edge hues) are NOT
+   here — they stay local to the viewer, where they carry meaning. */
+
+:root {
+  /* ---- dark surface (default) ---- */
+  --bg:#0e1216; --panel:#161d25; --panel2:#1b232c;
+  --ink:#ccd6df; --ink2:#9db0bd; --muted:#7d8c99; --faint:#566573;
+  --border:#253039; --accent:#3fbccb; --accent-strong:#66d3e0;
+  --pass:#5cc27e; --bad:#f87171;
+  --logo-filter:invert(1) brightness(1.06);
+
+  /* ---- type ---- */
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+
+  /* ---- aliases: legacy per-page names, resolved through the active theme ---- */
+  --line:var(--border); --dim:var(--muted); --fg:var(--ink); --card:var(--panel); --ok:var(--pass);
+}
+
+/* light surface — applied when the OS asks for it (and the page hasn't locked a theme) … */
+@media (prefers-color-scheme:light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    --bg:#eef2f5; --panel:#ffffff; --panel2:#f5f8fa;
+    --ink:#1b2530; --ink2:#3d4658; --muted:#5a6b78; --faint:#8595a1;
+    --border:#dbe3ea; --accent:#0d8898; --accent-strong:#0a6f7d;
+    --pass:#2f9e5e; --bad:#c0392b;
+    --logo-filter:none;
+  }
+}
+/* … or when a page locks light explicitly. */
+:root[data-theme="light"] {
+  --bg:#eef2f5; --panel:#ffffff; --panel2:#f5f8fa;
+  --ink:#1b2530; --ink2:#3d4658; --muted:#5a6b78; --faint:#8595a1;
+  --border:#dbe3ea; --accent:#0d8898; --accent-strong:#0a6f7d;
+  --pass:#2f9e5e; --bad:#c0392b;
+  --logo-filter:none;
+}
+/* a page can also lock dark (beats the media query) — the default values above already are dark,
+   but restating them keeps the lock explicit and immune to any future default change. */
+:root[data-theme="dark"] {
+  --bg:#0e1216; --panel:#161d25; --panel2:#1b232c;
+  --ink:#ccd6df; --ink2:#9db0bd; --muted:#7d8c99; --faint:#566573;
+  --border:#253039; --accent:#3fbccb; --accent-strong:#66d3e0;
+  --pass:#5cc27e; --bad:#f87171;
+  --logo-filter:invert(1) brightness(1.06);
+}
+
+/* ---- shared primitives (a page's own <style>, loaded after this, always wins on conflict) ---- */
+body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.6;
+       -webkit-font-smoothing:antialiased; }
+a { color:var(--accent); }
+a:hover { color:var(--accent-strong); }
+code, pre { font-family:var(--mono); }
+::selection { background:color-mix(in srgb, var(--accent) 30%, transparent); }
+
+/* ---- the brand lockup: emblem + wordmark. Reusable on any page. ---- */
+.kton-brand { display:inline-flex; align-items:center; gap:.55rem; text-decoration:none;
+              color:var(--ink); line-height:1; }
+.kton-brand img { height:2rem; width:auto; display:block; filter:var(--logo-filter); }
+.kton-brand .word { font-family:var(--sans); font-weight:800; font-size:1.2rem; letter-spacing:-.03em;
+                    color:var(--ink); }
+.kton-brand .word b { color:var(--accent); font-weight:800; }
+.kton-brand:hover .word { color:var(--ink); }
+.kton-brand:hover img { filter:var(--logo-filter) saturate(1.2); }
