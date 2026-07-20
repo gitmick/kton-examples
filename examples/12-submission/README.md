@@ -143,11 +143,16 @@ seven conditions hold **over the corpus it was handed** - no more:
     independence a verifier layers a trust-root policy on top - require the reviewers' vouching
     **authority to differ from the author's** (cross-org) - which, because the decision now lives in the
     driver, is a few lines there rather than another fragile SPARQL join.
-- **"no reject" is corpus-relative.** The one non-monotone condition (`FILTER NOT EXISTS` a fail review)
-  means "no fail *in the corpus loaded*". A withheld failing review makes the gate pass. The gate names
-  its corpus (its inputs) but cannot itself establish that the corpus is complete - that is the
-  **completeness** boundary, and it is a property of the source list, not of the hash. *This one is
-  irreducible*: you cannot prove a negative over a partial union. It is labeled, not closed.
+- **"no reject" is corpus-relative *for this gate's open-union form*.** The one non-monotone condition
+  (`FILTER NOT EXISTS` a fail review) means "no fail *in the corpus loaded*". A withheld failing review
+  makes the gate pass. This gate deliberately judges the agency's whole federated union, so it names its
+  corpus (its inputs) but cannot itself establish that corpus is complete - you cannot prove a negative
+  over a partial union. That is irreducible *for an open union* - **but not in general**: example 05 shows
+  the bounded-scope way to close it. If the review were carried as its own sub-nekton that commits, in its
+  own signed chain, to its *enrolled* reviewers, a withheld reject would become a *missing enrolled
+  reviewer* - a liveness failure that BLOCKS, mechanically. ex-12's release gate keeps the open-union form
+  (and names + commits to its corpus); adopting the enrolled-sub-nekton of ex-05 for the review scope is
+  the way to convert this boundary into a hard gate. It is labeled, and closable - just not by this gate.
 - **the environment is bound to the fit before it is read.** The gate reads the env from the fit
   envelope's own descriptor; Act 7 first **hard-gates** that this envelope's foton id equals the bound
   `fit_hash` (it re-derives the id with the kernel and aborts on mismatch), so the env is read from the
@@ -185,8 +190,10 @@ principle, three instances. (The anchored-head/freshness instance is the roadmap
 chapter.)
 
 None of the residual limits are hidden: the verdict carries its corpus *and its trust root*, so a
-smaller-corpus or friendlier-authority rerun is a *different*, comparable verdict. The only irreducible
-caveat is corpus-relative "no reject"; the freshness/anchor instance is the remaining roadmap item.
+smaller-corpus or friendlier-authority rerun is a *different*, comparable verdict. The one open caveat is
+corpus-relative "no reject" - irreducible for *this* open-union gate, but closable by carrying the review
+as an enrolled sub-nekton ([example 05](../05-review-scope/)); the freshness/anchor instance is the
+remaining roadmap item.
 
 > **Why qualification is safe under federation (and the gate is not a "third closed world").** Reading
 > more sources can only *complete* a qualification, never revoke one: the spectrum's member set is
@@ -250,3 +257,7 @@ bash run.sh
 Open the graph to see the whole thing in one frame: the lineage, the model tree, every signed
 attestation, and every signer - the five people plus the two org authorities - across three
 organizations that never shared a server.
+
+## See it
+
+[Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/12-submission/union.json&keys=data/12-submission/keys.json&names=data/12-submission/names.json)

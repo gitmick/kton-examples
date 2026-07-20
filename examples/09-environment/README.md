@@ -145,3 +145,7 @@ meet at shared hashes. Open the graph to see all five fotons and both claims as 
 ```
 bash run.sh
 ```
+
+## See it
+
+[Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/09-environment/union.json&keys=data/09-environment/keys.json&names=data/09-environment/names.json)

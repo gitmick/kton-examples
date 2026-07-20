@@ -64,7 +64,8 @@ reviews built from it. Anyone can fetch the exact form a reviewer used and verif
 The run exports the merged RDF - `plankton export --rdf` (the foton's PROV lineage) plus each review as
 a **nanopublication** (`nekton export --nanopub`) - and runs the shipped query
 [`completeness.rq`](completeness.rq). Each review is its own named graph, so the query joins each
-verdict to the reviewer in that graph's provenance and tallies distinct reviewers per verdict:
+verdict to the reviewer in that graph's provenance and tallies distinct reviewers per verdict. The core
+of it, abridged for readability:
 
 ```
 SELECT ?verdict (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
@@ -74,10 +75,13 @@ SELECT ?verdict (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
 } GROUP BY ?verdict
 ```
 
-The completeness policy (all required reviewers approve, no rejects) is applied to the tally:
+The actual [`completeness.rq`](completeness.rq) additionally splits each reviewer into *verified* (its
+signer is a trusted authority's vouched key) versus *claimed* (`nk:claimedSigner`), so an **unverified
+reject still blocks** - a security fix from a cold-session finding. The completeness policy (all required
+reviewers approve, no rejects) is applied to the tally (real output carries that split):
 
 ```
-approve (schema:AcceptAction): 3
+approve (schema:AcceptAction): 3   (verified approvals=3/3)
 reject  (schema:RejectAction): 0
 REVIEW COMPLETE: True  (approvals=3/3, rejects=0)
 ```
@@ -97,10 +101,11 @@ Example 12 records its release gate as a foton this way.
 
 **Boundary (honest):** this counts *distinct signing keys*, not verified enrolled reviewers - three
 sock-puppet keys would satisfy "3/3". Turning a threshold count into a real required-set check needs a
-sealed enrolment (who the required reviewers are) plus their `sec:controller` identities, vouched by an
-authority - the enrolment boundary named in [example 12](../12-submission/) and the protocol's Trust
-chapter. This example shows the *mechanism* (typed reviews + a re-derivable completeness query); the
-enrolment authority on top is a separate step.
+**sealed enrolment** (who the required reviewers are) - demonstrated in [example 05](../05-review-scope/),
+where a review carries its enrolled reviewers in its own signed chain so a missing one blocks - plus their
+`sec:controller` identities vouched by an authority ([example 12](../12-submission/)). This example shows
+the *mechanism* (typed reviews + a re-derivable completeness query); binding it to a sealed enrolment and
+an authority-vouched identity set is the step examples 05 and 12 add.
 
 ## Run it yourself
 
@@ -110,3 +115,7 @@ bash run.sh
 
 Open the graph to see the foton with its three approving reviews (each a distinct signer) and the
 registered template as one picture.
+
+## See it
+
+[Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/11-review-template/union.json&keys=data/11-review-template/keys.json&names=data/11-review-template/names.json)

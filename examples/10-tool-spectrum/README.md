@@ -108,3 +108,7 @@ relies on. "Not yet 3/3" means *not yet established*, not *failed*.
 ```
 bash run.sh
 ```
+
+## See it
+
+[Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/10-tool-spectrum/union.json&keys=data/10-tool-spectrum/keys.json&names=data/10-tool-spectrum/names.json)

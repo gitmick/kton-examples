@@ -140,11 +140,12 @@
       <div class="links"><a href="viewer.html?union=data/04-claim/union.json&keys=data/04-claim/keys.json&names=data/04-claim/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/04-claim/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
-      <div class="n">05</div><h3>Review scope</h3>
-      <p>A chain of signed claims sealed by one head. Each id covers the previous, so publishing the head
-      makes the whole review tamper-evident; <b>within this sealed scope</b> a dangling link is rejected -
-      a deliberately closed world. (On the open substrate, an unresolved reference is merely
-      <i>incomplete</i>, never invalid.)</p>
+      <div class="n">05</div><h3>Review as its own sub-nekton</h3>
+      <p>A review is its own registry, seeded from a public parent and handed over whole. It carries its
+      <i>enrolled</i> reviewers in its own signed chain, so completeness is <b>mechanical</b>: a reviewer who
+      rejects - or one who is enrolled but never delivers - blocks release. You cannot strip a reject to
+      get a clean review; you get an incomplete one, fail-closed. The verdict is a reproducible plankton
+      foton over the review.</p>
       <div class="links"><a href="viewer.html?union=data/05-review-scope/union.json&keys=data/05-review-scope/keys.json&names=data/05-review-scope/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/05-review-scope/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
@@ -228,14 +229,16 @@
       identities and authorities you accept is your decision, never the substrate's. The identity
       examples (07/08) give you verifiable bindings; they do not tell you whom to trust.</p></li>
     <li><div class="term">that the corpus you judged was complete <span class="tag">completeness</span></div>
-      <p>Sealing is tamper-evidence, not append-control: a reject already in the chain cannot be silently
-      dropped - the published head stops matching - but no hash proves that every relevant review is
-      <i>in</i> the corpus you loaded. A <i>withheld</i> failing review, never federated to you, leaves no
-      trace; you cannot prove a negative over a partial union. A closed-world verdict therefore <b>names
-      and commits to its corpus</b> (a smaller-corpus rerun is a different, comparable verdict), but that
-      the corpus was complete is a boundary, not a theorem. Making "every <i>enrolled</i> participant
-      delivered" mechanical needs an enrolment authority - a scope that commits to an authorized signer
-      set, vouched by a trust root - which is a roadmap step, not yet built.</p></li>
+      <p>Over an <b>open union</b> - the records you merely happened to load - completeness is a boundary:
+      sealing is tamper-evidence, not append-control, so a reject already in the chain cannot be silently
+      dropped, but no hash proves that every relevant review is <i>in</i> what you loaded. A <i>withheld</i>
+      failing review, never federated to you, leaves no trace - you cannot prove a negative over a partial
+      union. That is the model the release gate (example 12) uses, so it <b>names and commits to its
+      corpus</b> (a smaller-corpus rerun is a different, comparable verdict). But completeness becomes
+      <b>mechanical when the review carries its own corpus</b>: a sub-nekton that commits, in its own signed
+      seed-chain, to its <i>enrolled</i> reviewers and a close authority (<a href="viewer.html?union=data/05-review-scope/union.json&keys=data/05-review-scope/keys.json&names=data/05-review-scope/names.json">example 05</a>).
+      There the check flips - a withheld reject is a <i>missing enrolled reviewer</i>, and missing BLOCKS.
+      So: mechanical within a committed, enrolled scope; a boundary only over an open union.</p></li>
     <li><div class="term">that you looked at the latest decision <span class="tag">freshness</span></div>
       <p>A chain proves a head's integrity, not that it is the current one. Anchoring makes a superseding
       round undeniable and time-ordered, but confirming you hold the latest anchored head before you

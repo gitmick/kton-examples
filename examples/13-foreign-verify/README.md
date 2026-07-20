@@ -44,18 +44,18 @@ fixed 12-byte DER prefix + the key - no tooling, just a prefix:
 ```
 # 1. raw hex pubkey -> an Ed25519 PEM (the 302a3005...2100 prefix is the SPKI header for Ed25519)
 printf -- "-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----\n" \
-  "$(printf '302a300506032b6570032100%s' "$(cat signer.pub)" | xxd -r -p | base64 -w0)" > signer.pem
+  "$(printf '302a300506032b6570032100%s' "$(cat analyst.pub)" | xxd -r -p | base64 -w0)" > analyst.pem
 
 # 2. reconstruct the exact bytes DSSE signs (the PAE) and the raw signature, from the envelope
-python3 - signer  <<'PY'   # (the one binary step - PAE has length prefixes; any language does it)
+python3 - analyst  <<'PY'   # (the one binary step - PAE has length prefixes; any language does it)
 import json,base64,sys
-e=json.load(open("record.dsse.json")); p=base64.b64decode(e["payload"]); t=e["payloadType"].encode()
+e=json.load(open("foton.dsse.json")); p=base64.b64decode(e["payload"]); t=e["payloadType"].encode()
 open("pae.bin","wb").write(b"DSSEv1 %d %b %d %b"%(len(t),t,len(p),p))
 open("sig.bin","wb").write(base64.b64decode(e["signatures"][0]["sig"]))
 PY
 
 # 3. verify - pure OpenSSL, no kton, no cryptography library
-openssl pkeyutl -verify -pubin -inkey signer.pem -rawin -in pae.bin -sigfile sig.bin
+openssl pkeyutl -verify -pubin -inkey analyst.pem -rawin -in pae.bin -sigfile sig.bin
 # -> Signature Verified Successfully   (tamper one byte of pae.bin and it fails)
 ```
 
