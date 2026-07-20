@@ -24,6 +24,8 @@ import json, os, sys, base64
 args = sys.argv[1:]
 add_mode = "--add" in args
 if add_mode: args.remove("--add")
+symlink_mode = "--symlink" in args           # index entries as 0-byte symlinks (filesystem/nginx/IPFS) vs marker files (object storage)
+if symlink_mode: args.remove("--symlink")
 recs_path, out_dir = args[0], args[1]
 recs = json.load(open(recs_path))
 strip = lambda h: (h or "").replace("sha256:", "").lower()
@@ -39,6 +41,19 @@ def put(path, data):
 def obj_path(rid):        return os.path.join(out_dir, "objects", "sha256", shard(strip(rid)) + ".json")
 def marker(kind, h, pid): return os.path.join(out_dir, kind, "sha256", h[:2], h, strip(pid) + ".json")
 
+def put_index(kind, h, pid, signer):
+    """Append ONE index entry - never rewrite. --symlink: a 0-byte symlink to the object (dedup; list + follow
+    gives the record). Default: a tiny {by} marker (for object-storage hosts that have no symlinks). Either way
+    the entry's NAME is the producer hash, so listing the prefix yields the producers regardless of encoding."""
+    path = marker(kind, h, pid)
+    if os.path.lexists(path): return False
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if symlink_mode:
+        os.symlink(os.path.relpath(obj_path(pid), os.path.dirname(path)), path)   # entry -> the single stored object
+    else:
+        json.dump({"by": signer}, open(path, "w"), separators=(",", ":"))
+    return True
+
 n_obj = n_mark = 0
 for r in recs:
     rid = r.get("fotonId") or r.get("claimId")
@@ -50,12 +65,12 @@ for r in recs:
     dig = lambda s: strip((s.get("digest") or {}).get("sha256") or "")
     if r.get("fotonId"):                                          # FOTON: subjects=OUTPUTS, predicate.inputs=consumed
         for s in p.get("subject", []) or []:
-            h = dig(s); n_mark += 1 if (h and put(marker("output", h, rid), {"by": signer})) else 0
+            h = dig(s); n_mark += 1 if (h and put_index("output", h, rid, signer)) else 0
         for s in (p.get("predicate", {}) or {}).get("inputs", []) or []:
-            h = dig(s); n_mark += 1 if (h and put(marker("input", h, rid), {"by": signer})) else 0
+            h = dig(s); n_mark += 1 if (h and put_index("input", h, rid, signer)) else 0
     else:                                                        # CLAIM: subject=what it is ABOUT
         for s in p.get("subject", []) or []:
-            h = dig(s); n_mark += 1 if (h and put(marker("about", h, rid), {"by": signer})) else 0
+            h = dig(s); n_mark += 1 if (h and put_index("about", h, rid, signer)) else 0
 
 if not add_mode:
     base = os.path.dirname(recs_path)

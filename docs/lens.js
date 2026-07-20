@@ -111,7 +111,8 @@
     var nsign = 0;
     if (ids.length <= 24) {                                               // signer count from the tiny markers (skip when hugely reproduced)
       var s = {};
-      for (var i = 0; i < ids.length; i++) { var mk = await mget("output/sha256/" + shard(hash) + "/" + ids[i].replace(/^sha256:/, "") + ".json"); if (mk && mk.by) s[mk.by] = 1; }
+      for (var i = 0; i < ids.length; i++) { var mk = await mget("output/sha256/" + shard(hash) + "/" + ids[i].replace(/^sha256:/, "") + ".json");   // marker {by} OR (symlink followed) the record itself
+        var kid = mk && (mk.by || (mk.envelope && mk.envelope.signatures && mk.envelope.signatures[0] && mk.envelope.signatures[0].keyid)); if (kid) s[kid] = 1; }
       nsign = Object.keys(s).length;
     }
     return { rec: rec, nprod: ids.length, nsign: nsign };
