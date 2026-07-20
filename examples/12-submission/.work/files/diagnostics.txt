@@ -1,0 +1,3 @@
+GOF diagnostics
+CL estimate: 4.1500
+status: acceptable

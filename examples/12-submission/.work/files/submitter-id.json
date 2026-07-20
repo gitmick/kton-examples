@@ -1,0 +1,1 @@
+{"subject":[{"uri":"https://kton.dev/o/164859171189d621577646d5eb58697818c4a228c1bd6721953bf5908300a94c"}],"predicate":"https://w3id.org/security#controller","object":{"id":"did:web:sponsor.example/people/submitter"},"by":"CN=sponsor-org","when":"2026-07-16T00:00:00Z"}

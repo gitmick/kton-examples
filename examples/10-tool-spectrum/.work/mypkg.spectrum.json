@@ -1,0 +1,19 @@
+{
+  "spectrum": "mypkg-1.2.0-suite",
+  "of": "the mypkg 1.2.0 test suite (one foton per test)",
+  "normalizer": "sha256:cfd499c3e69846c46121404cd2f7395de2942167bd69f1311d19cd8ad102e7f4",
+  "members": [
+    {
+      "name": "test-glm",
+      "output": "sha256:1ebd4821786f8af151a29303b10326a4a5e86f34b4034c3ed208a71cce3eab5b"
+    },
+    {
+      "name": "test-summary",
+      "output": "sha256:e4183bd868cde787e66302056eb5ed0432be2a25383cd7fb2d6ea77834e3c14b"
+    },
+    {
+      "name": "test-predict",
+      "output": "sha256:214f12d3fe4b8d5a58c75694223cc9bdc36068d9c352288be701577d1e9b40c3"
+    }
+  ]
+}

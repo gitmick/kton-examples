@@ -1,0 +1,1 @@
+{"subject": [{"hash": "sha256:19e2dc26d27e0c45f9c11061d758a0209538564aff731533e9d0d6dd71f02c9b"}], "predicate": "https://kton.dev/v/submitted", "object": {"id": "did:web:sponsor.example/people/submitter"}, "why": "submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08", "by": "did:web:sponsor.example/people/submitter", "when": "2026-07-16T00:00:00Z"}

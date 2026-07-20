@@ -1,0 +1,1 @@
+{"subject":[{"hash":"sha256:b699d2104dae1011689cedcb7703b9d25b39563b1398a132f769efff187876c8"}],"predicate":"https://kton.dev/v/reproduces","object":{"L1":{"hash":"sha256:3676fb051a57690a2e6f2008b881ead0959b858e8379ebd426c9ee8496bd89ee"}},"why":"candidate test-predict reproduces reference at L1","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}

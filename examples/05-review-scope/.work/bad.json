@@ -1,0 +1,1 @@
+{"subject":[{"uri":"urn:doc:x"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"forged"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"sha256:45931b8164810349cc4f29a9810b9bc5990a96fe11e7c986b915bce61ba039d7","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}}

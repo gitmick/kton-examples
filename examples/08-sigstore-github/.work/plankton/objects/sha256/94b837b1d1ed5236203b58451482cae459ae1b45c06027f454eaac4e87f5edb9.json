@@ -1,0 +1,13 @@
+{
+  "fotonId": "sha256:94b837b1d1ed5236203b58451482cae459ae1b45c06027f454eaac4e87f5edb9",
+  "envelope": {
+    "payloadType": "application/vnd.in-toto+json",
+    "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiaW5wdXRzIjpbeyJkaWdlc3QiOnsic2hhMjU2IjoiMjVkOGFlNjBkZDAyZTRhODQxZjZkZjZkMmJkYjhhNjJmNWI2YzVjNTE2N2I5YTg2NjFlMjkwZGZkYTExYTAyYSJ9LCJuYW1lIjoicmVzdWx0LmNzdiJ9XSwicHJvdG9jb2wiOnsiZGVzY3JpcHRvciI6eyJjbWQiOiJhc3Nlc3MgcmVzdWx0LmNzdiJ9LCJraW5kIjoic2NyaXB0IiwicmVmIjoic2hhMjU2OjZmNjQ0NWFlM2E3MmM3YjI3OTU2Y2ExODljYTE3ZjkzMDgyYWQ4MmY0NWVkNjNjNjFmNWQyZWU4Y2UwY2YzOWYifSwic3BlY1ZlcnNpb24iOiIwLjEifSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8va3Rvbi5kZXYvZm90b24vdjAiLCJzdWJqZWN0IjpbeyJkaWdlc3QiOnsic2hhMjU2IjoiZDMyOGUzMjgzZjEwZDI3MTYyNDc5NTYzZjc4OTdlNjQxZDY1NDFhYjRiMmUxMzFkZmYyYTFiMTVjZjdmY2VlNSJ9LCJuYW1lIjoiYXNzZXNzbWVudC50eHQifV19",
+    "signatures": [
+      {
+        "keyid": "02b0914bf0ed58be",
+        "sig": "ulyUwdSlHqoo7hDQv7pZFxJnvqwD8t2vZWsjVq7Ebs8E1sfEmH3SQO+ILV2IyB5Gik+vaY+oTdMD5bt+CUNsDA=="
+      }
+    ]
+  }
+}

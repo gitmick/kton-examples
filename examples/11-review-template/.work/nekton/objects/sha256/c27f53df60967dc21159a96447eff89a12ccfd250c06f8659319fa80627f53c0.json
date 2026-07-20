@@ -1,0 +1,13 @@
+{
+  "claimId": "sha256:c27f53df60967dc21159a96447eff89a12ccfd250c06f8659319fa80627f53c0",
+  "envelope": {
+    "payloadType": "application/vnd.in-toto+json",
+    "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnkiOiJDTj1Cb2IiLCJldmlkZW5jZSI6W3siaGFzaCI6InNoYTI1NjphMmU2MGUwNzdkM2ExZGM3YTE1MDgzYjhjNGVkMTJkYTM0NjZiMWZmNGEwMzYyZmNkNGI3ZmQyMTJjZWMwOTQ0IiwibWVkaWFUeXBlIjoidGV4dC9tYXJrZG93biJ9XSwib2JqZWN0Ijp7ImRlY2lzaW9uIjoiaHR0cHM6Ly9zY2hlbWEub3JnL0FjY2VwdEFjdGlvbiJ9LCJwcmVkaWNhdGUiOnsidXJpIjoiaHR0cDovL3B1cmwub3JnL3Bhdi9yZXZpZXdlZEJ5In0sIndoZW4iOiIyMDI2LTA3LTIwVDE1OjAzOjQ1WiJ9LCJwcmVkaWNhdGVUeXBlIjoiaHR0cHM6Ly9rdG9uLmRldi9jbGFpbS92MCIsInN1YmplY3QiOlt7ImRpZ2VzdCI6eyJzaGEyNTYiOiJiZjcwNDg3ZmY4YzQ0NGI4MjIyMDc4MDljYzNlY2Y3MzQ2MWUzZWEyOGJiNzE5OGJmYmY1Mjc1ODkzMjA3MjcxIn19XX0=",
+    "signatures": [
+      {
+        "keyid": "458007905aeb8821",
+        "sig": "kKH4yA8rR67M4Uyx0Tpdi36rx42yiC/2K4VTV5DW9ONUMTdIIl/50tlz8sLxJ8LKmPWZYQFe1dEJ4vfg35aoDA=="
+      }
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+{"subject":[{"uri":"https://kton.dev/o/254de8559adac7a2d013456d7d1afbb21097200f3df2831b43b014ffb29a5d75"}],"predicate":"https://w3id.org/security#controller","object":{"id":"did:web:cro.example/people/analyst"},"by":"CN=cro-org","when":"2026-07-16T00:00:00Z"}

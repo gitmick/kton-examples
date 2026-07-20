@@ -1,0 +1,1 @@
+{"subject":[{"hash":"sha256:3e808c78c732b81b85b2b6b45fd870e2972dc53b2056d7ea5fb617cb97fa3691"}],"predicate":"http://www.w3.org/ns/prov#used","object":{"id":"oci://rocker/r-ver:4.3.2@sha256:d34db33fcaf00000000000000000000000000000000000000000000000000beef"},"why":"produced inside this exact image","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}

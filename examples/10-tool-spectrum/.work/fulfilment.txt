@@ -1,0 +1,5 @@
+  test-glm                 fulfilled (identical)
+  test-summary             fulfilled (identical)
+  test-predict             fulfilled (via potential sha256:cfd499c3e69846c46121404cd2f7395de2942167bd69f1311d19cd8ad102e7f4 in the ray)
+spectrum "mypkg-1.2.0-suite": 3/3 member(s) fulfilled (reproducible fact).
+the "validated at L0/L1" judgment is semantics on top - record it in nekton (gxp/tool-validation).

@@ -1,0 +1,14 @@
+{
+  "spectrum": "strip-banner-1.0",
+  "of": "POSIX sh + strip-banner.sh 1.0 in the pmxtools image (banner normalizer)",
+  "members": [
+    {
+      "name": "norm-a",
+      "output": "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f"
+    },
+    {
+      "name": "norm-b",
+      "output": "sha256:5dc79aabe6cd677f6dabdd5cfac66fbbc3e77bcea9cb315d5b18517e649028b3"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+  release checklist (six graph conditions + four-eyes decided in the driver, all bound to this submission):
+    [x] toolchain validated (gxp:validation-performed = pass)
+    [x] the fit's environment is qualified (qualifies-as citing a check foton that FULLY passed: membersFulfilled == membersTotal)
+    [x] the fit ran the designated final model (pmx:model-role = final)
+    [x] the fit's output reproduces (nk:reproduces at L0/L1)
+    [x] two distinct authority-vouched PRINCIPALS reviewed, each != the verified author, no fail (computed in the driver, not the graph)
+    [x] residual risk explicitly accepted (gxp:risk-accepted)
+    [x] the submission head is signed by a verifiable identity (nk:submitted)
+  RELEASE: COMPLETE - the submission may be accepted
+  (same gate bound to an unrelated hash: 0/7 conditions -> BLOCKED; conditions are not free-floating)

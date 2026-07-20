@@ -1,0 +1,13 @@
+{
+  "claimId": "sha256:f4d6723d1129c25b759327c2aafd2ffa92d9955e0a18cdb4256f639758fafa9c",
+  "envelope": {
+    "payloadType": "application/vnd.in-toto+json",
+    "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnkiOiJkaWQ6d2ViOnNwb25zb3IuZXhhbXBsZS9wZW9wbGUvbGVhZCIsImdlbmVzaXMiOnRydWUsInNjb3BlIjoicG9wUEstbUFCQyIsIndoZW4iOiIyMDI2LTA3LTIwVDE1OjAzOjUzWiJ9LCJwcmVkaWNhdGVUeXBlIjoiaHR0cHM6Ly9rdG9uLmRldi9zY29wZS92MCIsInN1YmplY3QiOlt7InVyaSI6InVybjpuZWt0b246c2NvcGU6cG9wUEstbUFCQyJ9XX0=",
+    "signatures": [
+      {
+        "keyid": "b735d2265801f745",
+        "sig": "EMHm4LAtznMfuwONkh/+2Oa89swJoJJff0V6PIUX4T9I5rtzejhzKx5HvkcARKAt6srKLRiMYNQioGepDs4yBg=="
+      }
+    ]
+  }
+}

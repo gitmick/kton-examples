@@ -1,0 +1,1 @@
+{"subject":[{"hash":"sha256:5abf6ad692b31c49cc2fe1b02cc0ef929a67ef50c322e3c05dc93a6681715cf6"}],"predicate":"http://www.w3.org/1999/02/22-rdf-syntax-ns#type","object":{"id":"https://kton.dev/template/v0"},"why":"the review/decision template (approve/reject a foton + a comment file)","by":"CN=Standards","when":"2026-07-16T00:00:00Z"}

@@ -1,0 +1,18 @@
+{
+  "spectrum": "r-4.3.2-mypkg-1.2.0",
+  "of": "R 4.3.2 + mypkg 1.2.0 (pinned deps): the whole test suite must reproduce",
+  "members": [
+    {
+      "name": "test-glm",
+      "output": "sha256:1f16e0ca9e97131068c74ffa614a2ecab94429b4820f3e43193e5dee086bdf7b"
+    },
+    {
+      "name": "test-summary",
+      "output": "sha256:a2d83a7143f6cb8b768add684e281a2bbf659eb9fd8cea24935c1c47486da0db"
+    },
+    {
+      "name": "test-predict",
+      "output": "sha256:ade92b43fd49de2c97f49c79445cfcf40de47da450c6fbdbf48bbeb37bc2359a"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+  test-onecomp             fulfilled (identical)
+  test-twocomp             fulfilled (identical)
+  test-covariate           fulfilled (via potential sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1 in the ray)
+spectrum "pmxtools-1.2.0": 3/3 member(s) fulfilled (reproducible fact).
+the "validated at L0/L1" judgment is semantics on top - record it in nekton (gxp/tool-validation).

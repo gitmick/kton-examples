@@ -1,0 +1,10 @@
+{
+  "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJwcmVkaWNhdGUiOnsiYnkiOiJDTj1MYWIiLCJvYmplY3QiOnsiTDAiOnsiaGFzaCI6InNoYTI1NjowMGIxM2MxYmIxZjcxYTU5YzhmMjk1ODQxNDQ3OWE0ZmIyZmMyNzVjMDgwZWFlNjdhMDA1ZGM5MGEyMDdhODNkIn19LCJwcmVkaWNhdGUiOnsidXJpIjoiaHR0cHM6Ly9rdG9uLmRldi92L3JlcHJvZHVjZXMifSwid2hlbiI6IjIwMjYtMDctMTZUMDA6MDA6MDBaIiwid2h5IjoiY2FuZGlkYXRlIHRlc3Qtc3VtbWFyeSByZXByb2R1Y2VzIHJlZmVyZW5jZSBhdCBMMCJ9LCJwcmVkaWNhdGVUeXBlIjoiaHR0cHM6Ly9rdG9uLmRldi9jbGFpbS92MCIsInN1YmplY3QiOlt7ImRpZ2VzdCI6eyJzaGEyNTYiOiI4NDc4Y2YzMWQ4MzRhODZhMmY5NjBkZDQ4NjNlNjVjNDk2OTc1MmMwYTkxYjZkYjlkZDAzMzUzYzUzN2IxZWM3In19XX0=",
+  "payloadType": "application/vnd.in-toto+json",
+  "signatures": [
+    {
+      "keyid": "0f3d23c3437c6657",
+      "sig": "agbCK7IVC8mp4BPT4IBzPnPX9jaxqq1ZqZDZohMO2aBeMN6WilG6DVOm+yLAzSq/4HaniRQhgRhXDAitX9MuDg=="
+    }
+  ]
+}

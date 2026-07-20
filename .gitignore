@@ -2,7 +2,10 @@
 bin/plankton
 bin/nekton
 bin/kton
-# private keys must NEVER be committed to a public repo
+# private key material must NEVER be committed to a public repo (belt-and-suspenders: keep this even
+# though each example writes its keys under .work/keys/, which we otherwise now PERSIST - see below)
 *.key
-# per-example working state (registries, inputs, envelopes) is regenerable
-**/.work/
+*.pem
+# Each example PERSISTS its .work/ so every foton's recorded input/output path is a real, fetchable
+# file in this repo (its raw permalink is the FileRef's carried `uri`). We deliberately do NOT ignore
+# .work/ anymore. Only the private signing keys inside it stay ignored (the *.key rule above).

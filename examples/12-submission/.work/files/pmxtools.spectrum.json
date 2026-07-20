@@ -1,0 +1,19 @@
+{
+  "spectrum": "pmxtools-1.2.0",
+  "of": "R 4.3.2 + pmxtools 1.2.0 + pinned deps + NONMEM 7.5.1",
+  "normalizer": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
+  "members": [
+    {
+      "name": "test-onecomp",
+      "output": "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319"
+    },
+    {
+      "name": "test-twocomp",
+      "output": "sha256:cbff22ac6c730c9ed2068ac873caa2cd77667cea02ba7c402be7e66ceb3f64a1"
+    },
+    {
+      "name": "test-covariate",
+      "output": "sha256:2506d2e2a3d2cd49c9aa8c4a7fb587e3656da22884e0bd0fa92d6c56923f5739"
+    }
+  ]
+}

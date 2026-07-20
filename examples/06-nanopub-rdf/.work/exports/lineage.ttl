@@ -1,0 +1,23 @@
+@prefix pk: <https://kton.dev/o/> .
+@prefix agent: <https://kton.dev/agent/> .
+@prefix nk: <https://kton.dev/v/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# plankton lineage as PROV: a foton is a prov:Activity; inputs are prov:used,
+# outputs prov:wasGeneratedBy. pk:<hash> nodes join nekton claims about the same hash.
+
+pk:fba2a8ae18733df4a22996d248d6d2a006f580e3ad0476427a2ba18de657ff15 a prov:Activity ;
+    nk:protocolKind "script" ;
+    nk:protocolRef pk:b5f0bd6132496622c9c44561f4410a22a7ed2ef6789983c268fd99e8754aa635 ;
+    prov:wasAttributedTo agent:2924c30fc4bd6972 ;
+    nk:signerVerified true ;
+    prov:used pk:8e5ceeca3a438135cfd1372eafe969ccc4440798e378d8b8ed24242f026a704f .
+pk:98ad61a25e3683b6adf2474b01bbe1c27de6aad2ce3a80ff4140fe473c14e691 a prov:Entity ;
+    prov:wasGeneratedBy pk:fba2a8ae18733df4a22996d248d6d2a006f580e3ad0476427a2ba18de657ff15 ;
+    rdfs:label ".work/model.txt" ;
+    prov:wasDerivedFrom pk:8e5ceeca3a438135cfd1372eafe969ccc4440798e378d8b8ed24242f026a704f .
+
+# lineage-root inputs (never produced here): labeled so every node carries a path
+pk:8e5ceeca3a438135cfd1372eafe969ccc4440798e378d8b8ed24242f026a704f a prov:Entity ;
+    rdfs:label ".work/data.csv" .

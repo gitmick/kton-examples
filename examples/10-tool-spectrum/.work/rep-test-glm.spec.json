@@ -1,0 +1,1 @@
+{"subject":[{"hash":"sha256:f8fa113487e9f9034f398bda7fe48c01a17c9b3d647c752f7be1d2a504cf82e2"}],"predicate":"https://kton.dev/v/reproduces","object":{"L0":{"hash":"sha256:f2203f89b9591f005733d3bec53ac084fa354c6a7f2a4e61279c669b308e4a27"}},"why":"candidate test-glm reproduces reference at L0","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}
