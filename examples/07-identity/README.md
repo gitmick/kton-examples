@@ -47,9 +47,9 @@ nekton claim sonnet.spec.json sonnet.key --add
 
 ```
 nekton by signer "$OPUS"
-# sha256:...  predicate=nk:assessed  by=claude-opus-4-8  keyid=<opus keyid>
+# sha256:...  predicate=nk:assessed  by=claude-opus-4-8  declared-keyid=<opus keyid> (unverified)
 nekton by signer "$SONNET"
-# sha256:...  predicate=nk:assessed  by=claude-sonnet-5  keyid=<sonnet keyid>
+# sha256:...  predicate=nk:assessed  by=claude-sonnet-5  declared-keyid=<sonnet keyid> (unverified)
 ```
 
 That is the whole mechanism: **give a model a key, and every claim it makes is attributable to that
@@ -78,7 +78,7 @@ printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#control
   "$KEYIRI" > identity.spec.json
 nekton claim identity.spec.json deployer.key --add
 nekton about "$KEYIRI"
-# sha256:...  predicate=https://w3id.org/security#controller  by=CN=Deployment  keyid=<deployer keyid>
+# sha256:...  predicate=https://w3id.org/security#controller  by=CN=Deployment  declared-keyid=<deployer keyid> (unverified)
 ```
 
 The predicate is written as a full IRI because the bare `nekton claim` path stores it verbatim; the
@@ -129,3 +129,5 @@ that signed it - and which authority vouched, and whether you trust it, is exact
 not display. The label is "who this key claims to be, per a signature," never "verified identity."
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/07-identity/union.json&keys=data/07-identity/keys.json&names=data/07-identity/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

@@ -108,15 +108,20 @@ result.txt)` above is substituted with that hash before `producer` runs (i.e. `p
 
 ## Or just run the whole thing
 
+`run.sh` is a file in this example's directory — clone the repo and run it from there:
+
 ```
+git clone https://github.com/gitmick/kton-examples && cd kton-examples/examples/01-hello-foton
 bash run.sh
 ```
 
-Same steps, in a throwaway directory, plus it builds the graph snapshot for the viewer.
+Same steps as above, in a throwaway directory, plus it builds the graph snapshot for the viewer.
 
 ## See it
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/01-hello-foton/union.json&keys=data/01-hello-foton/keys.json&names=data/01-hello-foton/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*
 
 ## Why this matters (footnote)
 
