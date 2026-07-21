@@ -766,7 +766,7 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
   let pinch=null;
   cv.addEventListener("touchstart",e=>{ e.preventDefault(); $("#hint")?.classList.add("gone");
     if(e.touches.length===1){ const [ox,oy]=toff(e.touches[0]); const n=hit(ox,oy);
-      if(n){drag={n,moved:false};} else {pan={x:ox*DPR,y:oy*DPR,tx:ex.view.tx,ty:ex.view.ty};} pinch=null; }
+      if(n){drag={n,moved:false,sx:ox,sy:oy};} else {pan={x:ox*DPR,y:oy*DPR,tx:ex.view.tx,ty:ex.view.ty};} pinch=null; }
     else if(e.touches.length>=2){ const [ax,ay]=toff(e.touches[0]),[bx,by]=toff(e.touches[1]);
       pinch={d:Math.hypot(ax-bx,ay-by)||1, scale:ex.view.scale, tx:ex.view.tx, ty:ex.view.ty}; drag=null; pan=null; } },{passive:false});
   cv.addEventListener("touchmove",e=>{ e.preventDefault();
@@ -775,7 +775,9 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
       const wx=(mx-pinch.tx)/pinch.scale, wy=(my-pinch.ty)/pinch.scale;   // world point under the pinch centre
       ex.view.scale=pinch.scale*(nd/pinch.d); ex.view.tx=mx-wx*ex.view.scale; ex.view.ty=my-wy*ex.view.scale; redraw(); }
     else if(e.touches.length===1){ const [ox,oy]=toff(e.touches[0]);
-      if(drag){const [wx,wy]=s2w(ox,oy);drag.n.x=wx;drag.n.y=wy;drag.moved=true;redraw();}
+      // only DRAG a node once the finger has actually travelled (>10px); below that it stays a TAP so
+      // touchend can select the node (mobile taps jitter, which otherwise flips every tap into a drag).
+      if(drag){ if(drag.moved||Math.hypot(ox-drag.sx,oy-drag.sy)>10){ const [wx,wy]=s2w(ox,oy);drag.n.x=wx;drag.n.y=wy;drag.moved=true;redraw(); } }
       else if(pan){ex.view.tx=pan.tx+(ox*DPR-pan.x);ex.view.ty=pan.ty+(oy*DPR-pan.y);redraw();} } },{passive:false});
   cv.addEventListener("touchend",e=>{ if(drag&&!drag.moved){ const nd=drag.n;
       if(nd.type==="run"){ (ex.expand||(ex.expand=new Set())); nd.members.forEach(m=>ex.expand.add(m)); layoutAndRun(); }
