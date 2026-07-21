@@ -129,7 +129,7 @@ seven conditions hold **over the corpus it was handed** - no more:
   key->(principal, authority) map from `sec:controller` bindings **whose own signer is a trusted
   authority**; then it requires **>= 2 distinct principals**, each authority-vouched, each a different key
   *and* different principal from the author, and no fail. Deterministic - no pair-matching or
-  graph-pollution surface. *Executed:* a naive key-count reads a sock-puppet ring (K1 vouches K2, K2
+  graph-pollution surface. *The forgeries it structurally defeats* (the committed run proves fail-closed with a **negative control** — the same gate bound to an unrelated hash → 0/7 → BLOCKED; the ring here is the attack the logic defeats, not a literal run): a naive key-count reads a sock-puppet ring (K1 vouches K2, K2
   vouches K3, K3 vouches K1) as 3/3; this gate counts 0 authority-vouched principals and blocks; a
   **single** review blocks; an author **self-review** blocks (the author is excluded by key and by
   principal); an empty trust root blocks (nothing is vouched). The viewer marks the self/ring-signed
