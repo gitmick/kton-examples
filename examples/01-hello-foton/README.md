@@ -45,8 +45,10 @@ echo "mean=5"  > result.txt
 
 `3 7 2 8` really does have mean 5. plankton stores none of these bytes, only their hash.
 
-**3. Record the computation as a foton, and file it into the registry.** `--add` does both in one
-step; `-o` also keeps the envelope file so we can show and verify it below.
+**3. Record the computation as a foton, and file it into the registry.** `--cmd` records the command
+string as metadata (a label — plankton never runs it); `--add` does both authoring and filing in one
+step; `-o` also keeps the **envelope** — the signed foton as a DSSE-wrapped JSON file (here
+`mean.foton.json`) — so we can show and verify it below.
 
 ```
 plankton author --cmd "mean data.txt result.txt" \
@@ -58,11 +60,18 @@ plankton author --cmd "mean data.txt result.txt" \
 A **foton** is one edge of a lineage graph: `inputs -> command -> outputs`, each file named by its
 hash, signed by you. Again: plankton does not execute `mean`; it records the statement that this
 command, with these input hashes, produced these output hashes. The registry it was filed into is
-just a directory (`PLANKTON_DIR`, default `./plankton-data`; `--registry <dir>` picks another).
+just a directory (`PLANKTON_DIR`, default `./plankton-data`; `--registry <dir>` picks another) —
+created automatically on the first `--add`/`add`, so you never `mkdir` it.
 
 > `--add` is the convenience for the everyday case. Authoring and filing are still separate
-> underneath: `plankton author` alone just writes the signed record (to hand off or publish), and
-> `plankton add` alone files a record you received from someone else. `--add` fuses the two.
+> underneath — the two-step form is:
+> ```
+> plankton author --cmd "mean data.txt result.txt" --in data.txt --out result.txt --sign me.key -o mean.foton.json
+> plankton add mean.foton.json
+> ```
+> `plankton author` alone just writes the signed record (to hand off or publish); `plankton add` alone
+> files a record — yours, or one you received from someone else. `--add` fuses the two into the single
+> command above.
 
 **4. Read it back.**
 
@@ -72,7 +81,11 @@ plankton show mean.foton.json
 # command: mean data.txt result.txt   (RECORDED, never run by plankton)
 # inputs:  data.txt    sha256:...
 # outputs: result.txt  sha256:...
+# declared keyid: ... (unverified envelope field - run `plankton verify` with the signer's key)
 ```
+
+That last line is a *declared* identity — a hint the record makes about who signed it, **not yet
+checked**. Step 5 is what turns "declared" into "verified".
 
 **5. Verify the signature.**
 
@@ -90,7 +103,8 @@ plankton producer $(plankton hash result.txt)
 # sha256:...  kind=script  in=1 out=1
 ```
 
-`plankton hash <file>` prints the `sha256:<hex>` form the queries expect.
+`plankton hash <file>` prints the `sha256:<hex>` form the queries expect — the whole `$(plankton hash
+result.txt)` above is substituted with that hash before `producer` runs (i.e. `plankton producer sha256:...`).
 
 ## Or just run the whole thing
 
