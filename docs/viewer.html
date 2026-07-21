@@ -95,6 +95,8 @@
     #panel{width:100%;max-width:100%;height:64%;top:auto;bottom:0;right:0;left:0;
       border-left:none;border-top:1px solid var(--line);transform:translateY(100%)}
     #panel.open{transform:none}
+    #controls{left:8px;right:8px;width:auto;top:8px;max-height:40vh;overflow:auto}
+    .legend{display:none}
   }
   #panel .who{font-size:15px;font-weight:650} #panel .role{color:var(--dim);margin-bottom:8px}
   #panel .kv{font-size:12px;color:var(--dim);margin:5px 0} #panel .kv code{color:var(--ink);word-break:break-all}
@@ -731,6 +733,7 @@ function nodeDraw(ctx,n){ const sel=n.id===ex.center;
     const r=data?RW*1.15:RW*0.7;ctx.beginPath();ctx.arc(n.x,n.y,r,0,7);ctx.fill();ctx.stroke(); if(data||sel)label(ctx,n,n.role,r); return; }
   ctx.fillStyle=pcol(n.participant);ctx.strokeStyle=n.verified?css("--ok"):css("--bad");ctx.lineWidth=sel?3:2;
   if(n.type==="foton"){ctx.beginPath();ctx.arc(n.x,n.y,RW,0,7);ctx.fill();ctx.stroke();}else{const w=RW*1.7;rrect(ctx,n.x-w/2,n.y-w/2,w,w,3);ctx.fill();ctx.stroke();}
+  if(n.type==="foton"&&n.repro>1){ const bx=n.x+RW*0.78,by=n.y-RW*0.78; ctx.fillStyle=css("--ok"); ctx.beginPath(); ctx.arc(bx,by,7.5,0,7); ctx.fill(); ctx.strokeStyle=css("--panel"); ctx.lineWidth=1.5; ctx.stroke(); ctx.fillStyle="#0b0f18"; ctx.font="bold 8.5px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("↻"+n.repro,bx,by); }  // ↻N = distinct signers that produced this output (native from graph.wasm)
   // claims: append the assertion (from the WASM's rendered object text) so verdicts/roles read off the graph
   const val=(n.type==="claim"&&n.text)?": "+clip(n.text,16):"";
   if(!LOD||n.id===ex.center||n.id===ex.sel) label(ctx,n,`${n.participant.replace('pfed-','')} · ${n.role}${val}`,RW);
@@ -774,7 +777,7 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
   const link=(e)=>lk(G.byId.get(e.from),e.kind);
   const uris=[...new Set([...(LOC[n.id]||[]), ...((G.locators||{})[n.id]||[])])];
   const meta=isSrc?`<div class="kv">external input - referenced by content hash; not a signed record.</div>`
-    :`<div class="kv">signer <code>${esc(n.signer||"?")}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span></div>`;
+    :`<div class="kv">signer <code>${esc(n.signer||"?")}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span>${n.repro>1?` <span class="badge vok" title="distinct independent signers that produced this exact output (↻N)">↻${n.repro} reproduced</span>`:``}</div>`;
   const linN=n.type==="foton"?reach(n.id,"up","builds-on",Infinity).size-1:0, impN=n.type==="foton"?reach(n.id,"down","builds-on",Infinity).size-1:0;  // counts on the buttons
   p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
     <div class="who" style="color:${isSrc?'#cfd8e6':pcol(n.participant)}">${isSrc?esc(n.role):idlabel(n.participant)}</div>
