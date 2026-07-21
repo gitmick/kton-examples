@@ -54,6 +54,23 @@
   // distinct producing fotons of a hash (same bytes from N fotons = reproduction) - dedup across registries by id
   function distinctProducers(outs) { var seen = {}, out = []; (outs || []).forEach(function (e) { var id = e.rec.fotonId || e.rec.claimId; if (id && !seen[id]) { seen[id] = 1; out.push(e); } }); return out; }
   function distinctSigners(list) { var s = {}; (list || []).forEach(function (e) { var sg = e.rec.envelope && e.rec.envelope.signatures && e.rec.envelope.signatures[0] && e.rec.envelope.signatures[0].keyid; if (sg) s[sg] = 1; }); return Object.keys(s).length; }
+  function sigOf(rec) { return rec && rec.envelope && rec.envelope.signatures && rec.envelope.signatures[0] && rec.envelope.signatures[0].keyid; }
+  // is this record a `reproduces` claim? (predicate IRI lives at payload.predicate.predicate.uri; also accept a bare string)
+  function isReproduces(rec) { try { var p = JSON.parse(atob(rec.envelope.payload)); var pr = p && p.predicate && p.predicate.predicate; return /reproduc/i.test(String((pr && (pr.uri || pr)) || "")); } catch (e) { return false; } }
+  // Distinct signers who VOUCH for these exact bytes. A foton is IMMUTABLE: an identical rerun dedups to
+  // ONE object, so corroboration is NOT producer-foton multiplicity - it is counted at the ATTESTATION
+  // layer. An attester is (a) the author of a producing foton, or (b) the signer of a `reproduces` claim
+  // whose subject is a producing foton. Returns the union set of keyids.
+  function reproSigners(prods) {
+    var s = {};
+    (prods || []).forEach(function (e) {
+      var kid = sigOf(e.rec); if (kid) s[kid] = 1;                          // (a) producing = attesting
+      var fid = e.rec.fotonId; if (!fid) return;
+      var about = IDX[/^sha256:/.test(fid) ? fid : "sha256:" + fid];        // reproduces claims carry the foton id as subject -> refs
+      ((about && about.refs) || []).forEach(function (c) { if (isReproduces(c.rec)) { var sg = sigOf(c.rec); if (sg) s[sg] = 1; } });
+    });
+    return Object.keys(s);
+  }
   // the reader's OWN connected planktons (e.g. set in Teams), unioned onto whatever the embedding delivers:
   // the same file may then resolve to MORE (you know things the sender did not ship) or LESS (it points at
   // a plankton you are not connected to). Stored as a JSON array or comma list under localStorage "kton-planktons".
@@ -175,15 +192,16 @@
     b.className = "lens-badge lens-" + state; b.style.backgroundImage = "url(" + CFG.logo + ")";
     b.setAttribute("aria-label", "provenance available - open the kton world");
     var ped = pedigree(hit.rec, names);
-    var repro = nprod > 1;                                        // same bytes produced by >1 foton = reproduced/corroborated
+    var nrep = Math.max(nsign || 0, nprod || 0);                  // corroboration = distinct ATTESTERS (producer authors ∪ reproduces-claim signers); immutable fotons dedup, so this - not producer count - is ↻N
+    var repro = nrep > 1;
     var tip = document.createElement("div"); tip.className = "lens-tip";
     var vline = state === "ok" ? '<span class="v">✓ verified here</span>' : state === "av" ? '<span class="m">● known · open to verify</span>' : '<span class="m">● known by hash</span>';
-    var repline = repro ? '<span class="v">↻ reproduced · ' + nprod + ' fotons' + (nsign > 1 ? ' · ' + nsign + ' signers' : '') + '</span><br>' : '';
+    var repline = repro ? '<span class="v">↻ reproduced · ' + nrep + ' signers' + (nprod > 1 ? ' · ' + nprod + ' fotons' : '') + '</span><br>' : '';
     tip.innerHTML = repline + vline + '<br><b>' + (ped.by || "?") + '</b>' + (ped.cmd ? '<br><span class="m">via</span> ' + ped.cmd : "") + (ped.ins && ped.ins.length ? '<br><span class="m">from</span> ' + ped.ins.join(", ") : "") + '<br><span class="m">click to dig into where it came from</span>';
     b.onclick = function () { openWorld(hit, hash); };
     wrap.appendChild(b);
-    if (repro) { var rp = document.createElement("span"); rp.className = "lens-rep"; rp.textContent = "↻" + nprod;
-      rp.title = nprod + " independent fotons produced these exact bytes (reproduced)"; wrap.appendChild(rp); }
+    if (repro) { var rp = document.createElement("span"); rp.className = "lens-rep"; rp.textContent = "↻" + nrep;
+      rp.title = nrep + " independent signers attest these exact bytes (reproduced) — producing a foton OR signing a reproduces claim about it"; wrap.appendChild(rp); }
     wrap.appendChild(tip);
   }
 
@@ -213,7 +231,7 @@
         var prods = distinctProducers(entry.outs);              // every foton that OUTPUT these exact bytes = a reproduction
         hit = prods[0] || entry.ins[0] || entry.refs[0];        // prefer a PRODUCER (where it came from); else consumer; else a claim ref
         names = namesCache[hit.reg.names]; if (names === undefined) { try { names = await (await fetch(hit.reg.names)).json(); } catch (e) { names = {}; } namesCache[hit.reg.names] = names; }
-        nprod = prods.length; nsign = distinctSigners(prods);
+        nprod = prods.length; nsign = reproSigners(prods).length;   // attesters = producer authors ∪ reproduces-claim signers
       }
       var v = bytes ? await verifySig(hit.rec, hit.keys) : null;  // content already matches (hash came from the bytes)
       attach(img, hash, hit, v === true ? "ok" : v === false ? "un" : "av", names, nprod, nsign);

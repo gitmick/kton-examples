@@ -591,10 +591,13 @@ function fotonsLacking(pred, value){ return G.nodes.filter(n=>n.type==="foton" &
 function trustCard(id){ const cs=claimsOf(id); if(!cs.length) return `<div class="kv">no claims about this record yet.</div>`;
   const rev=cs.filter(c=>/reviewedBy/i.test(c.role));
   const appr=rev.filter(c=>/approve|accept/i.test(c.text||"")).length, rej=rev.filter(c=>/reject/i.test(c.text||"")).length;
-  const repro=cs.some(c=>/reproduces/i.test(c.role));
+  // reproduction is counted by DISTINCT SIGNERS of reproduces claims, not producer-foton multiplicity:
+  // a foton is immutable, so an identical rerun dedups to one producer - corroboration accrues as claims.
+  const reproSigners=new Set(cs.filter(c=>/reproduces/i.test(c.role)).map(c=>c.signer).filter(Boolean));
+  const nrep=reproSigners.size, repro=nrep>0;
   const g={}; for(const c of cs){ const pred=(c.role||"").split(":").pop(); const v=(c.text||"").split(",")[0]||""; (g[pred]??={}); g[pred][v]=(g[pred][v]||0)+1; }
   let rows=""; for(const pred in g){ const parts=Object.entries(g[pred]).map(([v,n])=>`${v||"—"}${n>1?" ×"+n:""}`).join(", "); rows+=`<div class="tcrow"><b>${esc(pred)}</b> · ${esc(parts)}</div>`; }
-  return `<div class="tcbanner"><span class="badge ${rej?"vno":appr?"vok":"vpart"}">${appr} approve · ${rej} reject</span> <span class="badge ${repro?"vok":"vpart"}">${repro?"✓ reproduced":"not reproduced"}</span></div>${rows}`;
+  return `<div class="tcbanner"><span class="badge ${rej?"vno":appr?"vok":"vpart"}">${appr} approve · ${rej} reject</span> <span class="badge ${repro?"vok":"vpart"}" title="distinct signers of reproduces claims about this foton">${repro?(nrep>1?"↻"+nrep+" reproduced":"✓ reproduced"):"not reproduced"}</span></div>${rows}`;
 }
 function enterExplorer(centerId, mode, push=true, note=""){ $("#overview").style.display="none"; $("#explorer").style.display="block";
   ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, note, expand:new Set(), view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
