@@ -89,13 +89,17 @@
   .legend .row{display:flex;align-items:center;gap:7px;margin:2px 0} .dot{width:11px;height:11px;border-radius:50%} .sq{width:11px;height:11px;border-radius:3px} .sw{width:18px;border-top:2px solid}
   #panel{position:absolute;top:0;right:0;width:360px;max-width:88vw;height:100%;background:var(--panel);border-left:1px solid var(--line);padding:16px 18px;overflow:auto;transform:translateX(100%);transition:transform .18s}
   #panel.open{transform:none} #panel .x{float:right;color:var(--dim);cursor:pointer;font-size:18px}
-  /* mobile: the record panel is a side drawer on desktop (good), but a full-width right drawer eats a
-     phone screen. Below 640px make it a BOTTOM sheet instead - top-to-bottom, not left-to-right. */
+  #cv{touch-action:none}  /* the graph canvas handles pan/zoom itself; stop the browser hijacking touch gestures */
+  #controls .ctoggle{display:none}  /* mobile-only collapse toggle */
+  /* mobile: the record panel becomes a BOTTOM sheet, and the filter panel collapses to a top toggle. */
   @media (max-width:640px){
     #panel{width:100%;max-width:100%;height:64%;top:auto;bottom:0;right:0;left:0;
       border-left:none;border-top:1px solid var(--line);transform:translateY(100%)}
     #panel.open{transform:none}
-    #controls{left:8px;right:8px;width:auto;top:8px;max-height:40vh;overflow:auto}
+    #controls{left:8px;right:8px;width:auto;top:8px;max-height:44vh;overflow:auto}
+    #controls .ctoggle{display:inline-block;cursor:pointer;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:7px;padding:4px 10px;font-size:12px;margin-bottom:6px}
+    #controls.min{max-height:none;overflow:visible;padding:6px 8px}
+    #controls.min > :not(.ctoggle){display:none}   /* collapsed: only the toggle shows; tap to expand */
     .legend{display:none}
   }
   #panel .who{font-size:15px;font-weight:650} #panel .role{color:var(--dim);margin-bottom:8px}
@@ -596,7 +600,7 @@ function enterExplorer(centerId, mode, push=true, note=""){ $("#overview").style
   ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, note, expand:new Set(), view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); openNode(centerId);
   if(push) history.pushState({view:'explorer',center:centerId,mode},""); }
 function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],["desc","descendants"],["both","both"]]; const c=G.byId.get(ex.center);
-  $("#controls").innerHTML=`<span class="back" onclick="showOverview()">← overview&nbsp;&nbsp;<span style="opacity:.55;font-weight:400">Esc</span></span>
+  $("#controls").innerHTML=`<span class="ctoggle" id="ctoggle">☰ filters ▾</span><span class="back" onclick="showOverview()">← overview&nbsp;&nbsp;<span style="opacity:.55;font-weight:400">Esc</span></span>
     <div class="qbar"><span class="qq">🔍 ${ex.note?esc(ex.note):("pedigree · "+({nbr:"neighbours",anc:"ancestors",desc:"descendants",both:"both",lin:"trace inputs",imp:"blast radius"}[ex.mode]||ex.mode))}</span><span class="qx" id="qreset" title="reset to this node's pedigree">reset ✕</span></div>
     <div class="lbl">centre</div><div style="font-size:12.5px;color:${c.type==='source'?'#cfd8e6':'var(--accent)'}">${c.type==='source'?esc(c.role):idlabel(c.participant)+" · "+esc(c.role)}</div>
     ${ex.note?`<div class="lbl" style="color:var(--b);margin-top:4px;text-transform:none;letter-spacing:0">▸ ${ex.note}</div>`:``}
@@ -612,6 +616,8 @@ function drawControls(){ const modes=[["nbr","neighbours"],["anc","ancestors"],[
   { const qr=$("#qreset"); if(qr) qr.onclick=()=>enterExplorer(ex.center,"both"); }   // reset the query -> plain pedigree of this node
   $$("#controls [data-fp]").forEach(el=>el.onclick=()=>{const p=el.dataset.fp;filt.parts.has(p)?filt.parts.delete(p):filt.parts.add(p);drawControls();layoutAndRun();});
   $$("#controls [data-ft]").forEach(el=>el.onclick=()=>{const t=el.dataset.ft;filt.types.has(t)?filt.types.delete(t):filt.types.add(t);drawControls();layoutAndRun();});
+  { const ct=$("#ctoggle"); if(ct) ct.onclick=()=>{ const c=$("#controls"); c.classList.toggle("min"); ex.ctrlsOpen=!c.classList.contains("min"); }; }
+  if(window.matchMedia&&matchMedia("(max-width:640px)").matches && !ex.ctrlsOpen) $("#controls").classList.add("min");  // phones: start collapsed, tap ☰ to expand
 }
 function layoutAndRun(){
   const set=pedigree(ex.center, ex.mode, ex.cap||PED_CAP);
@@ -689,8 +695,10 @@ function layerLayout(nodes, edges, byId){
     lay.forEach(n=>{ const ps=(anc[n.id]||[]).map(id=>byId.get(id)).filter(p=>p&&has.has(p.id)&&p._d<L);
       n._b = ps.length? ps.reduce((s,p)=>s+p._y,0)/ps.length : n._y; });
     lay.sort((a,b)=>(a._b-b._b)||a.participant.localeCompare(b.participant)); lay.forEach((n,i)=>n._y=i); }
+  const MB = window.matchMedia && matchMedia("(max-width:640px)").matches;   // phones: stack layers TOP-TO-BOTTOM for a portrait screen
   const DX=210, DY=60;
-  for(let L=0;L<=maxD;L++){ const lay=layers[L]||[], off=(lay.length-1)/2; lay.forEach((n,i)=>{ n.x=L*DX; n.y=(i-off)*DY; }); }
+  for(let L=0;L<=maxD;L++){ const lay=layers[L]||[], off=(lay.length-1)/2;
+    lay.forEach((n,i)=>{ if(MB){ n.x=(i-off)*76; n.y=L*96; } else { n.x=L*DX; n.y=(i-off)*DY; } }); }
 }
 function fitView(){ const cv=$("#cv"),DPR=devicePixelRatio||1; cv.width=cv.clientWidth*DPR; cv.height=cv.clientHeight*DPR;
   if(!ex.nodes.length){ex.view={scale:DPR,tx:cv.width/2,ty:cv.height/2};return;}
@@ -753,6 +761,26 @@ function startRender(){ ex.started=true; const cv=$("#cv"),DPR=devicePixelRatio|
       else { ex.sel=nd.id; openNode(nd.id); redraw(); } }
     if(pan)cv.style.cursor="grab"; drag=null;pan=null; };
   cv.ondblclick=e=>{ const n=hit(e.offsetX,e.offsetY); if(n){recentre(n.id);} };
+  // --- touch: one finger pans (or drags a node); two fingers pinch-zoom. Mirrors the mouse logic. ---
+  const toff=t=>{ const r=cv.getBoundingClientRect(); return [t.clientX-r.left, t.clientY-r.top]; };
+  let pinch=null;
+  cv.addEventListener("touchstart",e=>{ e.preventDefault(); $("#hint")?.classList.add("gone");
+    if(e.touches.length===1){ const [ox,oy]=toff(e.touches[0]); const n=hit(ox,oy);
+      if(n){drag={n,moved:false};} else {pan={x:ox*DPR,y:oy*DPR,tx:ex.view.tx,ty:ex.view.ty};} pinch=null; }
+    else if(e.touches.length>=2){ const [ax,ay]=toff(e.touches[0]),[bx,by]=toff(e.touches[1]);
+      pinch={d:Math.hypot(ax-bx,ay-by)||1, scale:ex.view.scale, tx:ex.view.tx, ty:ex.view.ty}; drag=null; pan=null; } },{passive:false});
+  cv.addEventListener("touchmove",e=>{ e.preventDefault();
+    if(pinch && e.touches.length>=2){ const [ax,ay]=toff(e.touches[0]),[bx,by]=toff(e.touches[1]);
+      const nd=Math.hypot(ax-bx,ay-by), mx=(ax+bx)/2*DPR, my=(ay+by)/2*DPR;
+      const wx=(mx-pinch.tx)/pinch.scale, wy=(my-pinch.ty)/pinch.scale;   // world point under the pinch centre
+      ex.view.scale=pinch.scale*(nd/pinch.d); ex.view.tx=mx-wx*ex.view.scale; ex.view.ty=my-wy*ex.view.scale; redraw(); }
+    else if(e.touches.length===1){ const [ox,oy]=toff(e.touches[0]);
+      if(drag){const [wx,wy]=s2w(ox,oy);drag.n.x=wx;drag.n.y=wy;drag.moved=true;redraw();}
+      else if(pan){ex.view.tx=pan.tx+(ox*DPR-pan.x);ex.view.ty=pan.ty+(oy*DPR-pan.y);redraw();} } },{passive:false});
+  cv.addEventListener("touchend",e=>{ if(drag&&!drag.moved){ const nd=drag.n;
+      if(nd.type==="run"){ (ex.expand||(ex.expand=new Set())); nd.members.forEach(m=>ex.expand.add(m)); layoutAndRun(); }
+      else { ex.sel=nd.id; openNode(nd.id); redraw(); } }
+    if(e.touches.length<2) pinch=null; if(e.touches.length===0){ drag=null; pan=null; } });
 }
 function recentre(id, push=true){ ex.center=id; ex.sel=id; ex.cap=PED_CAP; ex.note=""; ex.expand=new Set(); drawControls(); layoutAndRun(); openNode(id);
   if(push) history.pushState({view:'explorer',center:id,mode:ex.mode},""); }
