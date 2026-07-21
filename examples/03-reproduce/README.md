@@ -31,11 +31,15 @@ deterministic, we just recreate the same bytes. Then ask plankton if they reprod
 ```
 echo "sum=10" > result_rerun.txt
 plankton reproduces $(plankton hash result.txt) $(plankton hash result_rerun.txt)
-# reproduction: L0
+# reproduction: L0 - identical output bytes (expected for L0). Independence is attested by the
+#   separate producer fotons + your reproduces claim, not by this byte compare.
 ```
 
-**L0** means byte-identical. That is the strongest form: the re-run produced exactly the recorded
-output.
+**L0** means byte-identical — the strongest reproduction *level*. Be clear on what this demo does and
+does not show: because we recreated the bytes in this same script, `plankton reproduces` is comparing the
+output **to itself** (hence the caveat the tool prints). That proves the *mechanism* — a pure, unforgeable
+hash compare. Genuine *independent* reproduction is a **separate party** signing an `nk:reproduces` claim
+that *their own* run produced the same output hash ([example 12](../12-submission/) does exactly that).
 
 **3. Prove it is not just always saying yes.** Tamper with the output and try again:
 
@@ -64,3 +68,5 @@ bash run.sh
 ## See it
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/03-reproduce/union.json&keys=data/03-reproduce/keys.json&names=data/03-reproduce/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

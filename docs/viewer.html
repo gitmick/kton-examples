@@ -333,7 +333,7 @@ function openSettings(){ const el=$("#settings"); const srcs=extraSources();
   el.innerHTML=`<div class="sthead">settings <span class="stx" title="close">×</span></div>
     <label class="strow"><input type="checkbox" id="autoprev" ${autoPreview?"checked":""}> auto-preview a file's bytes when you open its node</label>
     <div class="stlbl">additional kton sources</div>
-    <div id="srclist">${srcs.length?srcs.map((s,i)=>`<div class="srcrow"><code>${clip(s,40)}</code><span class="srcx" data-i="${i}">remove</span></div>`).join(""):'<div class="stmuted">none - showing only the delivered registry</div>'}</div>
+    <div id="srclist">${srcs.length?srcs.map((s,i)=>`<div class="srcrow"><code>${clipe(s,40)}</code><span class="srcx" data-i="${i}">remove</span></div>`).join(""):'<div class="stmuted">none - showing only the delivered registry</div>'}</div>
     <div class="srcadd"><input id="srcurl" placeholder="https://…/union.json"><button id="srcaddbtn">add</button></div>
     <div class="stmuted">Sources union in by content hash, so you may see more (or less) than the delivered graph. Stored in this browser only.</div>`;
   el.style.display="block";
@@ -347,7 +347,7 @@ function openSettings(){ const el=$("#settings"); const srcs=extraSources();
 function resolveFocus(union, focus){
   const strip=s=>String(s||"").replace(/^sha256:/,"").toLowerCase();
   const hx=strip(focus);
-  // graph node ids are SHORT (12 hex), so match a full hash by prefix
+  // graph node ids are 32 hex, so match a full hash by prefix
   const nodeIdFor=full=>{ const h=strip(full); if(G.byId.has(h)) return h;
     for(const n of G.nodes){ const nid=strip(n.id); if(nid.length>=6 && (h.startsWith(nid)||nid.startsWith(h))) return n.id; }
     return null; };
@@ -793,7 +793,7 @@ function fileRow(f,isOut){ const uris=[...new Set([...(LOC[f.hash]||[]), ...((G.
   return `<div class="frow ${isNode?'nav':''}" ${isNode?`data-id="${esc(f.hash)}"`:``}>${esc(f.name||"(unnamed)")} <span class="m">${esc(f.hash)}</span>`+
     (uris.length?`<span class="rc pvrow${isOut?" pvout":""}" data-h="${esc(f.hash)}" data-u="${encodeURIComponent(uris[0])}">⤢ preview</span>`:``)+
     uris.map(u=>safeUri(u)?`<a class="uri" href="${esc(safeUri(u))}" target="_blank" rel="noopener">↗ ${clipe(u,46)}</a>`:`<span class="uri m">↗ ${clipe(u,46)} (unsafe uri)</span>`).join("")+`</div>`+
-    (uris.length?`<div class="frow-prev" id="pv-${f.hash}"></div>`:``); }
+    (uris.length?`<div class="frow-prev" id="pv-${esc(f.hash)}"></div>`:``); }
 function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(id);
   if(gn&&gn.type==="group"){
     p.innerHTML=`<span class="x" onclick="document.querySelector('#panel').classList.remove('open')">×</span>
