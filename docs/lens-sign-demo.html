@@ -48,8 +48,9 @@
 
   <h2>What happens when you press ✎</h2>
   <ol>
-    <li>If you are not signed in, you are sent to Bonfire (which may broker you on to ORCID,
-    Keycloak, GitHub or Google) and back — an OAuth2 authorization-code flow with PKCE.</li>
+    <li>If you are not signed in, you are sent to Keycloak (which may broker you on to ORCID,
+    GitHub or Google) and back — an OAuth2 authorization-code flow with PKCE. Keycloak rather
+    than Bonfire, because only Keycloak passes the ORCID iD through.</li>
     <li>On first use your browser generates an <b>Ed25519 key with <code>extractable: false</code></b>
     and registers only the public half. The instance signs a <code>sec:controller</code> claim
     binding that key to your ORCID iD, if it has one.</li>
@@ -60,8 +61,9 @@
   </ol>
 
   <div class="note warn" id="cfgwarn" hidden>
-    <b>Not configured yet.</b> Run <code>stack/register-lens-client.sh</code> to register this page
-    as an OAuth client. Until then the read-only lens still works — only the ✎ button is absent.
+    <b>Not configured yet.</b> Run <code>stack/keycloak/build-realm.py</code> and restart Keycloak
+    to create the <code>kton-lens</code> client. Until then the read-only lens still works — only
+    the ✎ button is absent.
   </div>
 
   <div class="foot">
@@ -94,7 +96,7 @@
   if (cfg && cfg.client_id) {
     await load("lens-sign.js", {
       "data-bridge": BRIDGE,
-      "data-bonfire": cfg.bonfire || "http://localhost:4000",
+      "data-issuer": cfg.issuer,
       "data-client-id": cfg.client_id,
     });
   } else {

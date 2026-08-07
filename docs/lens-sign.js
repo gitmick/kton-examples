@@ -3,8 +3,10 @@
  * lens.js answers "where did this come from?". This answers "and I, personally, vouch for it."
  *
  * The three-part split is the whole design:
- *   - your identity comes from Bonfire (which may itself have brokered it from ORCID / Keycloak /
- *     GitHub / Google) via an OAuth2 authorization-code + PKCE flow - a public client, no secret;
+ *   - your identity comes from Keycloak (which may itself have brokered it from ORCID, GitHub or
+ *     Google) via an OAuth2 authorization-code + PKCE flow - a public client, no secret. It is
+ *     Keycloak rather than Bonfire deliberately: Bonfire's own OIDC provider forwards only `sub`
+ *     and `name`, so an ORCID iD brokered in through it never reaches the bridge;
  *   - your KEY is generated here with `extractable: false` and lives in IndexedDB. It cannot be
  *     read back out, exported, or exfiltrated by any script on the page - not even this one;
  *   - the BINDING between the two is a `sec:controller` claim signed by the instance (the bridge),
@@ -17,7 +19,7 @@
  *
  *   <script src="lens-sign.js"
  *           data-bridge="http://localhost:8789"
- *           data-bonfire="http://localhost:4000"
+ *           data-issuer="http://localhost:8080/realms/openscience"
  *           data-client-id="...."></script>
  *
  * Load it AFTER lens.js. lens.js calls window.ktonSign.attach() if this file is present, so the
@@ -28,7 +30,10 @@
   var S = document.currentScript;
   var CFG = {
     bridge: (S.getAttribute("data-bridge") || "").replace(/\/$/, ""),
-    bonfire: (S.getAttribute("data-bonfire") || "").replace(/\/$/, ""),
+    // The OIDC ISSUER, not a hard-coded pair of endpoints: they are discovered from
+    // <issuer>/.well-known/openid-configuration. That keeps this file provider-agnostic - the
+    // same code works against Keycloak, Bonfire, or anything else conforming.
+    issuer: (S.getAttribute("data-issuer") || "").replace(/\/$/, ""),
     clientId: S.getAttribute("data-client-id") || "",
     wasm: S.getAttribute("data-wasm") || "graph.wasm",
     wasmExec: S.getAttribute("data-wasm-exec") || "wasm_exec.js",
@@ -45,7 +50,7 @@
   function b64url(buf) { return b64(buf).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
   function rand(n) { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
 
-  /* ---------- 1. identity: OAuth2 authorization-code + PKCE against Bonfire ----------------
+  /* ---------- 1. identity: OAuth2 authorization-code + PKCE against the OIDC issuer ---------
    * PKCE with a PUBLIC client (token_endpoint_auth_method=none) is what lets a static page do
    * this at all: there is no client secret to hide, and the code is useless without the verifier
    * that never left this browser.
@@ -54,8 +59,20 @@
 
   function token() { try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
 
+  // Discovery, fetched once and cached for the page's lifetime.
+  var discovered = null;
+  async function discover() {
+    if (discovered) return discovered;
+    if (!CFG.issuer) throw new Error("no data-issuer configured");
+    var r = await fetch(CFG.issuer + "/.well-known/openid-configuration");
+    if (!r.ok) throw new Error("OIDC discovery failed at " + CFG.issuer + " (HTTP " + r.status + ")");
+    discovered = await r.json();
+    return discovered;
+  }
+
   async function login() {
-    if (!CFG.bonfire || !CFG.clientId) throw new Error("no data-bonfire / data-client-id configured");
+    if (!CFG.issuer || !CFG.clientId) throw new Error("no data-issuer / data-client-id configured");
+    var d = await discover();
     var verifier = b64url(rand(32));
     sessionStorage.setItem(VERIFIER_KEY, verifier);
     var challenge = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
@@ -67,13 +84,13 @@
       code_challenge: challenge,
       code_challenge_method: "S256",
     });
-    location.href = CFG.bonfire + "/openid/authorize?" + q.toString();
+    location.href = d.authorization_endpoint + "?" + q.toString();
   }
 
   // The redirect target must match what was registered EXACTLY, so strip query/hash.
   function redirectUri() { return location.origin + location.pathname; }
 
-  // Called on load: if we came back from Bonfire with ?code=, trade it for an access token.
+  // Called on load: if we came back from the issuer with ?code=, trade it for an access token.
   async function completeLogin() {
     var p = new URLSearchParams(location.search);
     var code = p.get("code");
@@ -89,7 +106,8 @@
       redirect_uri: redirectUri(),
       code_verifier: verifier,
     });
-    var r = await fetch(CFG.bonfire + "/openid/token", {
+    var d = await discover();
+    var r = await fetch(d.token_endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
@@ -283,7 +301,7 @@
   window.ktonSign = {
     // available() is checked by lens.js before it renders the button, so a browser without
     // Ed25519 gets NO sign affordance rather than one that fails when pressed.
-    available: function () { return !!(CFG.bridge && CFG.bonfire && CFG.clientId && ed25519Supported()); },
+    available: function () { return !!(CFG.bridge && CFG.issuer && CFG.clientId && ed25519Supported()); },
     attach: function (wrap, hash) {
       if (!this.available()) return;
       inject();
