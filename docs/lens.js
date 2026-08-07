@@ -152,7 +152,10 @@
   opacity:0;pointer-events:none;transform:translateY(4px);transition:.14s;z-index:3}\
 .lens-badge:hover+.lens-tip,.lens-tip:hover{opacity:1;transform:translateY(0)}\
 .lens-tip b{color:#fff} .lens-tip .v{color:#4fd39a} .lens-tip .m{color:#98a1b2}\
-.lens-ov{position:fixed;inset:0;z-index:99999;background:rgba(10,14,22,.62);backdrop-filter:blur(2px);display:flex;flex-direction:column;padding:22px}\
+.lens-ov{border:0;padding:22px;width:100vw;height:100vh;max-width:100vw;max-height:100vh;background:transparent;\
+  display:flex;flex-direction:column;overflow:hidden}\
+.lens-ov::backdrop{background:rgba(10,14,22,.62);backdrop-filter:blur(2px)}\
+.lens-ov:not([open]){display:none}\
 .lens-ov header{display:flex;align-items:center;gap:12px;color:#fff;font:600 13px ui-sans-serif,system-ui,sans-serif;padding:0 2px 12px}\
 .lens-ov header .h{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\
 .lens-ov header code{font:11px ui-monospace,Menlo,monospace;opacity:.7}\
@@ -168,22 +171,39 @@
     // them relative to itself. Resolve them to absolute against our base once (the one place it's needed).
     var abs = function (u) { try { return new URL(u, document.baseURI).href; } catch (e) { return u; } };
     var q = new URLSearchParams({ union: abs(hit.reg.union), keys: abs(hit.reg.keys), names: abs(hit.reg.names), focus: hash });
-    var ov = document.createElement("div"); ov.className = "lens-ov";
+    // A <dialog> opened with showModal() renders in the browser's TOP LAYER, which sits above
+    // every z-index on the page. The host here is Bonfire, whose nav and drawer use z-index
+    // 2147483647 (the max 32-bit int) - there is no number that wins that race, so do not race.
+    var ov = document.createElement("dialog"); ov.className = "lens-ov";
     ov.innerHTML = '<header><span class="h">where this came from &middot; <code>' + hash.slice(0, 23) + '&hellip;</code></span><button class="x">Close&nbsp; Esc</button></header>' +
       '<iframe title="kton provenance" src="' + CFG.viewer + "?" + q.toString() + '"></iframe>';
-    function close() { ov.remove(); document.removeEventListener("keydown", onk); }
-    function onk(e) { if (e.key === "Escape") close(); }
+    function close() { try { ov.close(); } catch (e) {} ov.remove(); }
     ov.querySelector(".x").onclick = close;
+    // Clicking the backdrop lands on the dialog element itself, never on its children.
     ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
-    document.addEventListener("keydown", onk);
+    ov.addEventListener("cancel", close);        // native Escape handling
     document.body.appendChild(ov);
+    ov.showModal();
   }
 
   function pedigree(rec, names) {
     var p; try { p = JSON.parse(atob(rec.envelope.payload)); } catch (e) { return {}; }
     var proto = ((p.predicate || {}).protocol || {}).descriptor || {};
     var kid = rec.envelope.signatures && rec.envelope.signatures[0] && rec.envelope.signatures[0].keyid;
-    return { cmd: proto.cmd, by: (names && names[kid]) || kid, ins: ((p.predicate || {}).inputs || []).map(function (i) { return i.name; }).filter(Boolean) };
+    // An `ingest:` protocol is a foton that only MOVED bytes - an upload, a copy, a re-encode on
+    // the way in - rather than computing anything. Naming it in the hover card tells a reader
+    // nothing they cannot already see ("this picture was uploaded"), so the step is recorded in
+    // the graph but omitted here. What still shows is `from <input>`: the file it came from,
+    // which is the part that carries information.
+    var ingest = !!(proto.cmd && /^ingest:/.test(proto.cmd));
+    // For an ingest the signer is a service key, not an author - naming it invites a reader to
+    // treat "who uploaded it" as "who made it". Both lines are dropped, leaving the one fact the
+    // step actually contributes: the file the bytes came from.
+    return {
+      cmd: ingest ? null : proto.cmd,
+      by: ingest ? null : ((names && names[kid]) || kid),
+      ins: ((p.predicate || {}).inputs || []).map(function (i) { return i.name; }).filter(Boolean),
+    };
   }
 
   function attach(img, hash, hit, state, names, nprod, nsign) {
@@ -199,8 +219,22 @@
     var tip = document.createElement("div"); tip.className = "lens-tip";
     var vline = state === "ok" ? '<span class="v">✓ verified here</span>' : state === "av" ? '<span class="m">● known · open to verify</span>' : '<span class="m">● known by hash</span>';
     var repline = repro ? '<span class="v">↻ reproduced · ' + nrep + ' signers' + (nprod > 1 ? ' · ' + nprod + ' fotons' : '') + '</span><br>' : '';
-    tip.innerHTML = repline + vline + '<br><b>' + (ped.by || "?") + '</b>' + (ped.cmd ? '<br><span class="m">via</span> ' + ped.cmd : "") + (ped.ins && ped.ins.length ? '<br><span class="m">from</span> ' + ped.ins.join(", ") : "") + '<br><span class="m">click to dig into where it came from</span>';
-    b.onclick = function () { openWorld(hit, hash); };
+    tip.innerHTML = repline + vline
+      + (ped.by ? '<br><b>' + ped.by + '</b>' : "")
+      + (ped.cmd ? '<br><span class="m">via</span> ' + ped.cmd : "")
+      + (ped.ins && ped.ins.length ? '<br><span class="m">from</span> ' + ped.ins.join(", ") : "")
+      + '<br><span class="m">click to dig into where it came from</span>';
+    // The badge sits INSIDE the host's clickable image, so the click must not bubble: Bonfire
+    // binds a lightbox to the figure and would open the photo on top of the viewer. Several
+    // lightboxes trigger on pointerdown/mousedown rather than click, so stop those too.
+    ["pointerdown", "mousedown", "touchstart"].forEach(function (ev) {
+      b.addEventListener(ev, function (e) { e.stopPropagation(); }, true);
+    });
+    b.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openWorld(hit, hash);
+    };
     wrap.appendChild(b);
     if (repro) { var rp = document.createElement("span"); rp.className = "lens-rep"; rp.textContent = "↻" + nrep;
       rp.title = nrep + " independent signers attest these exact bytes (reproduced) — producing a foton OR signing a reproduces claim about it"; wrap.appendChild(rp); }

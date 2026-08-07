@@ -248,7 +248,10 @@
 .lens-sign:hover{transform:scale(1.12)}\
 .lens-sign[disabled]{opacity:.5;cursor:progress}\
 .lens-signed{border-color:#12b886;color:#12b886}\
-.lens-say{position:fixed;inset:0;z-index:100000;background:rgba(10,14,22,.62);display:flex;align-items:center;justify-content:center}\
+.lens-say{border:0;padding:0;width:100vw;height:100vh;max-width:100vw;max-height:100vh;background:transparent;\
+  display:flex;align-items:center;justify-content:center}\
+.lens-say::backdrop{background:rgba(10,14,22,.62)}\
+.lens-say:not([open]){display:none}\
 .lens-say .box{background:#141922;color:#e8ebf2;border-radius:14px;padding:20px;width:min(460px,92vw);\
   font:13px/1.55 ui-sans-serif,system-ui,sans-serif;box-shadow:0 18px 60px rgba(0,0,0,.55)}\
 .lens-say h3{margin:0 0 6px;font-size:15px}\
@@ -265,7 +268,7 @@
   function inject() { if (injected) return; injected = true; var s = document.createElement("style"); s.textContent = CSS; document.head.appendChild(s); }
 
   function dialog(hash, onDone) {
-    var ov = document.createElement("div"); ov.className = "lens-say";
+    var ov = document.createElement("dialog"); ov.className = "lens-say";
     ov.innerHTML =
       '<div class="box"><h3>Sign a claim about this figure</h3>' +
       '<code>' + hash + '</code>' +
@@ -275,11 +278,10 @@
       '<div class="row"><button class="no">Cancel</button><button class="go">Sign</button></div>' +
       '<div class="msg"></div></div>';
     var msg = ov.querySelector(".msg"), go = ov.querySelector(".go");
-    function close() { ov.remove(); document.removeEventListener("keydown", onk); }
-    function onk(e) { if (e.key === "Escape") close(); }
+    function close() { try { ov.close(); } catch (e) {} ov.remove(); }
     ov.querySelector(".no").onclick = close;
     ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
-    document.addEventListener("keydown", onk);
+    ov.addEventListener("cancel", close);
     go.onclick = async function () {
       go.disabled = true; msg.className = "msg"; msg.textContent = "Signing…";
       try {
@@ -295,6 +297,7 @@
       }
     };
     document.body.appendChild(ov);
+    ov.showModal();
   }
 
   /* ---------- public surface used by lens.js ------------------------------------------------ */
@@ -310,7 +313,12 @@
       b.textContent = "✎";
       b.title = "sign a claim about this figure";
       b.setAttribute("aria-label", "sign a claim about this figure");
+      // Same reason as the lens badge: this button lives inside the host's clickable figure.
+      ["pointerdown", "mousedown", "touchstart"].forEach(function (ev) {
+        b.addEventListener(ev, function (e) { e.stopPropagation(); }, true);
+      });
       b.onclick = function (e) {
+        e.preventDefault();
         e.stopPropagation();
         dialog(hash, function () { b.className = "lens-sign lens-signed"; b.title = "you have signed a claim about this figure"; });
       };
