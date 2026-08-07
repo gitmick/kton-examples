@@ -203,6 +203,10 @@
     if (repro) { var rp = document.createElement("span"); rp.className = "lens-rep"; rp.textContent = "↻" + nrep;
       rp.title = nrep + " independent signers attest these exact bytes (reproduced) — producing a foton OR signing a reproduces claim about it"; wrap.appendChild(rp); }
     wrap.appendChild(tip);
+    // The WRITE half (lens-sign.js) is optional and loaded separately: if it is present AND this
+    // browser can actually sign, it adds a "sign a claim about this" button next to the badge.
+    // The lens stays purely read-only when it is absent - which is the common case.
+    if (window.ktonSign && window.ktonSign.available()) window.ktonSign.attach(wrap, hash);
   }
 
   async function run() {
