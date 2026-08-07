@@ -1,0 +1,164 @@
+# kton-examples tutorial review
+
+Findings from a full read-through of the tutorial: [docs/index.html](docs/index.html) plus the
+14 example READMEs it links to. Reviewed at commit `1740362`.
+
+Each finding gets a stable ID (F-001, F-002, …) so it can be referenced in discussion without
+re-describing it. Location format:
+- Landing page: `docs/index.html:<line>` + a short quoted excerpt (so it's still findable after edits).
+- Example READMEs: `examples/NN-name/README.md#<heading-slug>` (GitHub auto-anchors headings).
+
+Severity: `blocker` (wrong/misleading), `minor` (typo, awkward wording), `nit` (style/polish).
+
+---
+
+## docs/index.html
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-001 | `docs/index.html:91` | "It is an edge in a lineage graph." | Introduces graph terminology ("edge") with no prior mention of what the *nodes* are — the reader hasn't been told files are the nodes, so "edge" lands without a referent. | Either add a one-line node/edge framing just above (in the "So what is a 'record'?" intro, line 88: "records are edges; the files they connect are the nodes") or fold this framing into the earlier "lineage graph" mention in "What problem it solves" (line 58-60) so the graph vocabulary is established before "a foton" definition uses it. | minor |
+
+---
+
+## Viewer (docs/viewer.html)
+
+Shared by nearly every example's "open the graph" link, so a bug here isn't scoped to one example.
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-002 | `docs/viewer.html:96` (`#panel .frow .m`), observed via [Example 01's graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/01-hello-foton/union.json&keys=data/01-hello-foton/keys.json&names=data/01-hello-foton/names.json) | inputs/outputs hash span, e.g. `76f7ad219fc3d1ecc69d2ec4d20e444d` | The right sidebar (`#panel`) gets an unwanted horizontal scrollbar whenever a foton's input/output file hash is shown. `.frow .m` has no `word-break`/`overflow-wrap`, so the 32-char hash renders as one unbreakable token wider than the 360px panel; `#panel{overflow:auto}` then scrolls both axes instead of just vertically. | Add `word-break:break-all` to `#panel .frow .m` (matches the existing fix already applied to `#panel .kv code` at line 93), or change `#panel`'s overflow to `overflow-y:auto;overflow-x:hidden`. | minor |
+
+---
+
+## Example 01 — Hello foton
+`examples/01-hello-foton/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-003 | `examples/01-hello-foton/README.md#3-record-the-computation-as-a-foton-and-file-it-into-the-registry` | "`-o` also keeps the envelope file" | `--cmd` and "envelope file" are both used undefined: `--cmd` isn't explained in prose (only inferable from the flag name), and "envelope" is never introduced as what a signed foton *is*. | Gloss both inline: "`--cmd` records the command string as metadata, never run" and "the envelope is the signed foton — a DSSE-wrapped JSON file, here `mean.foton.json`." | minor |
+| F-004 | `examples/01-hello-foton/README.md#3-record-the-computation-as-a-foton-and-file-it-into-the-registry` | "The registry it was filed into is just a directory" | Doesn't say the registry directory doesn't need to pre-exist — `--add` (and plain `plankton add`) creates it automatically on first use. Reader may assume they must `mkdir` it first. | Add a clause: "...just a directory — created automatically on the first `--add`/`add` if it doesn't exist yet." | minor |
+| F-005 | `examples/01-hello-foton/README.md#3-record-the-computation-as-a-foton-and-file-it-into-the-registry` | "`--add` is the convenience for the everyday case. ... `--add` fuses the two." | Explains the two underlying separate calls (`author` alone, `add` alone) only in prose, after already showing the fused `--add` command — no code example of the two-step form, so the "convenience" claim has nothing concrete to compare against. | Show the two-step form first (`plankton author ... -o mean.foton.json` then `plankton add mean.foton.json`), then introduce `--add` as the shortcut for it. | minor |
+| F-006 | `examples/01-hello-foton/README.md#4-read-it-back` | sample output for `plankton show mean.foton.json` | The shown transcript omits the `declared keyid: ... (unverified envelope field - run 'plankton verify' ...)` line that `plankton show` actually prints. This isn't just truncation — it hides the exact detail the walkthrough needs: step 4 (`show`) surfacing a *declared*, unverified identity is what step 5 (`verify`) then confirms. Without it, readers never see where "declared" comes from before "verified" is introduced. | Add the `declared keyid: ...` line to the sample output in step 4, so the declared→verified narrative is visible across steps 4-5 instead of asserted only in the step-3/footnote prose. | minor |
+| F-007 | `examples/01-hello-foton/README.md#6-ask-the-graph-a-question-who-produced-resulttxt` | `plankton producer $(plankton hash result.txt)` | Not perfectly clear that `$(plankton hash result.txt)` is itself the whole variable that gets replaced by the hash — clear for most of the audience, but a `[result.txt hash]`-style placeholder would be clearer. | Write it as `plankton producer [result.txt hash]` (or similarly mark `$(plankton hash result.txt)` as one substituted placeholder). | nit |
+| F-008 | `examples/01-hello-foton/README.md#or-just-run-the-whole-thing` | `bash run.sh` | README never says `run.sh` is a repo file living at `examples/01-hello-foton/run.sh` — a reader following the manual walkthrough in any directory (the steps above are path-agnostic) won't have it there and hits "No such file or directory". | State where `run.sh` lives and that the reader needs to be in the example's directory (e.g. after cloning the repo) to run it — or link directly to the file. | minor |
+| F-009 | `examples/01-hello-foton/README.md#see-it` | "[Open the graph](...viewer.html?union=data/01-hello-foton/union.json...)" | Presented right after the reader's own walkthrough as if it shows what they just built, but it's actually a static, pre-generated snapshot (checked into the repo, built by the canonical `run.sh`/CI) — not the reader's own local registry. Confusing: a reader who typed the commands by hand gets someone else's graph, not theirs. | Only demo "open as graph" once there's actually a graph of the data the reader produced — e.g. caveat the link as a pre-generated illustrative snapshot, or move the "see it" moment to right after `run.sh` (which does build a real snapshot of that run). | minor |
+
+## Example 02 — Federation
+`examples/02-federation/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-010 | `examples/02-federation/README.md:7-14` | "We build up to it in three acts..." + the numbered "Three things could be shared" list | The "acts" framing is too lyrical/distracting for a technical walkthrough, and it's not clear the numbered list (1. registry, 2. file bytes, 3. records via `mirror`) is meant to line up with Act 1/2/3 — it doesn't (item 1 = Act 1, item 3 = Act 3, item 2 = never shared, no act). Two "1,2,3" schemes that look aligned but aren't. On top of that, "act" itself isn't self-explanatory on first read — it only clicked after reading further that it just means "3 different ways to perform the aggregation." | Drop the "acts" theatrics (or at least don't number the "things shared" list 1-2-3 too), and if the list is meant to map to the acts, say so explicitly. Consider naming it plainly, e.g. "three ways to do the aggregation," instead of "acts." | minor |
+| F-011 | `examples/02-federation/README.md:26-30` | "You will see a registry named two ways below... The read commands take a third form, `--source <dir>` (Act 2), which names the stores to read as a union." | High-level theory (what's shared, the acts) is mixed in the same paragraph as pure flag/syntax reference (`PLANKTON_DIR=` vs `--registry` vs `--source`) — the abstraction level jumps mid-paragraph. | Split the syntax reference out of the conceptual intro — e.g. its own labelled "syntax note," or move it down to where `--source` is first used in Act 2. | minor |
+| F-012 | `examples/02-federation/README.md:40` | `MODEL=$(plankton hash model.txt)     # the file we will query the lineage of, in every act` | Comment calls `$MODEL` "the file", but the variable actually holds `model.txt`'s *hash* (`plankton hash`'s output) — `plankton lineage` takes a hash, not a path. As written it reads like `$MODEL` is a file/path. | Reword to say what's actually stored, e.g. "# model.txt's hash — what we'll query the lineage of below". | nit |
+| F-013 | `examples/02-federation/README.md#see-it` | "[Open the graph](...viewer.html?union=data/02-federation/union.json...)" | Same issue as **F-009** (example 01): the link is a pre-generated static snapshot, not the reader's own `shared`/`reg-a`/`reg-b` registries built during the walkthrough, but it's presented right after that walkthrough as if it were. | Same fix as F-009 — and since this recurs per-example, consider fixing it once at the pattern level (see cross-cutting note) rather than per example. | minor |
+
+## Example 03 — Reproduce
+`examples/03-reproduce/README.md`
+
+Reviewed — no findings.
+
+## Example 04 — Claim (nekton)
+`examples/04-claim/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-014 | `examples/04-claim/README.md:45-46` | "`--add` files the claim as it signs it ... We keep `review.dsse.json` here so we can `show`/`verify` it next." | Doesn't explain the signing step or what `review.dsse.json` is. The command `nekton claim review.spec.json reviewer.key review.dsse.json --add` has three positional args (spec, key, output) that are never walked through, so it's not clear `review.dsse.json` is the *signed claim* — a DSSE-wrapped JSON envelope produced by signing `review.spec.json` with `reviewer.key`. Same "envelope" gap as example 01 (F-003), but worse here since the term "envelope"/DSSE is never even introduced in this example. | Add a line naming the three positional args (spec to sign, signing key, output file) and stating plainly what `review.dsse.json` is: "the signed claim — a DSSE-wrapped JSON envelope, same idea as a foton's envelope in example 01." | minor |
+| F-015 | `examples/04-claim/README.md:48` | "`pav:reviewedBy` is just an opaque IRI; the kernel stores it and never interprets what it means." | Too technical/jargon-heavy without explanation — "opaque IRI" and "the kernel" are both dropped in unexplained, even though the point being made (it's just a label, not interpreted) is simple. | Reword plainly, e.g.: "`pav:reviewedBy` is just a label (an IRI, the namespaced-string identifier used in linked data) — nekton stores it as-is and never tries to interpret or validate what it means." Gloss `pav:` itself, concisely, with a link: "PAV (Provenance, Authoring and Versioning) — a published ontology for who authored/versioned/reviewed a resource: [pav-ontology.github.io/pav](https://pav-ontology.github.io/pav/)." | minor |
+| F-016 | `examples/04-claim/README.md:42` | `nekton claim review.spec.json reviewer.key review.dsse.json --add` | Syntax error — as written the command trails `--add` on `nekton claim`, but that isn't correct here; it should be `nekton claim review.spec.json reviewer.key review.dsse.json` (sign + write the file) followed by a separate `nekton add review.dsse.json` (file it into the registry). | Split into the two actual commands: `nekton claim review.spec.json reviewer.key review.dsse.json` then `nekton add review.dsse.json`. Also fix F-014's location (line 45-46), which currently describes `--add` as doing both in one step here. | blocker |
+| F-017 | `examples/04-claim/README.md:38-39` (cf. line 48) | `"predicate": "pav:reviewedBy", "object": {"value": "looks correct"}` | The predicate name `reviewedBy` naturally reads as "the object is who reviewed this," so a reader expects `object` to hold the reviewer's identity — instead `object` holds the free-text verdict/comment ("looks correct"), and the actual reviewer identity is carried separately in the top-level `by` field (`CN=Reviewer`). The subject/predicate/object/by mapping is never spelled out, so the triple's shape is easy to misread. | Add a one-line gloss right after the JSON block mapping the fields explicitly, e.g.: "this triple says *subject* (the foton) *pav:reviewedBy* has verdict *object* ('looks correct'); `by` is who is making that statement — not the predicate's object." | minor |
+| F-018 | `examples/04-claim/README.md:53-57` (step 4) | `nekton verify review.dsse.json reviewer.pub` presented as the step that establishes the claim is signed/valid | Inspecting the claim directly (its code/data) already shows it as signed and verified before `nekton verify` is explicitly run, but the text never explains what "signed" means at creation (step 3) versus what running `verify` adds/confirms at this point — unlike example 01, which has an explicit footnote spelling out the declared-vs-verified distinction, example 04 leaves this connection unstated. | Add a short gloss, mirroring example 01's footnote, clarifying what is already true of the claim once signed vs. what `nekton verify` additionally confirms (i.e., that *any* verifier can independently re-check the signature, not just trust the record at face value). | minor |
+
+## Example 05 — Review as its own sub-nekton
+`examples/05-review-scope/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-019 | `examples/05-review-scope/README.md:7` (first use), core to lines 7-19 and 30-31 | "leg 1, the **seedchain** is intact" ... "**Seed** the public parent; seed the review `--parent` it" | The concept of "seeding" is never introduced before this example — the only prior mention anywhere in examples 01-04 is `examples/04-claim/README.md:46`, which just namedrops `seed` as one of three subcommands sharing a flag, with zero explanation. Example 05 then opens on "the seedchain is intact" and builds its entire integrity/completeness model on seeding, with no definition of what a seed record is or what `nekton seed` actually does. A reader arrives at the example's core concept with no foundation for it. | Add a short "what is a seed?" gloss before or at first use (e.g. "a seed is the first, self-signed record of a nekton store — the root the rest of the chain is anchored to") — either inline here, or better, introduce the term briefly back in example 04 where `seed` is first named, so example 05 can build on it instead of introducing it cold. | blocker |
+| F-020 | `examples/05-review-scope/README.md` (whole file — no such section exists; cf. the "exhibit" at lines 51-57) | n/a — structural absence | Unlike examples 01, 02 and 04, example 05 has **no runnable "walk through it" section**: no commands, no sample output. It's pure narrative (the numbered "lifecycle") plus an "exhibit" that just *describes* three scenarios in English rather than showing `run.sh`'s actual output. Readers have been trained by every prior example to learn the concepts by running commands and reading real output; that scaffold disappears exactly when the material (chained claims, seeding, completeness) gets hardest. Related to F-019/F-021: with no commands to anchor them, the undefined terms have nothing concrete to attach to. | Add a short command-driven walkthrough mirroring 01/02/04's style — actual `nekton seed`, `nekton claim --parent ...`, `nekton close` invocations with real output — before or alongside the prose lifecycle, so the reader sees the concepts happen instead of only reading about them. | blocker |
+| F-021 | `examples/05-review-scope/README.md:7-8, 16, 30, 32, 79` | "resolves to its **head**" (7-8) · "**kernel**" (16) · "in its own **store**" (30) · "the first **chain link**" (32) · "a dangling `**prev**`" (79) | A pileup of core data-model terms — head, kernel, store, chain link, prev — none of which is ever defined, either here or earlier in the tutorial. `store` is presumably the same idea as "registry" from examples 01-04 but that's never stated; `head`/`chain link`/`prev` describe a hash-chain-of-claims model that's new as of this example and has no primer; `kernel` implies an architectural distinction (core primitives vs. consumer convention) that's asserted but never explained. Related to F-019/F-020 — these compound into the same "hard to read" problem, best fixed together. | Add a brief "concepts you need first" glossary before the numbered lifecycle: store = registry (same thing, this example's term for it); a claim can point to a `prev` claim, chaining them; the **head** is the latest claim in that chain; the **kernel** is kton's core primitive layer, as opposed to conventions consumers build on top of it (as this example itself does). | minor |
+| F-022 | `examples/05-review-scope/README.md:45` | "whose **COVERED** inputs are the review and the public parent" | `COVERED` is used as a defined technical term (capitalized, implying a specific qualification status) but it is only actually *defined* later, in example 09 (the COVERED-vs-CARRIED distinction). A reader following the tutorial in order hits the term here with no prior definition. Related to F-019/F-020/F-021 — another undefined-term instance in the same example. | Either avoid the loaded term here (say "inputs" plainly, since the COVERED/CARRIED distinction isn't this example's point) or add a one-clause forward gloss ("COVERED — fully hash-verified as an input, see example 09"). | minor |
+| F-023 | `examples/05-review-scope/README.md:16-17` | "SPEC §7.4 reserves parent→child registration and sealing as *consumer convention*" | "SPEC §7.4" reads like an internal author's cross-reference to a protocol spec document that isn't part of this repo and isn't linked — a reader has no way to look it up, so it functions as a dead reference. | Either link it (if the spec is public, e.g. the `plankton`/`trust.md`-style doc referenced elsewhere) or drop the citation and just state the claim in prose without the unresolvable pointer. | nit |
+
+## Example 06 — Export as RDF
+`examples/06-nanopub-rdf/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-024 | `examples/06-nanopub-rdf/README.md:5` | "They use the **same hash-based IRIs**" | "IRI" is used here (and twice earlier — `docs/index.html:149` and `examples/04-claim/README.md:48`) without ever being defined anywhere in the tutorial. It's a real, correctly-borrowed standard term (RFC 3987 Internationalized Resource Identifier, the standard identifier concept in RDF/Linked Data), not kton-invented — but a reader who doesn't already know RDF has no gloss to fall back on, exactly in the one example (RDF export) where the term matters most. Same shape of gap as F-019/F-021 in example 05: correct terminology, zero definition. | Add a one-line gloss at first or clearest use: "IRI — Internationalized Resource Identifier, the Unicode-friendly generalization of a URI and the standard way to name things in RDF: [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987)." Best placed in example 06 itself since that's where RDF is actually introduced, rather than the earlier, incidental uses. | minor |
+| F-025 | `examples/06-nanopub-rdf/README.md:28` | `nekton claim review.spec.json reviewer.key review.dsse.json --add   # file it + keep it for the export` | Same syntax error as **F-016** (example 04): `--add` is trailed on `nekton claim`, which the CLI doesn't accept there (`error: usage: nekton claim <spec.json> <key.key> <out.dsse.json>`, confirmed by reproducing F-016 live). This step is condensed/copied from example 04, so the bug was carried over along with the text. | Same fix as F-016: split into `nekton claim review.spec.json reviewer.key review.dsse.json` then `nekton add review.dsse.json`. Since this is now confirmed in two places, worth checking whether the same broken snippet is copy-pasted into any other example (e.g. 11, which also authors claims) before fixing each occurrence individually. | blocker |
+| F-026 | `examples/06-nanopub-rdf/README.md:3-4, 9-10` | "Both layers **export to RDF**: plankton lineage as **PROV**, nekton claims as **nanopublications**." ... "it leans on semantic-web vocabulary (RDF, PROV, **Turtle**, **TriG**, **triplestore**)" | Six semantic-web vocabulary names dropped across the opening two paragraphs, none explained — the second sentence (line 9-10) even flags them as the exact prerequisite jargon the example "leans on," which if anything makes the missing glosses more conspicuous. Related to F-024 (IRI, same example, same gap shape). | One concise sentence + link per term, right after the opening paragraph: <br>• **RDF** — W3C's standard model for data as subject-predicate-object triples: [RDF primer](https://www.w3.org/TR/rdf11-primer/). <br>• **PROV** (PROV-O) — the W3C provenance ontology for describing how a resource was generated, used, or derived: [PROV-O spec](https://www.w3.org/TR/prov-o/). <br>• **Nanopublication** — a standard format for one small, citable, signed scientific assertion bundled with its own provenance and publication metadata: [nanopub.net](https://nanopub.net/). <br>• **Turtle** — a human-readable text syntax for writing RDF triples: [Turtle spec](https://www.w3.org/TR/turtle/). <br>• **TriG** — Turtle extended to group triples into multiple named graphs in one file: [TriG spec](https://www.w3.org/TR/trig/). <br>• **Triplestore** — a database built specifically to store and query RDF triples: [overview](https://en.wikipedia.org/wiki/Triplestore). | minor |
+| F-027 | `examples/06-nanopub-rdf/README.md:52-58` (step 4) | `python3 - <<'PY'` / `import rdflib` | Running the step-4 snippet as written fails: `ModuleNotFoundError: No module named 'rdflib'`. The README never mentions `rdflib` as a prerequisite anywhere (its intro's assumptions only list `plankton`/`nekton` on PATH and having done examples 01/04) — no install instruction (`pip install rdflib`) is given before this Python is run. | Add a one-line prerequisite before the snippet, e.g. "This step also needs the `rdflib` Python package: `pip install rdflib`." | blocker |
+
+## Example 07 — Identity
+`examples/07-identity/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| F-028 | `examples/07-identity/README.md:11-14` (intro) | "**Parts 1 and 2 below run today.** Tier 3 (authority-backed identity) is described in the concept section..." | The intro's status disclaimer is largely redundant with, and duplicates, the properly-contextualized "authority-backed *(partially shipped)*" bullet later at lines 100-104 (same Sigstore/SSH-`allowed_signers`/model-CA facts, stated twice). Placed in the intro, before the reader has any framework for tiers, it just creates confusion that resolves itself 85 lines later. Root cause of F-029/F-030/F-031 below — fixing this one paragraph's placement would resolve all three. | Cut this paragraph from the intro almost entirely — keep only "Assumes `nekton` is on your PATH (claims are introduced in example 04)" — and let the existing "authority-backed (partially shipped)" bullet later be the single place this roadmap/status info lives. | blocker |
+| F-029 | `examples/07-identity/README.md:12` | "**Tier 3** (authority-backed identity)" | "Tier 3" is used here before the three-tier system (self-asserted / attested / authority-backed) is ever introduced — that list only appears ~85 lines later, in "Three assurance tiers" (lines 97-104). Same forward-reference shape as F-022 (example 05, "COVERED" used before its definition). Related to F-028. | Don't name the tier number until after the tiers are defined; if this status note is kept at all (see F-028), refer to it in plain words instead ("the strongest identity tier") rather than a number the reader hasn't seen yet. | minor |
+| F-030 | `examples/07-identity/README.md:12` | "is described in **the concept section**" | An unresolvable pointer — "the concept section" isn't named or linked, so the reader has no way to know it means "How identity works in kton" further down. Every other cross-reference in this tutorial links directly (e.g. "[example 08](../08-sigstore-github/)" two words later in the same sentence). Related to F-028. | Either link it directly (`[How identity works in kton](#how-identity-works-in-kton)`) or drop the vague self-reference. | nit |
+| F-031 | `examples/07-identity/README.md:11-14` | "**Parts 1 and 2 below run today.**" | Awkward phrasing — "run today" for "are runnable/working right now" reads oddly on first pass, especially juxtaposed with "still pending" two clauses later. Related to F-028. | Reword plainly, e.g. "Parts 1 and 2 are runnable now." | nit |
+| F-032 | `examples/07-identity/README.md:42-43` (step 2), consequence surfaces at step 3 (lines 49-52) | `nekton claim opus.spec.json opus.key --add` / `nekton claim sonnet.spec.json sonnet.key --add` | Confirmed by reproducing and inspecting the actual test directory: same root bug as **F-016**/**F-025**, but silent and worse here. `nekton claim` takes exactly 3 positionals (`<spec.json> <key.key> <out.dsse.json>`) and does not recognize `--add` as a flag; with only 2 real args given, the literal string `"--add"` is silently consumed as the 3rd positional (the output filename) instead of erroring. Result: (1) nothing is ever filed into the registry — confirmed `nekton-data/objects` is empty — so step 3's documented sample output never appears and the real output is `(none)` for both `nekton by signer` calls; (2) **both commands write to the same literal filename `--add`**, so the opus envelope is silently overwritten by the sonnet one when it runs second — confirmed the surviving `--add` file on disk contains only the sonnet claim. Silent data loss, no error at any point. | Same fix direction as F-016/F-025: split each into a 2-step form with a real, distinct output filename per model (`nekton claim opus.spec.json opus.key opus.dsse.json` then `nekton add opus.dsse.json`; same for sonnet), rather than relying on an `--add` flag this build doesn't accept. Given this is now confirmed in 3 places (04, 06, 07) with 3 different failure modes (hard error / same bug / silent overwrite), worth checking every other example for the same `nekton claim ... --add` pattern before fixing occurrence-by-occurrence. | blocker |
+| | | | | | |
+
+## Example 08 — Sign with your GitHub identity (Sigstore)
+`examples/08-sigstore-github/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| | | | | | |
+
+## Example 09 — Environment: from "I ran it" to a qualified stack
+`examples/09-environment/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| | | | | | |
+
+## Example 10 — Tool spectrum: run it, see what reproduces
+`examples/10-tool-spectrum/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| | | | | | |
+
+## Example 11 — Review template + SPARQL completeness
+`examples/11-review-template/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| | | | | | |
+
+## Example 12 — Capstone: a regulated popPK submission, zero trust
+`examples/12-submission/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| | | | | | |
+
+## Example 13 — Verified by a tool that isn't kton
+`examples/13-foreign-verify/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| | | | | | |
+
+## Example 14 — Fetch: getting the bytes back
+`examples/14-fetch/README.md`
+
+| # | Location | Excerpt | Issue | Suggestion | Severity |
+|---|----------|---------|-------|------------|----------|
+| | | | | | |
+
+---
+
+## Open questions / cross-cutting observations
+
+- (Anything that doesn't belong to one section — inconsistent terminology across examples,
+  ordering issues, repeated typos, etc.)
+- **"Open the graph" links a pre-generated snapshot, not the reader's own data** (F-009, F-013):
+  every example's "See it" section links a static, pre-built viewer snapshot right after the
+  reader's own hand-run walkthrough, as if it were their data. Confirmed on examples 01 and 02;
+  likely present in all 14 — worth checking/fixing once at the pattern level rather than filing
+  one near-identical finding per example.

@@ -9,3 +9,8 @@ bin/kton
 # Each example PERSISTS its .work/ so every foton's recorded input/output path is a real, fetchable
 # file in this repo (its raw permalink is the FileRef's carried `uri`). We deliberately do NOT ignore
 # .work/ anymore. Only the private signing keys inside it stay ignored (the *.key rule above).
+
+# Scratch/draft material under docs/ - never committed. (docs/findings.md is the one working
+# note we DO want tracked, so it's deliberately not listed here.)
+/docs/examplesTest/
+/docs/show-hn-kton.md
