@@ -160,7 +160,8 @@
 .lens-ov .x:hover{background:rgba(255,255,255,.24)}\
 .lens-ov iframe{flex:1;width:100%;border:0;border-radius:12px;background:#0f131a;box-shadow:0 14px 50px rgba(0,0,0,.5)}\
 ";
-  function inject() { var s = document.createElement("style"); s.textContent = CSS; document.head.appendChild(s); }
+  var styled = false;
+  function inject() { if (styled) return; styled = true; var s = document.createElement("style"); s.textContent = CSS; document.head.appendChild(s); }
 
   function openWorld(hit, hash) {
     // the registry paths are relative to THIS page; the viewer is a different file that would resolve
@@ -186,6 +187,7 @@
   }
 
   function attach(img, hash, hit, state, names, nprod, nsign) {
+    img.dataset.lensDone = "1";                                  // so a re-scan skips it
     var wrap = document.createElement("span"); wrap.className = "lens-wrap";
     img.parentNode.insertBefore(wrap, img); wrap.appendChild(img);
     var b = document.createElement("button");
@@ -211,7 +213,9 @@
 
   async function run() {
     if (!(window.crypto && crypto.subtle)) return;              // needs https or localhost
-    var imgs = [].slice.call(document.querySelectorAll(CFG.selector));
+    // Skip anything a previous scan already badged. run() is re-entrant so that a host page whose
+    // DOM changes after load (a LiveView app, an infinite feed) can call ktonLens.scan() again.
+    var imgs = [].slice.call(document.querySelectorAll(CFG.selector)).filter(function (i) { return !i.dataset.lensDone; });
     if (!imgs.length) return;
     inject();
     var LAZY = !!CFG.mirror;
@@ -241,5 +245,10 @@
       attach(img, hash, hit, v === true ? "ok" : v === false ? "un" : "av", names, nprod, nsign);
     }
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+  // Public entry point for host pages whose DOM changes after load. Serialised: a scan in flight
+  // is awaited rather than overlapped, so two rapid DOM changes cannot double-badge one image.
+  var running = null;
+  function scan() { running = (running || Promise.resolve()).then(run, run); return running; }
+  window.ktonLens = { scan: scan };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", scan); else scan();
 })();

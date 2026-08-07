@@ -79,7 +79,7 @@
 // Order matters: lens-sign.js must be in place BEFORE lens.js renders its badges, because
 // lens.js only adds the ✎ button if window.ktonSign is already there.
 (async function () {
-  var BRIDGE = "http://localhost:8789";
+  var BRIDGE = "/kton-api";   // same origin now - the proxy fronts Bonfire, the lens and the bridge
   var cfg = null;
   try { cfg = await (await fetch("lens-client.json", {cache: "no-store"})).json(); } catch (e) {}
 
