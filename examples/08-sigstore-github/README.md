@@ -24,13 +24,17 @@ GitHub signature you add next is a second, **outer** attestation over the whole 
 different party vouching for the record, independent of whoever authored it. Inner signature = who made
 the record; outer signature = who is willing to stand behind it under their real-world identity.
 
-**2. (you run this) Sign it with your GitHub identity.** This opens an OIDC login, choose GitHub:
+**2. (you run this) Sign it with your GitHub identity.** This step is **interactive and the output below is
+illustrative** — you run it locally, and **no `sig.bundle`, certificate, or Rekor entry is committed to this
+repo** (keyless signing needs *your* live OIDC login; there is nothing to commit on our side). It opens an
+OIDC login, choose GitHub:
 
 ```
 cosign sign-blob --yes --new-bundle-format --bundle sig.bundle foton.dsse.json
 # Retrieving signed certificate...
 # tlog entry created with index: <n>          <- your signature is now in the Rekor transparency log
 # Wrote bundle to file sig.bundle
+# (example output — the index/bundle above are from a real run YOU do, not committed here)
 ```
 
 Keyless means: the login proves your GitHub identity to **Fulcio**, which issues a *short-lived

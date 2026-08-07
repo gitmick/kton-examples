@@ -88,7 +88,8 @@
   <p class="sub">Two kinds, both are just a small signed file identified by the hash of its content:</p>
   <ul class="defs">
     <li><div class="term">a foton</div><p>a recorded computation: the hashes of its inputs, an opaque
-      command/protocol, and the hashes of its outputs. It is an edge in a lineage graph.</p></li>
+      command/protocol, and the hashes of its outputs. It is an <b>edge</b> in a lineage graph — the files it
+      connects (its inputs and outputs) are the <b>nodes</b>.</p></li>
     <li><div class="term">a claim</div><p>a signed statement whose subject is usually a foton or a file
       (by hash), so claims attach to exactly the thing they are about.</p></li>
   </ul>
@@ -211,6 +212,14 @@
       it and checks <code>sha256 == hash</code> before trusting a byte. A forged mirror is rejected on
       arrival: the hash is the authority, the URI only a hint.</p>
       <div class="links"><a href="viewer.html?union=data/14-fetch/union.json&keys=data/14-fetch/keys.json&names=data/14-fetch/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/14-fetch/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">&#9876;</div><h3>Red team &mdash; adversarial engagement <span style="font-weight:400;color:var(--dim)">(its own repo)</span></h3>
+      <p>The hardest test of &ldquo;trust no one&rdquo;: an adversarial security engagement against kton,
+      <b>documented in kton itself</b> &mdash; each attack is a foton, each finding a signed claim, and the
+      regression suite a spectrum. Two dozen attacks (co-signature drop, normalizer forge, federation
+      withholding, four-eyes graph-poll, viewer XSS &hellip;) with the fixes that closed them.</p>
+      <div class="links"><a href="https://github.com/gitmick/kton-redteam">read the engagement &rarr;</a></div>
     </div>
   </div>
 

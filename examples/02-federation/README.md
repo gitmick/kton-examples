@@ -6,12 +6,12 @@ The real lesson: **two independent registries converge to the same lineage by co
 shared store and nothing copied** - because every record is named by its content. We build up to it in
 three acts, each sharing *less* than the last.
 
-Three things could be "shared" here; keep them apart:
+Three things could be "shared" here — keep them apart (these are *not* the Act 1/2/3 numbering):
 
-1. **the registry** (the records) - shared in Act 1, separate from Act 2 on.
-2. **the file bytes** - plankton stores none, only hashes; on one machine they just sit in the working
-   folder. Whoever wants to re-hash a file obtains its bytes out-of-band (see the note in Act 3).
-3. **the records, copied by `mirror`** - Act 3, and it is an *optimization*, not the mechanism.
+- **the registry** (the records) - shared in Act 1, separate from Act 2 on.
+- **the file bytes** - plankton stores none, only hashes; on one machine they just sit in the working
+  folder. Whoever wants to re-hash a file obtains its bytes out-of-band (see the note in Act 3).
+- **the records, copied by `mirror`** - Act 3, and it is an *optimization*, not the mechanism.
 
 The coupling drops act by act:
 
@@ -23,11 +23,11 @@ The coupling drops act by act:
 
 Assumes `plankton` is on your PATH. (New to fotons? Do [example 01](../01-hello-foton/) first.)
 
-You will see a registry named two ways below, they are interchangeable: the **`PLANKTON_DIR=<dir>`**
-environment variable (prefix a single command), or the **`--registry <dir>`** flag (on the commands
-that write to a store: `add`, and `author --add`). `--registry X` is simply `PLANKTON_DIR=X` for that
-one command. The read commands take a third form, **`--source <dir>`** (Act 2), which names the stores
-to read as a union.
+**Syntax note — three ways to name a store** (skip if you just want the story; come back when a flag
+appears). A registry is named two interchangeable ways: the **`PLANKTON_DIR=<dir>`** environment variable
+(prefix a single command), or the **`--registry <dir>`** flag (on the commands that write to a store:
+`add`, and `author --add`) — `--registry X` is simply `PLANKTON_DIR=X` for that one command. The read
+commands take a third form, **`--source <dir>`** (Act 2), which names the stores to read as a union.
 
 ## Setup
 
@@ -143,3 +143,5 @@ The viewer colours the two participants differently, so you see one federated gr
 registries.
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/02-federation/union.json&keys=data/02-federation/keys.json&names=data/02-federation/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

@@ -83,3 +83,5 @@ never the head. The open-substrate rule, not a sealed-scope fatality.
 ## See it
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/05-review-scope/union.json&keys=data/05-review-scope/keys.json&names=data/05-review-scope/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

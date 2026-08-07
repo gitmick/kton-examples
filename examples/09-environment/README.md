@@ -149,3 +149,5 @@ bash run.sh
 ## See it
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/09-environment/union.json&keys=data/09-environment/keys.json&names=data/09-environment/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

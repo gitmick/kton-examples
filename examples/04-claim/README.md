@@ -51,7 +51,7 @@ claim`, `annotate`, and `seed`). We keep `review.dsse.json` here so we can `show
 
 ```
 nekton about "$FOTON"
-# sha256:...  predicate=pav:reviewedBy  by=CN=Reviewer  keyid=...
+# sha256:...  predicate=pav:reviewedBy  by=CN=Reviewer  declared-keyid=... (unverified)
 nekton show   review.dsse.json      # the full claim
 nekton verify review.dsse.json reviewer.pub
 # signature: VALID - verified as keyid ... (the authoritative signer)
@@ -76,3 +76,5 @@ bash run.sh
 The viewer shows the foton and the claim as one graph, the claim attached to the foton it is about.
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/04-claim/union.json&keys=data/04-claim/keys.json&names=data/04-claim/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

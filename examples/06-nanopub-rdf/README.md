@@ -71,3 +71,5 @@ bash run.sh
 ## See it
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/06-nanopub-rdf/union.json&keys=data/06-nanopub-rdf/keys.json&names=data/06-nanopub-rdf/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

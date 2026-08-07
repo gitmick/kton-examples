@@ -119,3 +119,5 @@ registered template as one picture.
 ## See it
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/11-review-template/union.json&keys=data/11-review-template/keys.json&names=data/11-review-template/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

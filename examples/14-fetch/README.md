@@ -101,3 +101,5 @@ the forged one. The graph shows *claimed* locations; verification happens at `fe
 the picture.
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/14-fetch/union.json&keys=data/14-fetch/keys.json&names=data/14-fetch/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*
