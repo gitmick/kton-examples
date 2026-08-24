@@ -14,3 +14,7 @@ bin/kton
 # note we DO want tracked, so it's deliberately not listed here.)
 /docs/examplesTest/
 /docs/show-hn-kton.md
+
+# generated per-deployment by stack/register-lens-client.sh (an OAuth client id, not a secret,
+# but instance-specific - each deployment registers its own)
+docs/lens-client.json

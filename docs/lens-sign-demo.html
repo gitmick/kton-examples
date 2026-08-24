@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign a claim about a figure — kton lens + Bonfire Open Science</title>
+<link rel="icon" type="image/png" href="logo.png">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#f6f7f9;color:#141922;
+    font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  .page{max-width:760px;margin:0 auto;background:#fff;padding:48px 52px 72px;min-height:100vh;
+    box-shadow:0 1px 3px rgba(0,0,0,.06),0 12px 40px rgba(20,30,50,.06)}
+  .eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:11.5px;font-weight:640;color:#3a45cf}
+  h1{font-size:25px;line-height:1.2;margin:.3em 0 .35em}
+  h2{font-size:15px;margin:32px 0 6px}
+  p{margin:.7em 0;color:#2b3240}
+  .note{margin:20px 0;background:#f0f5fb;border:1px solid #d5e3f2;border-radius:10px;padding:13px 16px;font-size:14px}
+  .note b{color:#3a45cf}
+  .warn{background:#fff6ed;border-color:#f2ddc5}
+  .warn b{color:#b4610f}
+  figure{margin:22px 0 6px;text-align:center}
+  figure img{max-width:100%;border:1px solid #e3e6ec;border-radius:8px;background:#fff}
+  figcaption{font-size:12.5px;color:#6b7480;margin-top:8px;text-align:left}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:#f0f2f5;padding:.05em .35em;border-radius:4px}
+  ol{padding-left:20px} li{margin:.35em 0;color:#2b3240}
+  .foot{margin-top:40px;padding-top:16px;border-top:1px solid #e3e6ec;color:#6b7480;font-size:13px}
+</style>
+</head>
+<body>
+<article class="page">
+  <span class="eyebrow">kton lens · write half</span>
+  <h1>Sign a claim about this figure</h1>
+  <p>The figure below is checked against this instance's registry: the page fetches its bytes,
+  SHA-256s them in your browser, and asks the instance whether it knows them. Nothing is uploaded.</p>
+
+  <div class="note">
+    <b>Two buttons appear on a known figure.</b> The round logo badge opens the provenance graph
+    (read). The <b>✎</b> button signs a claim about it (write) — with a key generated in your
+    browser as non-extractable, bound to your signed-in identity by a claim this instance signs.
+  </div>
+
+  <figure>
+    <img class="lens" src="lens-paper/figures/fig-gof.svg" alt="Goodness-of-fit plots">
+    <figcaption><b>Figure 1.</b> Goodness-of-fit for the base model. Seeded into the instance
+    registry by <code>stack/seed-demo.sh</code>, so the lens has something to recognise.</figcaption>
+  </figure>
+
+  <h2>What happens when you press ✎</h2>
+  <ol>
+    <li>If you are not signed in, you are sent to Keycloak (which may broker you on to ORCID,
+    GitHub or Google) and back — an OAuth2 authorization-code flow with PKCE. Keycloak rather
+    than Bonfire, because only Keycloak passes the ORCID iD through.</li>
+    <li>On first use your browser generates an <b>Ed25519 key with <code>extractable: false</code></b>
+    and registers only the public half. The instance signs a <code>sec:controller</code> claim
+    binding that key to your ORCID iD, if it has one.</li>
+    <li>The kton WASM kernel canonicalises the claim and frames the bytes to sign; WebCrypto makes
+    the signature; the kernel reassembles the DSSE envelope.</li>
+    <li>The finished record is filed. It is byte-identical to the same claim signed by the
+    <code>nekton</code> CLI.</li>
+  </ol>
+
+  <div class="note warn" id="cfgwarn" hidden>
+    <b>Not configured yet.</b> Run <code>stack/keycloak/build-realm.py</code> and restart Keycloak
+    to create the <code>kton-lens</code> client. Until then the read-only lens still works — only
+    the ✎ button is absent.
+  </div>
+
+  <div class="foot">
+    The private key never leaves your browser and cannot be exported — not even by this page.
+    What makes your signature <em>mean</em> something is not the key but the binding: a claim,
+    signed by this instance, saying whose key it is.
+  </div>
+</article>
+
+<script>
+// Load the lens pair with configuration discovered at runtime, so the client_id lives in a
+// generated file rather than being hard-coded into a committed page.
+// Order matters: lens-sign.js must be in place BEFORE lens.js renders its badges, because
+// lens.js only adds the ✎ button if window.ktonSign is already there.
+(async function () {
+  var BRIDGE = "/kton-api";   // same origin now - the proxy fronts Bonfire, the lens and the bridge
+  var cfg = null;
+  try { cfg = await (await fetch("lens-client.json", {cache: "no-store"})).json(); } catch (e) {}
+
+  function load(src, attrs) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement("script");
+      s.src = src;
+      Object.keys(attrs || {}).forEach(function (k) { s.setAttribute(k, attrs[k]); });
+      s.onload = res; s.onerror = function () { rej(new Error("could not load " + src)); };
+      document.body.appendChild(s);
+    });
+  }
+
+  if (cfg && cfg.client_id) {
+    await load("lens-sign.js", {
+      "data-bridge": BRIDGE,
+      "data-issuer": cfg.issuer,
+      "data-client-id": cfg.client_id,
+    });
+  } else {
+    document.getElementById("cfgwarn").hidden = false;
+  }
+
+  await load("lens.js", {
+    "data-planktons": BRIDGE + "/kton/union.json",
+    "data-viewer": "viewer.html",
+    "data-logo": "logo.png",
+  });
+})();
+</script>
+</body>
+</html>
