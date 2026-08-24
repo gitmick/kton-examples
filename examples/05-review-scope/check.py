@@ -13,17 +13,41 @@
 #     A close by anyone else does not count (condition B: not "any" close, the authorised one).
 # Then: every enrolled reviewer must have a delivery in the sealed chain (completeness), and none may be a
 # reject (safety). Miss either and the gate BLOCKS.
-import json, base64, glob, sys
+import json, base64, glob, os, sys
 
 REV_DIR, PUB_DIR, REV = sys.argv[1:4]
 INIT = "https://kton.dev/v/review-initialised"
 CLOSED = "https://kton.dev/v/closed"
 REVIEWED = "https://kton.dev/v/reviewed"
 
+def store_records(reg):
+    """Every record in a registry, as parsed dicts.
+
+    A registry files a scope's claims as ONE FILE PER (SUB)NEKTON -
+    objects/scope/<scope_id>.nekton.jsonl and objects/unscoped.nekton.jsonl, one record per line -
+    and older stores kept one file per claim at objects/<algo>/<hash>.json. Read both, so a
+    non-recursive glob can never silently show you half a store.
+    """
+    out = []
+    for f in sorted(glob.glob(os.path.join(reg, "objects", "**", "*.nekton.jsonl"), recursive=True)):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    try:
+                        out.append(json.loads(line))
+                    except Exception:
+                        continue
+    for f in sorted(glob.glob(os.path.join(reg, "objects", "**", "*.json"), recursive=True)):
+        try:
+            out.append(json.load(open(f)))
+        except Exception:
+            continue
+    return out
+
 def load(d):
     recs = {}
-    for f in glob.glob(d + "/objects/sha256/*.json"):
-        r = json.load(open(f))
+    for r in store_records(d):
         cid = r.get("claimId") or r.get("fotonId")
         if not cid or "envelope" not in r:
             continue

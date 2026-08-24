@@ -90,7 +90,7 @@ plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-re
 POT=$(python3 -c "import json,base64,glob;
 import os
 best=None
-for f in glob.glob('$PLANKTON_DIR/objects/sha256/*.json'):
+for f in glob.glob('$PLANKTON_DIR/objects/**/*.json', recursive=True):
  import json;r=json.load(open(f));import base64
  s=json.loads(base64.b64decode(r['envelope']['payload']))
  if s['predicate']['protocol'].get('kind')=='normalize': best=s['predicate']['protocol']['ref']
@@ -267,7 +267,11 @@ PLANKTON_DIR="$W/agency/plankton" plankton export "$F/agency-plankton.json"
 # working intermediate (what rdflib parses), re-derivable from the two registry bundles above.
 plankton export --rdf --trust-keys "$W/keys" -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf --trust-keys "$W/keys" > "$F/submission.ttl"
 : > "$F/attestations.trig"
-for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub --trust-keys "$W/keys" "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
+records_of "$W/agency/nekton" | while IFS= read -r rec; do
+  printf '%s\n' "$rec" > "$W/rec.json"
+  nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$F/attestations.trig" 2>/dev/null
+  echo >> "$F/attestations.trig"
+done
 echo "  nekton + plankton registries bundled (the gate's INPUT); RDF is the export step inside the decision"
 # The verifier's OWN trust root: the authorities whose sec:controller vouchers it accepts (here the two
 # org authorities). This is what stops the sock-puppet forgery - three self-issued (or ring-signed) keys

@@ -42,3 +42,6 @@ snapshot() {
   python3 "$EXROOT/viewer/build_union.py" --out "$EXROOT/docs/data/$name" --keydir "$keydir" "$@"
   echo "  SEE IT: docs/viewer.html?union=data/$name/union.json&keys=data/$name/keys.json&names=data/$name/names.json"
 }
+
+# Reading a registry: one file per (sub)nekton, plus the legacy per-claim form.
+source "$(dirname "${BASH_SOURCE[0]}")/records.sh"

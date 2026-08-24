@@ -38,7 +38,7 @@ for who in alice bob carol; do
   echo "  $who approved (schema:AcceptAction) + attached $who.md"
 done
 echo "  --- correctness checks ---"
-echo "  distinct review claims on disk (append-only, nothing overwritten): $(ls "$NEKTON_DIR"/objects/sha256/*.json | wc -l | tr -d ' ')"
+echo "  distinct review claims on disk (append-only, nothing overwritten): $(records_of "$NEKTON_DIR" | wc -l | tr -d ' ')"
 echo "  distinct signing keyids among the reviews:                         $(nekton by predicate http://purl.org/pav/reviewedBy | grep -oE 'keyid=[0-9a-f]+' | sort -u | wc -l | tr -d ' ')"
 echo "  reviews recorded ABOUT the foton:"
 nekton about "$FOTON" | sed 's/^/    /'
@@ -59,7 +59,11 @@ nekton about "$TPLHASH" | sed 's/^/    /'
 echo; echo "########## Part 5 - export the RDF and TEST review completeness with SPARQL ##########"
 plankton export --rdf -o "$W/lineage.ttl" >/dev/null 2>&1 || plankton export --rdf > "$W/lineage.ttl"
 : > "$W/reviews.trig"
-for f in "$NEKTON_DIR"/objects/sha256/*.json; do nekton export --nanopub --trust-keys "$W/keys" "$f" >> "$W/reviews.trig"; echo >> "$W/reviews.trig"; done
+records_of "$NEKTON_DIR" | while IFS= read -r rec; do
+  printf '%s\n' "$rec" > "$W/rec.json"
+  nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$W/reviews.trig" 2>/dev/null
+  echo >> "$W/reviews.trig"
+done
 echo "  exported: lineage.ttl (foton, PROV) + reviews.trig (each review as a nanopublication)"
 if python3 -c "import rdflib" 2>/dev/null; then
   python3 "$EXDIR/check_completeness.py" "$W/lineage.ttl" "$W/reviews.trig" "$EXDIR/completeness.rq" "${FOTON#sha256:}" alice bob carol

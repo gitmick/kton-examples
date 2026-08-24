@@ -24,14 +24,35 @@ os.makedirs(a.out, exist_ok=True)
 def keyid(pubhex):
     return hashlib.sha256(bytes.fromhex(pubhex)).hexdigest()[:16]
 
+def store_records(reg):
+    """Every record in a registry, as parsed dicts.
+
+    A registry files a scope's claims as ONE FILE PER (SUB)NEKTON -
+    objects/scope/<scope_id>.nekton.jsonl and objects/unscoped.nekton.jsonl, one record per line -
+    and older stores kept one file per claim at objects/<algo>/<hash>.json. Read both, so a
+    non-recursive glob can never silently show you half a store.
+    """
+    out = []
+    for f in sorted(glob.glob(os.path.join(reg, "objects", "**", "*.nekton.jsonl"), recursive=True)):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    try:
+                        out.append(json.loads(line))
+                    except Exception:
+                        continue
+    for f in sorted(glob.glob(os.path.join(reg, "objects", "**", "*.json"), recursive=True)):
+        try:
+            out.append(json.load(open(f)))
+        except Exception:
+            continue
+    return out
+
 # 1. the union of all records, deduped by content id.
 seen, union = set(), []
 for reg in a.reg:
-    for f in sorted(glob.glob(os.path.join(reg, "objects", "sha256", "*.json"))):
-        try:
-            rec = json.load(open(f))
-        except Exception:
-            continue
+    for rec in store_records(reg):
         rid = rec.get("fotonId") or rec.get("claimId")
         if rid and rid not in seen:
             seen.add(rid)
