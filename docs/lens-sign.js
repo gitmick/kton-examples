@@ -55,7 +55,8 @@
    * this at all: there is no client secret to hide, and the code is useless without the verifier
    * that never left this browser.
    */
-  var TOKEN_KEY = "kton-access-token", VERIFIER_KEY = "kton-pkce-verifier";
+  var TOKEN_KEY = "kton-access-token", VERIFIER_KEY = "kton-pkce-verifier",
+      STATE_KEY = "kton-oauth-state";
 
   function token() { try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
 
@@ -75,12 +76,19 @@
     var d = await discover();
     var verifier = b64url(rand(32));
     sessionStorage.setItem(VERIFIER_KEY, verifier);
+    // `state` does two jobs. It is OAuth's CSRF defence - PKCE proves the code was requested by
+    // this browser, but only state proves this page started the flow. And it makes the callback
+    // ADDRESSED: without it this file claimed any ?code= it found on the page, so a second
+    // redirect-flow half on the same page would fight it for the other's authorization code.
+    var state = b64url(rand(16));
+    sessionStorage.setItem(STATE_KEY, state);
     var challenge = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
     var q = new URLSearchParams({
       response_type: "code",
       client_id: CFG.clientId,
       redirect_uri: redirectUri(),
       scope: "openid profile",
+      state: state,
       code_challenge: challenge,
       code_challenge_method: "S256",
     });
@@ -95,10 +103,17 @@
     var p = new URLSearchParams(location.search);
     var code = p.get("code");
     if (!code) return false;
+
+    // Only take a code that answers OUR request. A mismatch is somebody else's callback (or a
+    // forged one): leave the URL untouched so the half that does own it can still complete.
+    var expected = sessionStorage.getItem(STATE_KEY);
+    if (!expected || p.get("state") !== expected) return false;
+
     var verifier = sessionStorage.getItem(VERIFIER_KEY) || "";
     // Clean the URL first, so a refresh cannot replay a spent code.
     history.replaceState({}, "", redirectUri());
     sessionStorage.removeItem(VERIFIER_KEY);
+    sessionStorage.removeItem(STATE_KEY);
     var body = new URLSearchParams({
       grant_type: "authorization_code",
       code: code,
