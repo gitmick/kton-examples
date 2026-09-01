@@ -1,11 +1,15 @@
 name: ci
 
 # Runs every one of the 14 examples end to end. The examples need the reference binaries
-# (plankton / nekton / kton), which are built from the sibling `plankton` repo - so this job checks
-# that repo out and builds them. While `plankton` is private, add a repo secret PLANKTON_TOKEN
-# (a fine-grained PAT with Contents: read on the plankton repo); once plankton is public the default
-# token is enough and the secret can be removed. `${{ github.repository_owner }}` makes this follow the
-# examples repo into whatever org it lives in (kton-protocol), no edit needed after the migration.
+# (plankton / nekton / kton), which are built from the kernel repo - so this job checks it out and
+# builds them.
+#
+# The kernel is kton-protocol/kton, and it is PUBLIC, so the default token is enough and no
+# PLANKTON_TOKEN secret is needed. It is named explicitly rather than derived from
+# `github.repository_owner`: this repo is still gitmick/kton-examples, so deriving it resolved to
+# gitmick/plankton - archived, private, and a month behind - which failed the checkout and SKIPPED
+# every example step. CI reported failure for a month while verifying nothing. If this repo moves to
+# kton-protocol, the line below keeps working unchanged.
 
 on:
   push:
@@ -19,12 +23,11 @@ jobs:
       - name: checkout kton-examples
         uses: actions/checkout@v4
 
-      - name: checkout the plankton kernel (to build the reference binaries)
+      - name: checkout the kton kernel (to build the reference binaries)
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/plankton
-          path: _plankton
-          token: ${{ secrets.PLANKTON_TOKEN || github.token }}
+          repository: kton-protocol/kton
+          path: _kton
 
       - uses: actions/setup-go@v5
         with:
@@ -43,9 +46,9 @@ jobs:
         run: |
           set -e
           mkdir -p bin
-          ( cd _plankton/reference        && go build -trimpath -o "$GITHUB_WORKSPACE/bin/plankton" ./cmd/plankton )
-          ( cd _plankton/nekton/reference && go build -trimpath -o "$GITHUB_WORKSPACE/bin/nekton"   ./cmd/nekton   )
-          ( cd _plankton/kton/reference   && go build -trimpath -o "$GITHUB_WORKSPACE/bin/kton"     ./cmd/kton     )
+          ( cd _kton/reference        && go build -trimpath -o "$GITHUB_WORKSPACE/bin/plankton" ./cmd/plankton )
+          ( cd _kton/nekton/reference && go build -trimpath -o "$GITHUB_WORKSPACE/bin/nekton"   ./cmd/nekton   )
+          ( cd _kton/kton/reference   && go build -trimpath -o "$GITHUB_WORKSPACE/bin/kton"     ./cmd/kton     )
 
       - name: run every example end to end (snapshots regenerate; we assert exit 0)
         run: |
