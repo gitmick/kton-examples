@@ -192,10 +192,21 @@ Zwei Korrekturen am Briefing selbst:
 
 - **Der `docs/data`-Diff ist nicht „ausschließlich keyid und Signatur".** Das gilt für die einfachen
   Beispiele; bei 05, 07, 10, 11, 12 und 14 ändern sich die **Record-IDs** selbst. Deterministische
-  Schlüssel allein hätten es also nicht behoben. Ursache ist eine Wanduhr im signierten Payload
-  (`annotate.go:329`, `seed.go:64`, kein Override) — das ist #42 und liegt im Kernel. Was hier ging,
-  ist gemacht: `.pub`-Glob und Union waren unsortiert, zwei identische Läufe erzeugten verschiedene
-  Dateien; beides ist jetzt kanonisch. Die verbleibenden 38 Dateien brauchen #42.
+  Schlüssel allein hätten es also nicht behoben. Ursache ist eine Wanduhr im signierten Payload —
+  das ist #42. Was hier ging, ist gemacht: `.pub`-Glob und Union waren unsortiert, zwei identische
+  Läufe erzeugten verschiedene Dateien; beides ist jetzt kanonisch.
+
+  **Nachtrag, gleicher Tag 16:21:** #42 ist im Kernel behoben. `1f8caf6` auf `dev` gibt `seed` und
+  `annotate` ein `--when`; geprüft, zwei Läufe liefern byte-identische Record-IDs. Der Satz oben
+  („kein Override") stimmte bei der Prüfung gegen `a27c0f2` und ist seither überholt. Für
+  reproduzierbare Snapshots fehlt jetzt nur noch die Identitäts-Hälfte: `keygen` würfelt immer
+  (`author.go:57`), und der Public Key steckt in den Payloads. Ein selbst geschriebener 32-Byte-Seed
+  als `.key` wird akzeptiert, aber es gibt keinen Weg zum `.pub`-Hex — dafür wäre ein
+  `keygen --seed` oder ein `pubkey <key.key>` im Kernel nötig (an die Kernel-Seite gemeldet).
+
+  **Und eine Warnung an alle, die hier lokal arbeiten:** `bin/nekton` im Arbeitsbaum ist ein
+  vorgebautes Binary, das `--when` noch nicht kennt — es ist älter als `dev`. Genau der B1-Fall.
+  `bin/` ist gitignored und die CI baut frisch aus dem Checkout; lokal muss man selbst neu bauen.
 - **Ein Bug, den der neue Permalink-Check sofort fand und der nichts mit B7 zu tun hat:** Beispiel 09
   macht `cd "$PWD/.work"` *nach* dem Sourcen von `common.sh`, das die Permalink-Basis da schon
   eingefroren hatte. Alle 12 Locators zeigten ein Verzeichnis zu hoch, auf nicht existierende
