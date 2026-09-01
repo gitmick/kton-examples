@@ -65,3 +65,9 @@ jobs:
           # ex-08 (Sigstore keyless) is interactive: it runs its automatic part and exits 0, printing the
           # manual sign step - so it passes here without doing the OIDC round-trip.
           exit $fail
+
+      - name: every carried permalink resolves to a file this repo publishes
+        # Must run AFTER the examples: it reads the records they just produced. lib/common.sh mints a
+        # raw permalink for every recorded input/output, and .gitignore decides whether the file behind
+        # it is published - two files that know nothing about each other. This is what connects them.
+        run: python3 bin/check-permalinks.py

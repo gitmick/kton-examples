@@ -1,1 +1,2 @@
-  RELEASE: COMPLETE - 2 enrolled reviewers all delivered a pass, sealed at sha256:c6e9d8012b51..., closed by its own authority
+  gate read 4 record(s) from the review and 3 from the public parent
+  RELEASE: COMPLETE - 2 enrolled reviewers all delivered a pass, sealed at sha256:0ee0dd9399b0..., closed by its own authority

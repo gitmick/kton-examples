@@ -1,3 +1,4 @@
+  gate loaded 230 lineage triple(s) + 1080 attestation quad(s)
   release checklist (six graph conditions + four-eyes decided in the driver, all bound to this submission):
     [x] toolchain validated (gxp:validation-performed = pass)
     [x] the fit's environment is qualified (qualifies-as citing a check foton that FULLY passed: membersFulfilled == membersTotal)

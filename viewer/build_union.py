@@ -91,7 +91,7 @@ def short(principal):  # did:web:host/people/analyst -> analyst ; model:anthropi
 # (cold-session screenshot-deception). The green ring is about the KEY; attestation is about the LABEL.
 keys, names = {}, {}
 attested_kids = []
-for pub in glob.glob(os.path.join(a.keydir, "*.pub")):
+for pub in sorted(glob.glob(os.path.join(a.keydir, "*.pub"))):
     hx = open(pub).read().strip()
     if len(hx) != 64:
         continue
@@ -105,9 +105,15 @@ for pub in glob.glob(os.path.join(a.keydir, "*.pub")):
         names.setdefault(kid, os.path.splitext(os.path.basename(pub))[0])  # site label (unattested)
 attested = len(attested_kids)
 
+# CANONICAL ORDER. These three files are committed, so every run of an example diffs against the last
+# one - and an unordered glob or an append-order union makes two identical runs look different. Sorting
+# by content id (and by key) leaves only real changes in the diff. It does not make the snapshots
+# reproducible on its own: a `nekton annotate`/`nekton seed` record carries a wall-clock `when` (kernel
+# #42), so its id genuinely differs run to run. This removes the noise that is ours to remove.
+union.sort(key=lambda r: r.get("fotonId") or r.get("claimId") or "")
 json.dump(union, open(os.path.join(a.out, "union.json"), "w"))
-json.dump(keys, open(os.path.join(a.out, "keys.json"), "w"))
-json.dump(names, open(os.path.join(a.out, "names.json"), "w"))
+json.dump(keys, open(os.path.join(a.out, "keys.json"), "w"), sort_keys=True)
+json.dump(names, open(os.path.join(a.out, "names.json"), "w"), sort_keys=True)
 json.dump(sorted(attested_kids), open(os.path.join(a.out, "attested.json"), "w"))
 nf = sum(1 for r in union if "fotonId" in r)
 print(f"  viewer data: {len(union)} records ({nf} fotons, {len(union)-nf} claims), {len(keys)} identities ({attested} attested) -> {a.out}")

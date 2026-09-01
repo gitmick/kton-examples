@@ -84,9 +84,15 @@ also add to PATH):
 
 ## What is NOT here
 
-Private keys (`*.key`), the kton binaries, and the throwaway per-example working state (`.work/`) are
-git-ignored, this is a public repo. Only the run scripts, the viewer, and the (public) graph
-snapshots are published.
+Private keys (`*.key`) and the kton binaries are git-ignored - this is a public repo.
+
+`examples/*/.work/` is a split: the **data** an example reads and writes stays tracked, because every
+foton's recorded input/output carries a raw permalink to it, so you can fetch the exact bytes behind
+any node in the graph. Everything a run **derives** from that data - the registries, the public keys,
+the signed envelopes, the RDF exports, the generated claim specs - is ignored: it is rewritten on
+every run with a fresh keypair, so it can never diff cleanly, and nothing links to it.
+`bin/check-permalinks.py` holds the two halves together, failing CI if a carried permalink ever names
+a file this repo does not publish.
 
 ## Curated nekton templates
 

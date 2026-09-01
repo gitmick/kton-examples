@@ -9,17 +9,24 @@ export PATH="$EXROOT/bin:$PATH"
 # file in this repo. We shadow `plankton` so that `plankton author` automatically attaches, to EVERY
 # --in/--out, a CARRIED `uri` = that path's raw permalink (carried => NOT part of the foton id, so it
 # never changes lineage). A reader can then fetch the exact bytes behind any node. RAWBASE is derived
-# from the calling example's own directory; the pin below is the ONE line rewritten at each release/
-# migration (gitmick -> kton-protocol, main -> the release commit SHA).
+# from the directory the example is authoring IN; the pin below is the ONE line rewritten at each
+# release/migration (gitmick -> kton-protocol, main -> the release commit SHA).
 KTON_RAW_REPO="${KTON_RAW_REPO:-gitmick/kton-examples}"
 KTON_RAW_COMMIT="${KTON_RAW_COMMIT:-main}"            # PIN: set to the release commit SHA at publish
-RAWBASE="https://raw.githubusercontent.com/${KTON_RAW_REPO}/${KTON_RAW_COMMIT}/${PWD#"$EXROOT"/}"
 
 plankton() {
   if [ "${1:-}" != "author" ]; then command plankton "$@"; return; fi
   shift
   local -a a=("$@") extra=()
-  local i v logical localp
+  local i v logical localp rel rawbase
+  # Derive the repo home HERE, per call - not once when this file was sourced. An example may `cd`
+  # in between (09 cds into .work/ after sourcing), and a base frozen at source time then mints
+  # permalinks for a directory the files are not in: a well-formed, signed record whose `uri` 404s,
+  # invisible from inside the run. That is exactly what bin/check-permalinks.py caught in 09, where
+  # all 12 locators pointed one directory too high.
+  rel="${PWD#"$EXROOT"/}"
+  if [ "$rel" = "$PWD" ]; then command plankton author "$@"; return; fi   # outside the repo: no home
+  rawbase="https://raw.githubusercontent.com/${KTON_RAW_REPO}/${KTON_RAW_COMMIT}/${rel}"
   for ((i = 0; i < ${#a[@]}; i++)); do
     case "${a[i]}" in
       --in | --out)
@@ -27,7 +34,7 @@ plankton() {
         if [[ "$v" == *=* ]]; then logical="${v%%=*}"; localp="${v#*=}"; else logical="$v"; localp="$v"; fi
         logical="${logical#./}"; localp="${localp#./}"
         case "$localp" in /*) : ;;                    # absolute path: no repo home, cannot locate
-          *) extra+=(--located "$logical=$RAWBASE/$localp") ;;
+          *) extra+=(--located "$logical=$rawbase/$localp") ;;
         esac
         ;;
     esac

@@ -7,8 +7,32 @@ bin/kton
 *.key
 *.pem
 # Each example PERSISTS its .work/ so every foton's recorded input/output path is a real, fetchable
-# file in this repo (its raw permalink is the FileRef's carried `uri`). We deliberately do NOT ignore
-# .work/ anymore. Only the private signing keys inside it stay ignored (the *.key rule above).
+# file in this repo (its raw permalink is the FileRef's carried `uri`). So .work/ is NOT ignored
+# wholesale - but only the DATA in it earns its place in the index. What a run DERIVES is ignored:
+#
+#   the registries, the public keys and the signed envelopes are rewritten on every single run, with a
+#   fresh keypair each time and (for `nekton seed`/`annotate` records) a wall-clock `when`, so they can
+#   never diff cleanly. They were 219 of the 353 tracked .work/ files and 219 of the 255 that changed
+#   on every full run - noise that buried the real diffs. Nothing points at them: not one of them is
+#   the target of a carried `uri`, which is the only reason .work/ is tracked at all.
+#
+# bin/check-permalinks.py enforces the half that matters - every carried permalink must resolve to a
+# tracked file - so if a future example locates a file these rules exclude, CI says so instead of
+# publishing a record whose `uri` quietly 404s.
+**/.work/**/objects/**
+**/.work/**/*.pub
+**/.work/**/*.dsse.json
+**/.work/**/*.foton.json
+# The same reasoning for the other things a run manufactures rather than starts from: the claim specs
+# it prints on the fly (they carry the run's keyids), the RDF it exports, and the record dumps the
+# checks read. All regenerated, none the target of a carried `uri`.
+**/.work/**/*.spec.json
+**/.work/**/*.trig
+**/.work/**/*.ttl
+**/.work/**/*.jsonl
+**/.work/**/exports/**
+**/.work/**/rec.json
+**/.work/**/*.err
 
 # Scratch/draft material under docs/ - never committed. (docs/findings.md is the one working
 # note we DO want tracked, so it's deliberately not listed here.)
