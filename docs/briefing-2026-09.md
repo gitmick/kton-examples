@@ -171,3 +171,32 @@ etwas getan haben:
 
 B6 ist damit erledigt: die neuen Reader funktionieren gegen den 0.2-Kernel. Gegen den *alten*
 Kernel von `main` sind sie weiterhin ungeprüft — nach dem Merge von `dev` ist das gegenstandslos.
+
+---
+
+## Stand 2026-09-01, nach der Abarbeitung
+
+Reihenfolge wie oben. Was tatsächlich getan wurde, und wo das Briefing korrigiert werden musste:
+
+| | Stand | |
+|---|---|---|
+| **B1** | offen, nicht hier | Der Kernel adressiert es inzwischen selbst: `a27c0f2` („0.2: record the store layout, and refuse a store this build cannot read") legt `objects/.format` an — den Marker, dessen Fehlen oben beklagt wird. Für die Release-Notes bleibt es relevant. |
+| **B2** | erledigt | War bereits in `eee8c58` + `17102aa` behoben, bevor diese Runde begann. Geprüft: YAML valide, `kton-protocol/kton`, `path: _kton`, kein `continue-on-error`, `PLANKTON_TOKEN` nur noch im Kommentar. |
+| **B4** | erledigt, **größer als angenommen** | Nicht zwei falsche Blocker, sondern **vier**: F-032 und F-041 hängen an derselben Prämisse. `--add` wird in `main.go:214-229`, `annotate.go:150` und `seed.go:26` geparst, seit `d56827c` (v0.1.0), auf `main` wie auf `dev`. Live gegen ein aus dem Checkout gebautes 0.2-Binary reproduziert: alle Formen exit 0. F-032s Vorwurf (Datei namens `--add`, leere Registry) tritt nicht ein. Ohne die Rücknahme wären 25 Dateien „repariert" worden. |
+| **B3** | erledigt, **weiter gefasst** | Die drei Gates trennen jetzt Verdikt von Nicht-Lauf (exit 2) und nennen ihre Abdeckung, bevor sie urteilen. `records_required` ist die geteilte Form der Zusicherung. Alle `\|\| true` sind weg — sie versteckten zwei Dinge: positive Ergebnisse, die halten müssen, und Negativkontrollen, die still positiv werden könnten (jetzt `expect_fail`, das beim *Gelingen* abbricht). Dazu asserted: 11s „nichts überschrieben", die Nanopub-Exporte in 11/12, 06s Join. Fehlendes rdflib ist kein stiller Pass mehr. |
+| **B5** | erledigt | Aktives unäres `https://kton.dev/v/reviewed` in 04 und 06 — Variante (2) des Vorschlags, dieselbe Vokabel, die 05 schon nutzt. 04s README erklärt, warum die naheliegende Wahl die falsche ist. **11 trägt dieselbe Passiv-Form** über `templates/review-decision.json` + `aliases.json`, und daran hängt `completeness.rq`; offen, in F-017 vermerkt. |
+| **B6** | **erledigt, jetzt auch gegen `main`** | Die oben offene Frage ist beantwortet, nicht nur gegenstandslos: `origin/main` (`74dbba6`) ist weiterhin das Alt-Layout `objects/sha256/<hash>.json`, und genau das baut die CI (Checkout ohne `ref` nimmt den Default-Branch). Alle 14 Beispiele laufen dagegen durch, mit **identischen Record-Zahlen** wie unter 0.2: 4/3, 4/5, 3/7 im 05er Gate, 4 Nanopubs à 9875 Byte in 11, 21 von 21 und 230+1080 Tripel in 12. Die Reader halten über den Layout-Wechsel. |
+| **B7** | erledigt, **Vorschlag war so nicht tragfähig** | „`.work/` ignorieren" hätte eine bewusste Entscheidung gebrochen: `.gitignore` sagt ausdrücklich, dass `.work/` getrackt ist, damit die carried `uri` jedes Records auf eine echte Datei zeigt. Getrennt wird jetzt nach *Art*: von 353 getrackten `.work`-Dateien sind 60 Permalink-Ziele, keine der übrigen 293. Abgeleitetes ist ignoriert. 368 → 64 geänderte Dateien pro Lauf, 0 ungetrackte Reste. `bin/check-permalinks.py` hält die zwei Hälften zusammen und läuft in der CI. |
+
+Zwei Korrekturen am Briefing selbst:
+
+- **Der `docs/data`-Diff ist nicht „ausschließlich keyid und Signatur".** Das gilt für die einfachen
+  Beispiele; bei 05, 07, 10, 11, 12 und 14 ändern sich die **Record-IDs** selbst. Deterministische
+  Schlüssel allein hätten es also nicht behoben. Ursache ist eine Wanduhr im signierten Payload
+  (`annotate.go:329`, `seed.go:64`, kein Override) — das ist #42 und liegt im Kernel. Was hier ging,
+  ist gemacht: `.pub`-Glob und Union waren unsortiert, zwei identische Läufe erzeugten verschiedene
+  Dateien; beides ist jetzt kanonisch. Die verbleibenden 38 Dateien brauchen #42.
+- **Ein Bug, den der neue Permalink-Check sofort fand und der nichts mit B7 zu tun hat:** Beispiel 09
+  macht `cd "$PWD/.work"` *nach* dem Sourcen von `common.sh`, das die Permalink-Basis da schon
+  eingefroren hatte. Alle 12 Locators zeigten ein Verzeichnis zu hoch, auf nicht existierende
+  Dateien. `common.sh` leitet die Basis jetzt pro Aufruf ab.
