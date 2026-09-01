@@ -43,5 +43,20 @@ snapshot() {
   echo "  SEE IT: docs/viewer.html?union=data/$name/union.json&keys=data/$name/keys.json&names=data/$name/names.json"
 }
 
+# expect_fail <what> <cmd...> - run a command that is SUPPOSED to fail, and abort if it SUCCEEDS.
+#
+# For negative controls: a tampered re-run that must not reproduce, bytes that must not be present.
+# `|| true` cannot express that. It accepts both outcomes, so on the day tamper-detection silently
+# starts passing, the example still exits 0 and the narration above it still reads like a
+# demonstration - the exact shape of failure catalogued in docs/briefing-2026-09.md B3. The command's
+# own output still goes to stdout, so the example reads the same as before.
+expect_fail(){
+  local what="$1"; shift
+  if "$@"; then
+    echo "  !! NEGATIVE CONTROL BROKEN: $what was supposed to fail, and it SUCCEEDED" >&2
+    exit 1
+  fi
+}
+
 # Reading a registry: one file per (sub)nekton, plus the legacy per-claim form.
 source "$(dirname "${BASH_SOURCE[0]}")/records.sh"

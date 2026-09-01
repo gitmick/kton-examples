@@ -38,8 +38,17 @@ for who in alice bob carol; do
   echo "  $who approved (schema:AcceptAction) + attached $who.md"
 done
 echo "  --- correctness checks ---"
-echo "  distinct review claims on disk (append-only, nothing overwritten): $(records_of "$NEKTON_DIR" | wc -l | tr -d ' ')"
-echo "  distinct signing keyids among the reviews:                         $(nekton by predicate http://purl.org/pav/reviewedBy | grep -oE 'keyid=[0-9a-f]+' | sort -u | wc -l | tr -d ' ')"
+# The claims are the thing under test, so read them with the ASSERTING form: three reviewers went in,
+# at least three records must come out. A reader that sees an empty store returns an empty list rather
+# than an error (briefing B1), and every check below then measures nothing while looking fine.
+records_required "$NEKTON_DIR" "review claims" 3 > "$W/records.jsonl"
+echo "  distinct review claims on disk (append-only, nothing overwritten): $(grep -c '' < "$W/records.jsonl")"
+# "nothing was overwritten" is a CLAIM, so check it rather than print it: three reviewers must show up
+# as three distinct signing keys. Printed bare, a 1 here - the overwrite this example exists to
+# disprove - would read as just another line of output.
+NKEYS=$(nekton by predicate http://purl.org/pav/reviewedBy | grep -oE 'keyid=[0-9a-f]+' | sort -u | wc -l | tr -d ' ')
+echo "  distinct signing keyids among the reviews:                         $NKEYS"
+[ "$NKEYS" -eq 3 ] || { echo "  !! expected 3 distinct signers, saw $NKEYS - reviews are being overwritten or lost" >&2; exit 1; }
 echo "  reviews recorded ABOUT the foton:"
 nekton about "$FOTON" | sed 's/^/    /'
 
@@ -59,16 +68,37 @@ nekton about "$TPLHASH" | sed 's/^/    /'
 echo; echo "########## Part 5 - export the RDF and TEST review completeness with SPARQL ##########"
 plankton export --rdf -o "$W/lineage.ttl" >/dev/null 2>&1 || plankton export --rdf > "$W/lineage.ttl"
 : > "$W/reviews.trig"
-records_of "$NEKTON_DIR" | while IFS= read -r rec; do
+# COUNT the exports instead of assuming them. Every failed export appends nothing, so a loop that
+# ignores its exit status yields a near-empty .trig and the SPARQL gate below then queries an empty
+# graph - which it reads as "not enough approvals", i.e. as a verdict. This example once passed with a
+# 21-byte reviews.trig for exactly that reason.
+# Re-read here rather than reusing the Part 3 snapshot: Part 4 mirrored the template registration in,
+# so the registry now holds MORE than the three reviews, and the export is meant to carry all of it.
+records_required "$NEKTON_DIR" "records to export" 3 > "$W/export-records.jsonl"
+exported=0
+while IFS= read -r rec; do
   printf '%s\n' "$rec" > "$W/rec.json"
-  nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$W/reviews.trig" 2>/dev/null
-  echo >> "$W/reviews.trig"
-done
-echo "  exported: lineage.ttl (foton, PROV) + reviews.trig (each review as a nanopublication)"
+  if nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$W/reviews.trig" 2>>"$W/export.err"; then
+    exported=$((exported + 1)); echo >> "$W/reviews.trig"
+  fi
+done < "$W/export-records.jsonl"
+echo "  exported: lineage.ttl (foton, PROV) + reviews.trig ($exported nanopublication(s), $(wc -c < "$W/reviews.trig" | tr -d ' ') bytes)"
+if [ "$exported" -lt 3 ]; then
+  echo "  !! only $exported of the 3 reviews exported as nanopublications - the gate below would run on a"
+  echo "     near-empty graph and call that 'incomplete'. Refusing. nekton export said:" >&2
+  sed 's/^/       /' "$W/export.err" >&2
+  exit 1
+fi
 if python3 -c "import rdflib" 2>/dev/null; then
   python3 "$EXDIR/check_completeness.py" "$W/lineage.ttl" "$W/reviews.trig" "$EXDIR/completeness.rq" "${FOTON#sha256:}" alice bob carol
+elif [ "${KTON_ALLOW_SKIP:-}" = "1" ]; then
+  echo "  !! SPARQL completeness check SKIPPED (no rdflib, KTON_ALLOW_SKIP=1). This is NOT a pass."
 else
-  echo "  (SPARQL step needs rdflib: 'pip install rdflib' - skipping the completeness check)"
+  # A check that did not run must not report success. CI installs rdflib, so this only ever fires on a
+  # local box that is missing it - where the honest answer is "install it", not a green line.
+  echo "  the SPARQL completeness check needs rdflib: pip install rdflib" >&2
+  echo "  (set KTON_ALLOW_SKIP=1 to run the rest of the example without it - it will say so out loud)" >&2
+  exit 1
 fi
 
 echo

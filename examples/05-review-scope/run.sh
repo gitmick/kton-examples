@@ -51,6 +51,26 @@ build_review(){
   echo "$REV"
 }
 
+# gate <expected> <tee-file|-> <revStore> <revId>  - run the completeness gate and REQUIRE the outcome.
+# check.py exits 0=COMPLETE, 1=BLOCKED, 2=the gate could not run at all. Scenarios 2 and 3 are SUPPOSED
+# to block, so a non-zero exit there is the point of the demonstration - but it has to be the RIGHT
+# non-zero. The `|| true` this replaces accepted all three outcomes indiscriminately, which is how
+# scenario 1 once read zero claims, printed BLOCKED, and the example passed anyway.
+gate(){
+  local want="$1" out="$2" rd="$3" rev="$4" rc=0 got
+  if [ "$out" = "-" ]; then
+    python3 check.py "$rd" "$PUB_DIR" "$rev" || rc=$?
+  else
+    python3 check.py "$rd" "$PUB_DIR" "$rev" | tee "$out"; rc=${PIPESTATUS[0]}
+  fi
+  case "$rc" in 0) got=COMPLETE ;; 1) got=BLOCKED ;; *) got="GATE-ERROR($rc)" ;; esac
+  if [ "$got" != "$want" ]; then
+    echo "  !! this scenario expected $want and got $got - it no longer demonstrates what it claims" >&2
+    exit 1
+  fi
+  echo "  [asserted: expected $want, got $got]"
+}
+
 echo ""
 echo "########## Scenario 1: both enrolled reviewers PASS - the review is complete ##########"
 R1=$(build_review review-happy "$PWD/.work/r1" a:pass b:pass)
@@ -66,7 +86,7 @@ echo "== The completeness gate, DOCUMENTED as a reproducible plankton result (ne
 # reproducible decision over it - and it is exactly example 12's "nekton in, verdict out" shape.
 NEKTON_DIR="$PWD/.work/r1" nekton export .work/review-bundle.json  >/dev/null
 NEKTON_DIR="$PUB_DIR"      nekton export .work/parent-bundle.json  >/dev/null
-python3 check.py "$PWD/.work/r1" "$PUB_DIR" "$R1" | tee .work/verdict.txt || true
+gate COMPLETE .work/verdict.txt "$PWD/.work/r1" "$R1"
 export PLANKTON_DIR="$PWD/.work/plankton"
 VERDICT=$(plankton author --cmd "check.py: review + parent nekton -> completeness verdict" \
   --in .work/review-bundle.json --in .work/parent-bundle.json --in check.py --out .work/verdict.txt \
@@ -76,7 +96,7 @@ echo "  verdict documented as plankton foton $VERDICT (inputs = the review + par
 echo ""
 echo "########## Scenario 2: reviewer b REJECTS - a reject BLOCKS (it cannot be hidden) ##########"
 R2=$(build_review review-reject "$PWD/.work/r2" a:pass b:reject)
-python3 check.py "$PWD/.work/r2" "$PUB_DIR" "$R2" || true
+gate BLOCKED - "$PWD/.work/r2" "$R2"
 
 echo ""
 echo "########## Scenario 3: strip b's reject by closing WITHOUT it - now the review is INCOMPLETE ##########"
@@ -85,7 +105,7 @@ echo "########## Scenario 3: strip b's reject by closing WITHOUT it - now the re
 # -> BLOCKED. That is the whole point: you cannot cut the reject out to get a clean review; you get an
 # incomplete one, and incomplete fails closed.
 R3=$(build_review review-strip "$PWD/.work/r3" a:pass)
-python3 check.py "$PWD/.work/r3" "$PUB_DIR" "$R3" || true
+gate BLOCKED - "$PWD/.work/r3" "$R3"
 
 echo ""
 echo "== Tamper-evidence still holds: a dangling prev never joins the chain =="

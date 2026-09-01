@@ -21,8 +21,13 @@ FOTON="$(plankton author --cmd "fit data.csv model.txt" \
 echo "  foton id = $FOTON"
 
 echo "== Create: reviewer records a CLAIM about that foton (nekton) =="
-# a claim spec: subject is the foton id; predicate is an opaque IRI (here pav:reviewedBy).
-printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"looks correct"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json
+# A claim spec: subject is the foton id; predicate is an opaque IRI (here https://kton.dev/v/reviewed).
+# The predicate is ACTIVE and unary on purpose. The obvious choice, pav:reviewedBy, is passive - "X was
+# reviewed BY Y" - so its object slot belongs to the REVIEWER, and putting the verdict there says the
+# foton was reviewed by "looks correct". The reviewer would then appear nowhere in what the claim
+# asserts, only in `by`, which signs it. `reviewed` takes the verdict as its object and leaves the
+# identity to the signature, which is where this record actually establishes it.
+printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reviewed","object":{"value":"looks correct"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json
 nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json --add >/dev/null
 
 echo ""

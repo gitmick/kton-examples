@@ -104,7 +104,7 @@ echo "  env-spectrum id (ENV) = $ENV"
 echo "  the pinned docker image is checked against the spectrum:"
 plankton spectrum check "$F/pmxtools.spectrum.json" \
   --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" \
-  --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" | tee "$F/fulfilment.txt" | sed 's/^/    /' || true
+  --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" | tee "$F/fulfilment.txt" | sed 's/^/    /'   # 3/3 must hold (pipefail)
 # B1/D6: do not let "3/3 fulfilled" ride as a bare prose assertion on the qualifies-as claim. Back it
 # with a reproducible spectrum-check FOTON that commits to the exact spectrum + candidate result files,
 # so the qualification CARRIES ITS CORPUS (re-derivable), and the release gate can REQUIRE that foton
@@ -168,8 +168,9 @@ sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"
 plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/run1.ext"    --out "$F/fit.ref.canon" --sign "$(key qc).key" --add >/dev/null
 plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/run1-qc.ext" --out "$F/fit.qc.canon" --sign "$(key qc).key" --add >/dev/null
-echo -n "  plankton reproduces (raw): "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" || true
-echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
+echo -n "  plankton reproduces (raw): "; expect_fail "the RAW comparison (the run banners differ by design)" plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")"
+# no `|| true`: L1 reproduction is what the release gate later requires, so it must really hold here.
+echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT"
 # QC signs the reproduction as a claim that CONNECTS the two runs: subject = the analyst's output,
 # level = L1 (what the gate checks), and reproducedBy = QC's re-run foton - so the graph draws the
 # edge "the analyst's fit is reproduced by QC's fit", not two unlinked fotons.
@@ -267,12 +268,24 @@ PLANKTON_DIR="$W/agency/plankton" plankton export "$F/agency-plankton.json"
 # working intermediate (what rdflib parses), re-derivable from the two registry bundles above.
 plankton export --rdf --trust-keys "$W/keys" -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf --trust-keys "$W/keys" > "$F/submission.ttl"
 : > "$F/attestations.trig"
-records_of "$W/agency/nekton" | while IFS= read -r rec; do
+# The claims ARE the gate's evidence, so read them with the asserting form and count what survives the
+# export. Both halves matter: a reader that cannot see the store returns an empty list rather than an
+# error (briefing B1), and an export that fails appends nothing while the loop marches on. Either way
+# the gate below would query a near-empty graph - and the SPARQL gate answers "not established" for
+# missing evidence, so an empty graph produces a confident-looking refusal built on nothing.
+records_required "$W/agency/nekton" "agency claims" 1 > "$F/agency-records.jsonl"
+attested=0
+while IFS= read -r rec; do
   printf '%s\n' "$rec" > "$W/rec.json"
-  nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$F/attestations.trig" 2>/dev/null
-  echo >> "$F/attestations.trig"
-done
+  if nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$F/attestations.trig" 2>>"$W/export.err"; then
+    attested=$((attested + 1)); echo >> "$F/attestations.trig"
+  fi
+done < "$F/agency-records.jsonl"
+NREC=$(grep -c '' < "$F/agency-records.jsonl")
 echo "  nekton + plankton registries bundled (the gate's INPUT); RDF is the export step inside the decision"
+echo "  attestations.trig: $attested of $NREC agency claim(s) exported as nanopublications ($(wc -c < "$F/attestations.trig" | tr -d ' ') bytes)"
+[ "$attested" -gt 0 ] || { echo "  !! no claim exported as a nanopublication - the gate would run on an empty graph. nekton export said:" >&2
+                           sed 's/^/     /' "$W/export.err" >&2; exit 1; }
 # The verifier's OWN trust root: the authorities whose sec:controller vouchers it accepts (here the two
 # org authorities). This is what stops the sock-puppet forgery - three self-issued (or ring-signed) keys
 # are not vouched by a trusted authority, so they never count as reviewers. The trust root is written to
@@ -282,7 +295,12 @@ AUTH_CRO=$(keyid16 cro-org); AUTH_SPONSOR=$(keyid16 sponsor-org)
 printf 'trusted-authority %s  (CN=cro-org)\ntrusted-authority %s  (CN=sponsor-org)\n' "$AUTH_CRO" "$AUTH_SPONSOR" > "$F/trust-root.txt"
 if python3 -c "import rdflib" 2>/dev/null; then
   python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$FIT" "$HEAD" "$AUTH_CRO" "$AUTH_SPONSOR" | tee "$F/verdict.txt"
-  [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "  !! GATE REGRESSION: the capstone gate did NOT return COMPLETE (release.py exited non-zero)"; exit 1; }
+  RC=${PIPESTATUS[0]}
+  case "$RC" in
+    0) : ;;
+    2) echo "  !! GATE ERROR: release.py could not run at all (it was handed an empty graph) - see above"; exit 1 ;;
+    *) echo "  !! GATE REGRESSION: the capstone gate did NOT return COMPLETE (release.py exited $RC)"; exit 1 ;;
+  esac
   # The decision is NOT a free-floating query: the agency records it as a FOTON whose INPUTS are the raw
   # registries it judged (the nekton claims + the plankton fotons, by hash) and the gate logic
   # (release.rq), under trust-root.txt; the export-to-RDF is a STEP of its command, not a rootless input.
@@ -295,8 +313,15 @@ if python3 -c "import rdflib" 2>/dev/null; then
     --sign "$(key reviewer).key" --add | awk '/indexed foton/{print $3}')
   echo "  release decision recorded as foton $VERDICT"
   echo "    signed by the agency; its inputs ARE the nekton+plankton registries; re-run the export+gate -> same verdict (L0)"
+elif [ "${KTON_ALLOW_SKIP:-}" = "1" ]; then
+  echo "  !! RELEASE GATE SKIPPED (no rdflib, KTON_ALLOW_SKIP=1). This is NOT a pass - the capstone's"
+  echo "     whole point is the gate, and nothing above it was decided by one."
 else
-  echo "  (the release gate needs rdflib: 'pip install rdflib' - skipping)"
+  # The release gate is the payload of this example; skipping it silently and exiting 0 would make the
+  # capstone report success for a submission nobody adjudicated. CI installs rdflib.
+  echo "  the release gate needs rdflib: pip install rdflib" >&2
+  echo "  (set KTON_ALLOW_SKIP=1 to run the rest without it - it will say so out loud)" >&2
+  exit 1
 fi
 
 echo
