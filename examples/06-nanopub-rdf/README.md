@@ -22,7 +22,7 @@ FOTON=$(plankton author --cmd "fit data.csv model.txt" --in data.csv --out model
     --sign analyst.key --add | awk '/indexed foton/{print $3}')
 
 cat > review.spec.json <<JSON
-{ "subject":[{"hash":"$FOTON"}], "predicate":"pav:reviewedBy",
+{ "subject":[{"hash":"$FOTON"}], "predicate":"https://kton.dev/v/reviewed",
   "object":{"value":"approved"}, "by":"CN=Reviewer", "when":"2026-07-16T00:00:00Z" }
 JSON
 nekton claim review.spec.json reviewer.key review.dsse.json --add   # file it + keep it for the export
@@ -41,8 +41,8 @@ grep prov:Activity lineage.ttl
 
 ```
 nekton export --nanopub review.dsse.json -o claim.trig
-grep pav:reviewedBy claim.trig
-# pk:... <pav:reviewedBy> ...
+grep nk:reviewed claim.trig
+# pk:... nk:reviewed ...      (nk: = https://kton.dev/v/)
 ```
 
 **4. See the join.** Both files name the **same** node, `pk:...` (the namespace `pk:` is

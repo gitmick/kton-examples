@@ -60,8 +60,9 @@ echo "  normalizer potential: $POT"
 echo "  registered as application fotons (a potential IS their shared protocol ref):"
 plankton uses "${REFOUT[test-predict]}"  | sed 's/^/    ref-run  consumed by /'
 plankton uses "${CANDOUT[test-predict]}" | sed 's/^/    cand-run consumed by /'
-echo -n "  raw test-predict         : "; plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}" || true
-echo -n "  test-predict via potential: "; plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}" --via "$POT" || true
+echo -n "  raw test-predict         : "; expect_fail "the RAW comparison (that is why a normalizer exists)" plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}"
+# no `|| true`: this one is SUPPOSED to succeed, and the whole stage is pointless if it stops doing so.
+echo -n "  test-predict via potential: "; plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}" --via "$POT"
 
 echo; echo "############ STAGE D: DEFINE the tool spectrum, then CHECK the candidate against it ##########"
 plankton spectrum define --id "mypkg-1.2.0-suite" --of "the mypkg 1.2.0 test suite (one foton per test)" \
@@ -75,7 +76,7 @@ echo "  tool-spectrum id: $SPECID"
 plankton spectrum check "$W/mypkg.spectrum.json" \
   --candidate "test-glm=${CANDOUT[test-glm]}" \
   --candidate "test-summary=${CANDOUT[test-summary]}" \
-  --candidate "test-predict=${CANDOUT[test-predict]}" | tee "$W/fulfilment.txt" | sed 's/^/  /' || true
+  --candidate "test-predict=${CANDOUT[test-predict]}" | tee "$W/fulfilment.txt" | sed 's/^/  /'   # 3/3 must hold (pipefail)
 # F2 / D6: back the "3/3 fulfilled" with a reproducible spectrum-check FOTON that commits to the exact
 # candidate result hashes (its inputs) - so the tally is RE-DERIVABLE, not asserted in a free-text why.
 # Same pattern as the release gate (D6) and the enrolled review scope: a closed-world set + a

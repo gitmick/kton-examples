@@ -35,7 +35,7 @@ because a claim can be about several things at once, here just one.
 ```
 cat > review.spec.json <<JSON
 { "subject":  [{"hash": "$FOTON"}],
-  "predicate": "pav:reviewedBy",
+  "predicate": "https://kton.dev/v/reviewed",
   "object":    {"value": "looks correct"},
   "by": "CN=Reviewer", "when": "2026-07-16T00:00:00Z" }
 JSON
@@ -45,13 +45,22 @@ nekton claim review.spec.json reviewer.key review.dsse.json --add
 `--add` files the claim as it signs it (the same `--add` / `--registry` flags exist on `nekton
 claim`, `annotate`, and `seed`). We keep `review.dsse.json` here so we can `show`/`verify` it next.
 
-`pav:reviewedBy` is just an opaque IRI; the kernel stores it and never interprets what it means.
+The triple reads **subject** (the foton) — **reviewed** → **object** (the verdict, `"looks correct"`);
+`by` is who is *making* that statement, and the signature is what establishes them.
+
+`https://kton.dev/v/reviewed` is just an opaque IRI; the kernel stores it and never interprets what it
+means. That cuts both ways, and it is why the choice of predicate is yours to get right. The natural
+first pick here is `pav:reviewedBy` — but that one is *passive*: "X was reviewed **by** Y", so its
+object slot belongs to the reviewer's identity. Put the verdict there and the triple says the foton
+was reviewed by "looks correct", while the reviewer appears nowhere in what is being asserted. Nothing
+in the kernel will ever tell you: it stores predicates as opaque IRIs and does not interpret them. An
+active, unary `reviewed` takes the verdict as its object and leaves the identity to the signature.
 
 **4. Use it: ask what has been said about the foton.**
 
 ```
 nekton about "$FOTON"
-# sha256:...  predicate=pav:reviewedBy  by=CN=Reviewer  declared-keyid=... (unverified)
+# sha256:...  predicate=https://kton.dev/v/reviewed  by=CN=Reviewer  declared-keyid=... (unverified)
 nekton show   review.dsse.json      # the full claim
 nekton verify review.dsse.json reviewer.pub
 # signature: VALID - verified as keyid ... (the authoritative signer)

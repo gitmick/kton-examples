@@ -6,6 +6,15 @@
 # checklist and a verdict, then re-runs the gate bound to an unrelated hash to show it is
 # submission-specific.
 # Usage: release.py submission.ttl attestations.trig release.rq fitHash headHash [trustedKeyid ...]
+#
+# EXIT CODES - a verdict and a non-run are NOT the same thing:
+#   0  COMPLETE   - every condition met
+#   1  BLOCKED    - the gate ran and a condition is missing (a real refusal)
+#   2  GATE ERROR - the gate could not run: the RDF it was handed is empty
+# 2 matters because every condition here is monotone ("some record establishes X"), so on an empty
+# graph all seven simply fail and the gate prints a full checklist of unticked boxes - a confident
+# refusal built on nothing read. That is indistinguishable from an honest BLOCKED unless it is
+# separated out here. See docs/briefing-2026-09.md B3.
 import sys
 import rdflib
 
@@ -40,6 +49,16 @@ for (s, p, o, _g) in list(ds.quads((None, None, None, None))):
 # root asserts nothing -> no reviewer is authority-vouched -> two-independent-reviews cannot be met.
 for k in trusted_keyids:
     dg.add((rdflib.URIRef(AG + k), rdflib.RDF.type, NK_TRUSTED))
+
+# COVERAGE, before any verdict: the gate must have been handed something to judge.
+n_lineage = len(ds.get_context(LINEAGE))
+n_attest = sum(1 for _ in ds.quads((None, None, None, None))) - n_lineage
+print(f"  gate loaded {n_lineage} lineage triple(s) + {n_attest} attestation quad(s)")
+if not n_lineage or not n_attest:
+    which = ttl if not n_lineage else trig
+    print(f"  GATE ERROR - {which} loaded empty; refusing to render a checklist over nothing")
+    print("  (this is NOT a verdict: an empty graph fails every condition for the wrong reason)")
+    sys.exit(2)
 
 query = open(query_path).read()  # runs UNMODIFIED - no string surgery
 

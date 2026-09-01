@@ -27,7 +27,7 @@ echo "  its result is named by content hash: $RESULT"
 # The bytes live on the producer's side (a server, an object store, a mirror), NOT in the consumer's
 # content store - plankton stores only hashes. `kton blob` asks the LOCAL store, which is empty:
 cp .work/result.txt .work/store/result.bytes     # the producer keeps the bytes here
-echo -n "  is the content pinned locally? "; kton blob "$RESULT" || true
+echo -n "  is the content pinned locally? "; expect_fail "the local blob lookup (the bytes are deliberately NOT held)" kton blob "$RESULT"
 echo "  -> you hold the record (the hash), but you cannot re-hash bytes you do not have."
 
 echo; echo "########## B - a signed dcat:downloadURL says WHERE; kton fetch verifies sha256==hash ##########"

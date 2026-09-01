@@ -27,7 +27,7 @@ echo -n "  reproduces (re-run): "; plankton reproduces "$REF" "$RERUN"
 echo "== a TAMPERED re-run must not reproduce (negative control) =="
 echo "sum=999" > .work/result_tampered.txt
 TAMP="$(plankton hash .work/result_tampered.txt)"
-echo -n "  reproduces (tampered): "; plankton reproduces "$REF" "$TAMP" || true
+echo -n "  reproduces (tampered): "; expect_fail "the tampered re-run" plankton reproduces "$REF" "$TAMP"
 
 echo ""
 snapshot 03-reproduce "$PWD/.work/keys" --reg "$PLANKTON_DIR"
