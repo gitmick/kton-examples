@@ -48,6 +48,7 @@ two.)
 | 12 | `submission` | capstone: a regulated popPK submission across three orgs, verified by the agency with zero trust, gated by a SPARQL release query the agency records as a verdict-foton |
 | 13 | `foreign-verify` | a kton record verified by a non-kton tool (standard DSSE + Ed25519, no kton code) - records are copyable between tools |
 | 14 | `fetch` | resolve a content hash to its bytes via a signed `dcat:downloadURL`, re-hash on arrival, reject a forged mirror - the content-present verification tier |
+| 15 | `attach-material` | bind external evidence (Sigstore/Rekor/RFC 3161/eIDAS) to a record: kton carries it and never evaluates it, and a foton id is not its payload hash |
 
 ## Run them yourself
 
