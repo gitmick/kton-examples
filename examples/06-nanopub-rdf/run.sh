@@ -14,7 +14,7 @@ nekton  keygen "$PWD/.work/keys/reviewer" --seed "$(demoseed reviewer)" >/dev/nu
 echo "== Create: a foton + a claim about it =="
 echo "raw" > .work/data.csv; echo "model" > .work/model.txt
 FOTON="$(plankton author --cmd "fit data.csv model.txt" --in .work/data.csv --out .work/model.txt \
-  --sign "$PWD/.work/keys/analyst.key" --add | awk '/indexed foton/{print $3}')"
+  --sign "$PWD/.work/keys/analyst.key" --add --print-id)"
 # active, unary predicate: the object is the VERDICT, the reviewer is the signer (see example 04 -
 # passive pav:reviewedBy would claim the foton was reviewed by "approved")
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reviewed","object":{"value":"approved"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json

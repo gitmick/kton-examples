@@ -20,7 +20,7 @@ echo "########## A - a record names its bytes by HASH; the local content store i
 echo "dose,conc" > .work/data.csv
 echo "result=42" > .work/result.txt
 FOTON="$(plankton author --cmd "analyze data.csv result.txt" \
-  --in .work/data.csv --out .work/result.txt --sign "$PWD/.work/keys/lab.key" --add | awk '/indexed foton/{print $3}')"
+  --in .work/data.csv --out .work/result.txt --sign "$PWD/.work/keys/lab.key" --add --print-id)"
 RESULT="$(plankton hash .work/result.txt)"
 echo "  foton = $FOTON"
 echo "  its result is named by content hash: $RESULT"

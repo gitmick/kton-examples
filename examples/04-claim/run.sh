@@ -17,7 +17,7 @@ echo "raw" > .work/data.csv; echo "fit" > .work/model.txt
 # author + ingest in one step; the foton id is in the --add output
 FOTON="$(plankton author --cmd "fit data.csv model.txt" \
   --in .work/data.csv --out .work/model.txt \
-  --sign "$PWD/.work/keys/analyst.key" --add | awk '/indexed foton/{print $3}')"
+  --sign "$PWD/.work/keys/analyst.key" --add --print-id)"
 echo "  foton id = $FOTON"
 
 echo "== Create: reviewer records a CLAIM about that foton (nekton) =="

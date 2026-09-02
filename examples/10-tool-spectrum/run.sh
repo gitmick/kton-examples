@@ -25,7 +25,7 @@ for t in $TESTS; do
   Rscript "tests/$t.R" "$W/pk.csv" > "$W/$t.ref.out"       # <-- the test ACTUALLY runs
   REFID[$t]=$(plankton author --cmd "Rscript tests/$t.R pk.csv" \
     --in "$W/pk.csv" --in "tests/$t.R" --out "$W/$t.ref.out" \
-    --sign "$W/keys/author.key" --add | awk '/indexed foton/{print $3}')
+    --sign "$W/keys/author.key" --add --print-id)
   REFOUT[$t]=$(plankton hash "$W/$t.ref.out")
   printf "  %-13s -> %s   (%s)\n" "$t" "${REFOUT[$t]}" "$(head -c 40 "$W/$t.ref.out" | tr -d '\n')"
 done
@@ -40,7 +40,7 @@ for t in $TESTS; do
   Rscript "tests/$t.R" "$W/pk.csv" > "$W/$t.cand.out"      # <-- runs again, independently
   CANDID[$t]=$(plankton author --cmd "Rscript tests/$t.R pk.csv" \
     --in "$W/pk.csv" --in "tests/$t.R" --out "$W/$t.cand.out" \
-    --environment "$CANDENV" --sign "$W/keys/author.key" --add | awk '/indexed foton/{print $3}')
+    --environment "$CANDENV" --sign "$W/keys/author.key" --add --print-id)
   CANDOUT[$t]=$(plankton hash "$W/$t.cand.out")
   if [ "${CANDOUT[$t]}" = "${REFOUT[$t]}" ]; then eq="IDENTICAL bytes"; else eq="DIFFERS (volatile line)"; fi
   printf "  %-13s -> %s   [%s]\n" "$t" "${CANDOUT[$t]}" "$eq"
@@ -83,7 +83,7 @@ plankton spectrum check "$W/mypkg.spectrum.json" \
 # reproducible check, so completeness is re-derivable.
 CHECK=$(plankton author --cmd "plankton spectrum check mypkg-1.2.0-suite" \
   --in "$W/mypkg.spectrum.json" --in "$W/test-glm.cand.out" --in "$W/test-summary.cand.out" --in "$W/test-predict.cand.out" \
-  --out "$W/fulfilment.txt" --sign "$W/keys/author.key" --add | awk '/indexed foton/{print $3}')
+  --out "$W/fulfilment.txt" --sign "$W/keys/author.key" --add --print-id)
 echo "  fulfilment recorded as a reproducible foton (commits to the candidate result hashes): $CHECK"
 
 echo; echo "############ STAGE E: record the fulfilment so the GRAPH shows it ############"

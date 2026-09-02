@@ -19,22 +19,21 @@ nekton keygen "$PWD/.work/keys/reviewer-a" --seed "$(demoseed reviewer-a)"  >/de
 nekton keygen "$PWD/.work/keys/reviewer-b" --seed "$(demoseed reviewer-b)"  >/dev/null
 K(){ echo "$PWD/.work/keys/$1.key"; }
 kid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/$1.pub').read().strip())).hexdigest()[:16])"; }
-seedid(){ echo "$1" | grep -oE 'sha256:[0-9a-f]{64}' | tail -1; }
 KA=$(kid16 reviewer-a); KB=$(kid16 reviewer-b)
 
 echo "== The public record: a standing PARENT scope, in its own store =="
-PUB=$(seedid "$(NEKTON_DIR=$PUB_DIR nekton seed drug-reviews --when "$KTON_WHEN" --sign "$(K board)" --by 'CN=Board' --add)")
+PUB=$(NEKTON_DIR=$PUB_DIR nekton seed drug-reviews --when "$KTON_WHEN" --sign "$(K board)" --by 'CN=Board' --add --print-id)
 echo "  public scope = $PUB   (enrolled reviewers this run: a=$KA  b=$KB)"
 
 # build_review <name> <revStore> <delivery...>   delivery = "a:pass" | "b:reject"  -> prints the scope id.
 # The name must differ per review, else identical seeds (same parent+signer+second) collide to one scope id.
 build_review(){
   local NAME="$1" RD="$2"; shift 2
-  local REV; REV=$(seedid "$(NEKTON_DIR=$RD nekton seed "$NAME" --parent "$PUB" --when "$KTON_WHEN" --sign "$(K board)" --by 'CN=Board' --add)")
+  local REV; REV=$(NEKTON_DIR=$RD nekton seed "$NAME" --parent "$PUB" --when "$KTON_WHEN" --sign "$(K board)" --by 'CN=Board' --add --print-id)
   # INITIALISE (first link): the review's conditions - who is enrolled - signed by the board, which is
   # therefore the close authority. predicateBody carries the exact signed body (the reviewers array).
   printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"reviewers":["%s","%s"],"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$KA" "$KB" "$REV" "$REV" > .work/init.json
-  local HINIT; HINIT=$(NEKTON_DIR=$RD nekton claim .work/init.json "$(K board)" --add | grep -oE 'sha256:[0-9a-f]{64}' | head -1)
+  local HINIT; HINIT=$(NEKTON_DIR=$RD nekton claim .work/init.json "$(K board)" --add --print-id)
   # ANCHOR the conditions back to the public parent (an init record naming the review + its init head)
   printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$HINIT" "$PUB" "$PUB" > .work/anchor.json
   NEKTON_DIR=$PUB_DIR nekton claim .work/anchor.json "$(K board)" --add >/dev/null
@@ -42,7 +41,7 @@ build_review(){
   local prev="$HINIT" d who verdict kf
   for d in "$@"; do who="${d%%:*}"; verdict="${d##*:}"; kf="reviewer-$who"
     printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"%s"},"by":"reviewer-%s","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$verdict" "$who" "$REV" "$prev" > .work/rev.json
-    prev=$(NEKTON_DIR=$RD nekton claim .work/rev.json "$(K $kf)" --add | grep -oE 'sha256:[0-9a-f]{64}' | head -1)
+    prev=$(NEKTON_DIR=$RD nekton claim .work/rev.json "$(K $kf)" --add --print-id)
   done
   local HEAD; HEAD=$(NEKTON_DIR=$RD nekton head "$REV" | awk '/^head:/{print $2}')
   # CLOSE on the parent, signed by the board (the authority that initialised)
@@ -90,7 +89,7 @@ gate COMPLETE .work/verdict.txt "$PWD/.work/r1" "$R1"
 export PLANKTON_DIR="$PWD/.work/plankton"
 VERDICT=$(plankton author --cmd "check.py: review + parent nekton -> completeness verdict" \
   --in .work/review-bundle.json --in .work/parent-bundle.json --in check.py --out .work/verdict.txt \
-  --sign "$(K board)" --add | awk '/indexed foton/{print $3}')
+  --sign "$(K board)" --add --print-id)
 echo "  verdict documented as plankton foton $VERDICT (inputs = the review + parent nekton by hash + check.py)"
 
 echo ""

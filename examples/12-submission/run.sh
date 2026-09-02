@@ -25,7 +25,7 @@ key(){ echo "$W/keys/$1"; }
 for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" --seed "$(demoseed "$k")" >/dev/null; done
 keyiri(){ echo "https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest())")"; }
 keyid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest()[:16])"; }
-pauthor(){ plankton author "$@" --add | awk '/indexed foton/{print $3}'; }
+pauthor(){ plankton author "$@" --add --print-id; }
 # locate <file> <url> <signer>: record a signed dcat:downloadURL so the regulator can FETCH the bytes
 # it holds a content hash for (verifying sha256 == hash on arrival). Location is a signed claim, plural
 # and post-hoc; the kernels never dereference it (that is kton's job).
@@ -111,7 +111,7 @@ plankton spectrum check "$F/pmxtools.spectrum.json" \
 # rather than trust a naked binding. (This is example 10's pattern, adopted here.)
 CHECK=$(plankton author --cmd "plankton spectrum check pmxtools-1.2.0" \
   --in "$F/pmxtools.spectrum.json" --in "$F/test-onecomp.ref" --in "$F/test-twocomp.ref" --in "$F/test-covariate.cand" \
-  --out "$F/fulfilment.txt" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+  --out "$F/fulfilment.txt" --sign "$(key qc).key" --add --print-id)
 echo "  fulfilment recorded as a reproducible spectrum-check foton (commits to the checked results): $CHECK"
 # the exact OCI image (CARRIED) qualifies-as the env-spectrum (signed), carrying the fulfilment foton;
 # and a gxp tool-validation claim
@@ -141,7 +141,7 @@ Rscript "$T/gof.R" "$F/run1.ext" > "$F/diagnostics.txt"
 # Best practice: the analysis CODE is provenance too - record each script as a foton input (relative
 # name, so no absolute path leaks), so the trail says exactly which code produced each result.
 CLEAN=$(pauthor --cmd "Rscript tools/clean.R raw.csv analysis.csv" --in "$F/raw.csv" --in "tools/clean.R" --out "$F/analysis.csv" --sign "$(key analyst).key")
-FIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
+FIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" --print-id)
 GOF=$(pauthor --cmd "Rscript tools/gof.R run1.ext" --in "$F/run1.ext" --in "tools/gof.R" --out "$F/diagnostics.txt" --sign "$(key analyst).key")
 # Best practice: point at least one dcat:downloadURL at a REAL, commit-pinned raw URL of a committed
 # file, so "the regulator can fetch the bytes and re-hash" is demonstrable, not gestured at. fit.R is
@@ -162,7 +162,7 @@ echo; echo "########## ACT 4 - independent reproduction by QC (real re-run, auth
 # run, but a distinct signer and its own output), so the re-run is a visible parallel branch from
 # analysis.csv - not a dangling file. This is what makes reproduction show up in the lineage.
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1-qc.ext"
-QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add --print-id)
 echo "  QC re-ran the fit -> $QCFIT (same action key as the analyst's, independent signer + output)"
 sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"
@@ -179,10 +179,10 @@ nekton claim "$F/repro.json" "$(key qc).key" --add >/dev/null; echo "  QC signed
 
 echo; echo "########## ACT 5 - review scope: typed sign-offs with evidence, chained + sealed (04/05/11) #"
 export NEKTON_DIR="$W/sponsor/nekton"
-SCOPE=$(nekton seed popPK-mABC --when "$KTON_WHEN" --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
+SCOPE=$(nekton seed popPK-mABC --when "$KTON_WHEN" --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add --print-id)
 printf "%%PDF qc review\n" > "$F/qc-rep.pdf"; printf "%%PDF lead review\n" > "$F/lead-rep.pdf"
 nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
-C1=$(nekton by predicate "https://kton.dev/v/gxp/reviewed" | head -1 | awk '{print $1}')
+C1=$(nekton by predicate "https://kton.dev/v/gxp/reviewed" --json | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['claimId'])")
 nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
 locate "$F/qc-rep.pdf" "https://sponsor.example/reviews/qc-report.pdf" qc
 locate "$F/lead-rep.pdf" "https://sponsor.example/reviews/lead-report.pdf" lead
@@ -310,7 +310,7 @@ if python3 -c "import rdflib" 2>/dev/null; then
   export PLANKTON_DIR="$W/agency/plankton"
   VERDICT=$(plankton author --cmd "release gate: export agency plankton+nekton to RDF, run release.rq over the merged graph under trust-root.txt -> verdict" \
     --in "$F/agency-plankton.json" --in "$F/agency-nekton.json" --in "release.rq" --in "$F/trust-root.txt" --out "$F/verdict.txt" \
-    --sign "$(key reviewer).key" --add | awk '/indexed foton/{print $3}')
+    --sign "$(key reviewer).key" --add --print-id)
   echo "  release decision recorded as foton $VERDICT"
   echo "    signed by the agency; its inputs ARE the nekton+plankton registries; re-run the export+gate -> same verdict (L0)"
 elif [ "${KTON_ALLOW_SKIP:-}" = "1" ]; then

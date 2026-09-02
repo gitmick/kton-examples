@@ -34,7 +34,7 @@ printf "id,conc\n1,4.2\n2,3.8\n" > pk.csv
 printf 'd <- read.csv("pk.csv"); cat(sprintf("cl=%%.3f\\n", mean(d$conc)))\n' > fit.R
 printf "cl=4.000\n" > fit.out                                   # what your local R produced
 BARE=$(plankton author --cmd "Rscript fit.R" --in pk.csv --in fit.R --out fit.out \
-  --sign keys/author.key --add | awk '/indexed foton/{print $3}')
+  --sign keys/author.key --add --print-id)
 echo "  foton: $BARE"
 echo "  no environment recorded: reproducible BYTES, but silent about the R stack behind them."
 
@@ -71,7 +71,7 @@ echo "  env-spectrum id: $SPECID"
 echo
 echo "  now author the analysis UNDER that qualified environment (--environment). It is COVERED:"
 QUAL=$(plankton author --cmd "Rscript fit.R" --in pk.csv --in fit.R --out fit.out \
-  --environment "$SPECID" --sign keys/author.key --add | awk '/indexed foton/{print $3}')
+  --environment "$SPECID" --sign keys/author.key --add --print-id)
 echo "    unqualified foton: $BARE"
 echo "    qualified   foton: $QUAL"
 echo "    -> different foton id and action key: 'produced under a qualified-R env' is a DISTINCT"
