@@ -224,6 +224,24 @@
       <div class="links"><a href="viewer.html?union=data/15-attach-material/union.json&keys=data/15-attach-material/keys.json&names=data/15-attach-material/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/15-attach-material/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
+      <div class="n">16</div><h3>Has this been computed already?</h3>
+      <p>The <b>action key</b> covers inputs and protocol &mdash; and deliberately not the output, which is
+      the thing you were going to compute. So a cache HIT means &ldquo;somebody asked the same
+      question&rdquo;, never &ldquo;here is the answer&rdquo;: two signers can hit one key and disagree about
+      the result. <code>plankton reuse</code> says so on every hit, and refuses a foton whose protocol
+      <code>ref</code> contradicts its own descriptor.</p>
+      <div class="links"><a href="viewer.html?union=data/16-reuse-cache/union.json&keys=data/16-reuse-cache/keys.json&names=data/16-reuse-cache/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/16-reuse-cache/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">17</div><h3>&#8635;N &mdash; and how to inflate it</h3>
+      <p>How many <i>independent</i> signers produced this exact output? Two honest labs converge on one
+      foton carrying two signatures &mdash; agreement is a co-signature, not a second document. Then an
+      attacker relabels a keyid she does not hold, three times, and &#8635;4 appears out of nothing.
+      Nothing is detected and nothing is blocked; <code>--trust-keys</code> simply asks the other
+      question, and it collapses back to &#8635;2.</p>
+      <div class="links"><a href="viewer.html?union=data/17-reproductions/union.json&keys=data/17-reproductions/keys.json&names=data/17-reproductions/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/17-reproductions/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
       <div class="n">&#9876;</div><h3>Red team &mdash; adversarial engagement <span style="font-weight:400;color:var(--dim)">(its own repo)</span></h3>
       <p>The hardest test of &ldquo;trust no one&rdquo;: an adversarial security engagement against kton,
       <b>documented in kton itself</b> &mdash; each attack is a foton, each finding a signed claim, and the
