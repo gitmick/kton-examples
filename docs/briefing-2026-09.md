@@ -204,6 +204,18 @@ Zwei Korrekturen am Briefing selbst:
   als `.key` wird akzeptiert, aber es gibt keinen Weg zum `.pub`-Hex — dafür wäre ein
   `keygen --seed` oder ein `pubkey <key.key>` im Kernel nötig (an die Kernel-Seite gemeldet).
 
+  **Nachtrag 2026-09-02, erledigt.** #48 ist auf `dev` (`keygen --seed` + `pubkey`, beide Kerne),
+  damit war die Identitäts-Hälfte da. Die Beispiele setzen jetzt an jedem `keygen` ein
+  `--seed "$(demoseed <rolle>)"` und an jedem `nekton seed`/`annotate` ein `--when "$KTON_WHEN"` —
+  explizit an der Aufrufstelle, nicht als stiller Wrapper, weil man einem `run.sh` ansehen soll,
+  warum sein Snapshot stabil ist. Ergebnis: **2 von 48 Snapshot-Dateien** ändern sich noch, statt 38;
+  der komplette Lauf über alle 14 Beispiele berührt **15 getrackte Dateien statt 368**.
+
+  Die verbleibenden 15 hängen alle an zwei *absichtlich* volatilen Stellen: `10-tool-spectrum` und
+  `12-submission` drucken eine Session-Zeile mit pid und Wanduhr (`tests/test-predict.R`,
+  `tools/fit.R`, `tools/pmxtest.R`). Genau die macht dort L0 von L1 unterscheidbar, und in 12 hängt
+  der Release-Gate an eben dieser L1-Reproduktion. Das darf nicht "repariert" werden.
+
   **Und eine Warnung an alle, die hier lokal arbeiten:** `bin/nekton` im Arbeitsbaum ist ein
   vorgebautes Binary, das `--when` noch nicht kennt — es ist älter als `dev`. Genau der B1-Fall.
   `bin/` ist gitignored und die CI baut frisch aus dem Checkout; lokal muss man selbst neu bauen.

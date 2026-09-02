@@ -8,8 +8,8 @@ source ../../lib/common.sh
 export PLANKTON_DIR="$PWD/.work/plankton"
 export NEKTON_DIR="$PWD/.work/nekton"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys" "$PWD/.work/exports"
-plankton keygen "$PWD/.work/keys/analyst"  >/dev/null
-nekton  keygen "$PWD/.work/keys/reviewer" >/dev/null
+plankton keygen "$PWD/.work/keys/analyst" --seed "$(demoseed analyst)"  >/dev/null
+nekton  keygen "$PWD/.work/keys/reviewer" --seed "$(demoseed reviewer)" >/dev/null
 
 echo "== Create: a foton + a claim about it =="
 echo "raw" > .work/data.csv; echo "model" > .work/model.txt

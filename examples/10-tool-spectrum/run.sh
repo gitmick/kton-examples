@@ -14,8 +14,8 @@ export PLANKTON_DIR=".work/plankton"
 export NEKTON_DIR=".work/nekton"
 rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" ".work/keys"
 W=".work"
-plankton keygen "$W/keys/author" >/dev/null
-nekton  keygen "$W/keys/lab"    >/dev/null
+plankton keygen "$W/keys/author" --seed "$(demoseed author)" >/dev/null
+nekton  keygen "$W/keys/lab" --seed "$(demoseed lab)"    >/dev/null
 printf "conc\n4.2\n3.8\n5.1\n4.6\n" > "$W/pk.csv"          # the shared test fixture
 TESTS="test-glm test-summary test-predict"
 declare -A REFID CANDID REFOUT CANDOUT LEVEL

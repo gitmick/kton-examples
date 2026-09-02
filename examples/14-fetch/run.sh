@@ -13,8 +13,8 @@ export PLANKTON_DIR="$PWD/.work/plankton"     # results + the local content (blo
 export NEKTON_DIR="$PWD/.work/nekton"         # the signed located-at claims
 rm -rf "$PWD/.work"
 mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys" "$PWD/.work/store" "$PWD/.work/mirror"
-plankton keygen "$PWD/.work/keys/lab"      >/dev/null   # the producer
-nekton  keygen "$PWD/.work/keys/stranger" >/dev/null    # an UNTRUSTED third party (Stage C)
+plankton keygen "$PWD/.work/keys/lab" --seed "$(demoseed lab)"      >/dev/null   # the producer
+nekton  keygen "$PWD/.work/keys/stranger" --seed "$(demoseed stranger)" >/dev/null    # an UNTRUSTED third party (Stage C)
 
 echo "########## A - a record names its bytes by HASH; the local content store is empty ##########"
 echo "dose,conc" > .work/data.csv

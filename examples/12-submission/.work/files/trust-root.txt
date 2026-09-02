@@ -1,2 +1,2 @@
-trusted-authority 458f5c61674be9d4  (CN=cro-org)
-trusted-authority 1b04a53366e02a5f  (CN=sponsor-org)
+trusted-authority 5d73029715418fab  (CN=cro-org)
+trusted-authority 174559a61d0de1b5  (CN=sponsor-org)

@@ -11,7 +11,7 @@ W=".work"; rm -rf "$W"; mkdir -p "$W"; export PLANKTON_DIR="$W/reg"
 
 echo "== a kton foton, authored and signed by kton =="
 printf "id,dv\n1,4.2\n" > "$W/data.csv"; echo "cl=4.2" > "$W/fit.out"
-plankton keygen "$W/analyst" >/dev/null
+plankton keygen "$W/analyst" --seed "$(demoseed analyst)" >/dev/null
 plankton author --cmd "fit data.csv" --in "$W/data.csv" --out "$W/fit.out" \
   --sign "$W/analyst.key" -o "$W/foton.dsse.json" --add >/dev/null
 echo "  foton.dsse.json  (a DSSE envelope: payloadType application/vnd.in-toto+json)"

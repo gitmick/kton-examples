@@ -7,7 +7,7 @@ source ../../lib/common.sh
 
 export PLANKTON_DIR="$PWD/.work/registry"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
-plankton keygen "$PWD/.work/keys/me" >/dev/null
+plankton keygen "$PWD/.work/keys/me" --seed "$(demoseed me)" >/dev/null
 
 echo "== Create: record a foton whose output is a deterministic result =="
 echo "1 2 3 4" > .work/input.txt

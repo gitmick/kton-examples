@@ -14,8 +14,8 @@ cd "$(dirname "$0")"
 source ../../lib/common.sh
 
 rm -rf "$PWD/.work"; mkdir -p "$PWD/.work/keys"
-plankton keygen "$PWD/.work/keys/alice" >/dev/null
-plankton keygen "$PWD/.work/keys/bob"   >/dev/null
+plankton keygen "$PWD/.work/keys/alice" --seed "$(demoseed alice)" >/dev/null
+plankton keygen "$PWD/.work/keys/bob" --seed "$(demoseed bob)"   >/dev/null
 # The file bytes live in this working directory the whole time; on one machine every act just reads
 # them from here. plankton stores none of these bytes, only their hashes.
 echo "raw,data"     > .work/dataset.csv
