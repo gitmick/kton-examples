@@ -49,6 +49,8 @@ two.)
 | 13 | `foreign-verify` | a kton record verified by a non-kton tool (standard DSSE + Ed25519, no kton code) - records are copyable between tools |
 | 14 | `fetch` | resolve a content hash to its bytes via a signed `dcat:downloadURL`, re-hash on arrival, reject a forged mirror - the content-present verification tier |
 | 15 | `attach-material` | bind external evidence (Sigstore/Rekor/RFC 3161/eIDAS) to a record: kton carries it and never evaluates it, and a foton id is not its payload hash |
+| 16 | `reuse-cache` | the action key: has this been computed before? - and why a cache HIT is not an answer |
+| 17 | `reproductions` | ↻N independent signers for one output, and how a relabelled keyid inflates it until you pass `--trust-keys` |
 
 ## Run them yourself
 
