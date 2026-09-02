@@ -1,1 +1,1 @@
-{"subject":[{"uri":"https://kton.dev/o/2d790f66b36defa099b1fef3aaaac74e08f242bbd196947543c234172f0ad494"}],"predicate":"https://w3id.org/security#controller","object":{"id":"did:web:sponsor.example/people/lead"},"by":"CN=sponsor-org","when":"2026-07-16T00:00:00Z"}
+{"subject":[{"uri":"https://kton.dev/o/723e322949dee277f65de7d66684dbfde7e7f2006af680aa8bf65676480a62fa"}],"predicate":"https://w3id.org/security#controller","object":{"id":"did:web:sponsor.example/people/lead"},"by":"CN=sponsor-org","when":"2026-07-16T00:00:00Z"}

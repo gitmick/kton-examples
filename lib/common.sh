@@ -3,6 +3,31 @@
 # finished registry into data the graph viewer can render.
 EXROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="$EXROOT/bin:$PATH"
+EXNAME="$(basename "$PWD")"     # captured HERE: 09 cds into .work/ after sourcing this file
+
+# ---- reproducible demo identities and a fixed clock -------------------------------------------
+# The graph snapshots under docs/data/ are COMMITTED, so every run diffs against the last one. Two
+# things used to make that diff meaningless: a fresh random keypair per run - the public key lands
+# inside the signed payload, and in example 07 it IS the identity IRI - and a wall-clock `when` on
+# `nekton seed`/`annotate`. Both are fixable since kton 0.2 (`keygen --seed`, `--when`), so the
+# examples pass them EXPLICITLY at each call rather than through a wrapper that quietly rewrites
+# `keygen`. Someone reading a run.sh should be able to see why the snapshot is stable, and the flag
+# that does it is a real part of the CLI, worth showing.
+#
+# These are DEMO keys and nothing else. The seed is a published string, so the private key is public
+# and the identity is worthless - which is correct for a fixture and catastrophic for anything real.
+# A key whose seed is written down is a key everyone has. Real use: plain `keygen`, no --seed.
+KTON_WHEN="${KTON_WHEN:-2026-07-16T00:00:00Z}"   # the same fixed instant the claim specs already use
+
+# demoseed <label> - the 64-hex seed for this example's <label> identity.
+demoseed() { printf 'kton-examples/demo/%s/%s' "$EXNAME" "$1" | sha256sum | cut -d" " -f1; }
+
+# TWO EXAMPLES STAY VOLATILE ON PURPOSE, and must not be "fixed": 10-tool-spectrum and
+# 12-submission print a session banner carrying a pid and a wall clock (tests/test-predict.R,
+# tools/fit.R, tools/pmxtest.R). That volatility IS their subject - it is what makes two runs differ
+# byte-for-byte (no L0) while still agreeing once the normalizer strips the banner (L1), and in 12
+# the release gate turns on exactly that L1 reproduction. Their snapshots therefore change on every
+# run; every other example's is now a function of the repository, not of the clock.
 
 # ---- byte locators: every recorded input/output gets a fetch `uri` = its committed permalink ------
 # Each example PERSISTS its .work/ (see .gitignore), so a foton's recorded input/output path IS a real

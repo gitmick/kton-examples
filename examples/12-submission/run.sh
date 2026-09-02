@@ -22,7 +22,7 @@ W=".work"; rm -rf "$W"; mkdir -p "$W"/{files,keys}
 for org in cro sponsor agency; do mkdir -p "$W/$org/plankton" "$W/$org/nekton"; done
 F="$W/files"; T="$EXDIR/tools"
 key(){ echo "$W/keys/$1"; }
-for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" >/dev/null; done
+for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" --seed "$(demoseed "$k")" >/dev/null; done
 keyiri(){ echo "https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest())")"; }
 keyid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest()[:16])"; }
 pauthor(){ plankton author "$@" --add | awk '/indexed foton/{print $3}'; }
@@ -125,7 +125,7 @@ TALLY=$(grep -oE '[0-9]+/[0-9]+ member' "$F/fulfilment.txt" | head -1 | grep -oE
 printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s","membersFulfilled":"%s","membersTotal":"%s"},"why":"image fulfils pmxtools-1.2.0 (%s members, re-derivable in the spectrum-check foton)","by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$OCI" "${ENV#sha256:}" "${CHECK#sha256:}" "$NFUL" "$NTOT" "$TALLY" > "$F/qual.json"
 nekton claim "$F/qual.json" "$(key qc).key" --add >/dev/null
 printf "%%PDF tool validation protocol\n" > "$F/toolval.pdf"
-nekton annotate "$ENV" --template gxp/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --sign "$(key qc).key" --add >/dev/null
+nekton annotate "$ENV" --template gxp/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --add >/dev/null
 locate "$F/toolval.pdf" "https://cro.example/qms/SOP-CV-014/tool-validation.pdf" qc
 echo "  qualifies-as (image -> ENV) + gxp:validation-performed=pass recorded (protocol.pdf located)"
 
@@ -152,9 +152,9 @@ echo "  clean -> FIT (runs run12.mod, --environment ENV COVERED, code recorded +
 
 echo; echo "########## ACT 3 - the model-development tree (pmx/model-role: base -> covariate -> final) ###"
 export NEKTON_DIR="$W/cro/nekton"
-nekton annotate "$(plankton hash "$F/run1.mod")"  --template pmx/model-role --set role=base --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
-nekton annotate "$(plankton hash "$F/run7.mod")"  --template pmx/model-role --set role=covariate --set parent="$(plankton hash "$F/run1.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
-nekton annotate "$(plankton hash "$F/run12.mod")" --template pmx/model-role --set role=final --set parent="$(plankton hash "$F/run7.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
+nekton annotate "$(plankton hash "$F/run1.mod")"  --template pmx/model-role --set role=base --by "CN=analyst" --when "$KTON_WHEN" --sign "$(key analyst).key" --add >/dev/null
+nekton annotate "$(plankton hash "$F/run7.mod")"  --template pmx/model-role --set role=covariate --set parent="$(plankton hash "$F/run1.mod")" --by "CN=analyst" --when "$KTON_WHEN" --sign "$(key analyst).key" --add >/dev/null
+nekton annotate "$(plankton hash "$F/run12.mod")" --template pmx/model-role --set role=final --set parent="$(plankton hash "$F/run7.mod")" --by "CN=analyst" --when "$KTON_WHEN" --sign "$(key analyst).key" --add >/dev/null
 echo "  signed model tree: run1=base -> run7=covariate -> run12=final (the FIT ran run12)"
 
 echo; echo "########## ACT 4 - independent reproduction by QC (real re-run, authored as a foton) ########"
@@ -179,21 +179,21 @@ nekton claim "$F/repro.json" "$(key qc).key" --add >/dev/null; echo "  QC signed
 
 echo; echo "########## ACT 5 - review scope: typed sign-offs with evidence, chained + sealed (04/05/11) #"
 export NEKTON_DIR="$W/sponsor/nekton"
-SCOPE=$(nekton seed popPK-mABC --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
+SCOPE=$(nekton seed popPK-mABC --when "$KTON_WHEN" --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
 printf "%%PDF qc review\n" > "$F/qc-rep.pdf"; printf "%%PDF lead review\n" > "$F/lead-rep.pdf"
-nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
+nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
 C1=$(nekton by predicate "https://kton.dev/v/gxp/reviewed" | head -1 | awk '{print $1}')
-nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
+nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
 locate "$F/qc-rep.pdf" "https://sponsor.example/reviews/qc-report.pdf" qc
 locate "$F/lead-rep.pdf" "https://sponsor.example/reviews/lead-report.pdf" lead
 # a general (non-GxP) approval reuses schema.org (example 11)
-nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set decision=https://schema.org/AcceptAction --set comment="$F/lead-rep.pdf" --by "CN=lead" --sign "$(key lead).key" --add >/dev/null
+nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set decision=https://schema.org/AcceptAction --set comment="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --add >/dev/null
 HEAD=$(nekton head "$SCOPE" | awk '/head:/{print $2}')
 echo "  seed -> gxp:reviewed(qc,pass) -> gxp:reviewed(lead,pass) sealed; HEAD=$HEAD"
 
 echo; echo "########## ACT 5b - explicit residual-risk acceptance (risk/accept) ##########"
 printf "%%PDF shrinkage sensitivity\n" > "$F/shrinkage.pdf"
-nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity=medium --set rationale="eta-shrinkage on CL 28pct; addressed by sensitivity analysis" --set mitigation="$F/shrinkage.pdf" --by "CN=lead" --sign "$(key lead).key" --add >/dev/null
+nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity=medium --set rationale="eta-shrinkage on CL 28pct; addressed by sensitivity analysis" --set mitigation="$F/shrinkage.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --add >/dev/null
 locate "$F/shrinkage.pdf" "https://sponsor.example/risk/shrinkage-sensitivity.pdf" lead
 echo "  gxp:risk-accepted (medium, mitigation.pdf located) recorded"
 

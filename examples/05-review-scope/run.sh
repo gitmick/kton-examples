@@ -14,23 +14,23 @@ source ../../lib/common.sh
 
 rm -rf "$PWD/.work"; mkdir -p "$PWD/.work/keys"
 PUB_DIR="$PWD/.work/public"
-nekton keygen "$PWD/.work/keys/board"       >/dev/null   # authority: sets the rules AND closes
-nekton keygen "$PWD/.work/keys/reviewer-a"  >/dev/null
-nekton keygen "$PWD/.work/keys/reviewer-b"  >/dev/null
+nekton keygen "$PWD/.work/keys/board" --seed "$(demoseed board)"       >/dev/null   # authority: sets the rules AND closes
+nekton keygen "$PWD/.work/keys/reviewer-a" --seed "$(demoseed reviewer-a)"  >/dev/null
+nekton keygen "$PWD/.work/keys/reviewer-b" --seed "$(demoseed reviewer-b)"  >/dev/null
 K(){ echo "$PWD/.work/keys/$1.key"; }
 kid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/$1.pub').read().strip())).hexdigest()[:16])"; }
 seedid(){ echo "$1" | grep -oE 'sha256:[0-9a-f]{64}' | tail -1; }
 KA=$(kid16 reviewer-a); KB=$(kid16 reviewer-b)
 
 echo "== The public record: a standing PARENT scope, in its own store =="
-PUB=$(seedid "$(NEKTON_DIR=$PUB_DIR nekton seed drug-reviews --sign "$(K board)" --by 'CN=Board' --add)")
+PUB=$(seedid "$(NEKTON_DIR=$PUB_DIR nekton seed drug-reviews --when "$KTON_WHEN" --sign "$(K board)" --by 'CN=Board' --add)")
 echo "  public scope = $PUB   (enrolled reviewers this run: a=$KA  b=$KB)"
 
 # build_review <name> <revStore> <delivery...>   delivery = "a:pass" | "b:reject"  -> prints the scope id.
 # The name must differ per review, else identical seeds (same parent+signer+second) collide to one scope id.
 build_review(){
   local NAME="$1" RD="$2"; shift 2
-  local REV; REV=$(seedid "$(NEKTON_DIR=$RD nekton seed "$NAME" --parent "$PUB" --sign "$(K board)" --by 'CN=Board' --add)")
+  local REV; REV=$(seedid "$(NEKTON_DIR=$RD nekton seed "$NAME" --parent "$PUB" --when "$KTON_WHEN" --sign "$(K board)" --by 'CN=Board' --add)")
   # INITIALISE (first link): the review's conditions - who is enrolled - signed by the board, which is
   # therefore the close authority. predicateBody carries the exact signed body (the reviewers array).
   printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"reviewers":["%s","%s"],"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$KA" "$KB" "$REV" "$REV" > .work/init.json

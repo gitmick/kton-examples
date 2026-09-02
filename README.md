@@ -94,6 +94,14 @@ every run with a fresh keypair, so it can never diff cleanly, and nothing links 
 `bin/check-permalinks.py` holds the two halves together, failing CI if a carried permalink ever names
 a file this repo does not publish.
 
+The committed graph snapshots under `docs/data/` are **reproducible**: each example derives its demo
+keys from a fixed seed (`keygen --seed`, via `demoseed` in `lib/common.sh`) and stamps a fixed
+`--when`, so re-running an example reproduces its snapshot byte-for-byte instead of only differing by
+a fresh key. Those seeds are published strings — the keys are demo fixtures and worthless; real use
+is plain `keygen` with no `--seed`. Two examples stay volatile deliberately: `10-tool-spectrum` and
+`12-submission` print a pid/wall-clock banner, which is the very thing that makes their L0-vs-L1
+distinction demonstrable.
+
 ## Curated nekton templates
 
 `templates/` + `aliases.json` are **application/example content, not the protocol.** The kton kernel

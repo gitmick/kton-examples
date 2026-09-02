@@ -22,8 +22,8 @@ export NEKTON_DIR="$PWD/.work/nekton"
 export NEKTON_ALIASES="$PWD/../../aliases.json"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys"
 cd "$PWD/.work"
-plankton keygen keys/author >/dev/null    # produces the results
-nekton  keygen keys/lab    >/dev/null     # signs the environment statements
+plankton keygen keys/author --seed "$(demoseed author)" >/dev/null    # produces the results
+nekton  keygen keys/lab --seed "$(demoseed lab)"    >/dev/null     # signs the environment statements
 
 # the exact container the analyst ran in (a digest-pinned image). Same one all the way through.
 OCI="oci://rocker/r-ver:4.3.2@sha256:d34db33fcaf00000000000000000000000000000000000000000000000000beef"

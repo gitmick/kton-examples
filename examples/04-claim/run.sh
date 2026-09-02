@@ -9,8 +9,8 @@ source ../../lib/common.sh
 export PLANKTON_DIR="$PWD/.work/plankton"
 export NEKTON_DIR="$PWD/.work/nekton"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys"
-plankton keygen "$PWD/.work/keys/analyst"  >/dev/null   # makes the foton
-nekton  keygen "$PWD/.work/keys/reviewer" >/dev/null    # makes the claim
+plankton keygen "$PWD/.work/keys/analyst" --seed "$(demoseed analyst)"  >/dev/null   # makes the foton
+nekton  keygen "$PWD/.work/keys/reviewer" --seed "$(demoseed reviewer)" >/dev/null    # makes the claim
 
 echo "== Create: analyst records a foton (plankton) =="
 echo "raw" > .work/data.csv; echo "fit" > .work/model.txt

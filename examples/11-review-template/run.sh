@@ -22,7 +22,7 @@ echo "########## Part 1 - the template (the classical mechanism, vs the raw clai
 nekton templates --show review/decision | sed 's/^/  /'
 
 echo; echo "########## Part 2 - a foton to review ##########"
-plankton keygen "$W/keys/author" >/dev/null
+plankton keygen "$W/keys/author" --seed "$(demoseed author)" >/dev/null
 printf "auc\n42.0\n" > "$W/result.csv"; echo "verdict=within-range" > "$W/assessment.txt"
 FOTON=$(plankton author --cmd "assess result.csv" --in "$W/result.csv" --out "$W/assessment.txt" \
   --sign "$W/keys/author.key" --add -o "$W/foton.dsse.json" | awk '/indexed foton/{print $3}')
@@ -30,11 +30,11 @@ echo "  foton = $FOTON"
 
 echo; echo "########## Part 3 - THREE reviewers, each APPROVE with a comment file (nothing overwritten) #####"
 for who in alice bob carol; do
-  nekton keygen "$W/keys/$who" >/dev/null
+  nekton keygen "$W/keys/$who" --seed "$(demoseed "$who")" >/dev/null
   printf "# %s\nReproduced locally; AUC within range. Approve.\n" "$who" > "$W/$who.md"
   nekton annotate --foton "$W/foton.dsse.json" --template review/decision \
     --set decision="$APPROVE" --set comment="$W/$who.md" \
-    --by "CN=${who^}" --sign "$W/keys/$who.key" --add >/dev/null
+    --by "CN=${who^}" --when "$KTON_WHEN" --sign "$W/keys/$who.key" --add >/dev/null
   echo "  $who approved (schema:AcceptAction) + attached $who.md"
 done
 echo "  --- correctness checks ---"
@@ -56,7 +56,7 @@ echo; echo "########## Part 4 - register the template itself in a SEPARATE nekto
 TPLHASH=$(plankton hash "$NEKTON_TEMPLATES/review-decision.json")
 echo "  template content hash = $TPLHASH"
 PUB="$W/nekton-publisher"; mkdir -p "$PUB"
-nekton keygen "$W/keys/standards" >/dev/null
+nekton keygen "$W/keys/standards" --seed "$(demoseed standards)" >/dev/null
 printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/1999/02/22-rdf-syntax-ns#type","object":{"id":"https://kton.dev/template/v0"},"why":"the review/decision template (approve/reject a foton + a comment file)","by":"CN=Standards","when":"2026-07-16T00:00:00Z"}' \
   "$TPLHASH" > "$W/register.spec.json"
 nekton claim "$W/register.spec.json" "$W/keys/standards.key" --registry "$PUB" --add | sed 's/^/  /'
