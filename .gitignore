@@ -33,6 +33,7 @@ bin/kton
 **/.work/**/exports/**
 **/.work/**/rec.json
 **/.work/**/*.err
+**/.work/**/*.token.json
 
 # Scratch/draft material under docs/ - never committed. (docs/findings.md is the one working
 # note we DO want tracked, so it's deliberately not listed here.)

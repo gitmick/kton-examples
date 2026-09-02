@@ -214,6 +214,16 @@
       <div class="links"><a href="viewer.html?union=data/14-fetch/union.json&keys=data/14-fetch/keys.json&names=data/14-fetch/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/14-fetch/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
+      <div class="n">15</div><h3>Evidence from outside kton</h3>
+      <p>Records arrive carrying proof in vocabularies kton does not speak: a Sigstore bundle, a Rekor
+      entry, an RFC 3161 timestamp, an eIDAS signature. <code>attach</code> binds that evidence to a
+      record's content address and <code>material</code> hands it back &mdash; and the kernel never says
+      whether it is any good, because <i>which issuers count</i> is your trust policy, not a fact about
+      bytes. A verifier that is not kton does that half. Watch the id: an outside attestation commits to
+      the envelope <i>payload</i>, and a foton id is not its payload hash.</p>
+      <div class="links"><a href="viewer.html?union=data/15-attach-material/union.json&keys=data/15-attach-material/keys.json&names=data/15-attach-material/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/15-attach-material/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
       <div class="n">&#9876;</div><h3>Red team &mdash; adversarial engagement <span style="font-weight:400;color:var(--dim)">(its own repo)</span></h3>
       <p>The hardest test of &ldquo;trust no one&rdquo;: an adversarial security engagement against kton,
       <b>documented in kton itself</b> &mdash; each attack is a foton, each finding a signed claim, and the
