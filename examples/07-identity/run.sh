@@ -11,8 +11,11 @@ rm -rf "$PWD/.work"; mkdir -p "$NEKTON_DIR" "$PWD/.work/keys"
 echo "########## Part 1 - a key is an identity (self-asserted) ##########"
 # Give two models their own signing keys. The keyid is the fingerprint of the public key: it IS the
 # cryptographic identity. The human 'by' label, by contrast, is just text anyone could type.
-OPUS=$(nekton keygen "$PWD/.work/keys/opus" --seed "$(demoseed opus)"     | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
-SONNET=$(nekton keygen "$PWD/.work/keys/sonnet" --seed "$(demoseed sonnet)" | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
+nekton keygen "$PWD/.work/keys/opus"   --seed "$(demoseed opus)"   >/dev/null
+nekton keygen "$PWD/.work/keys/sonnet" --seed "$(demoseed sonnet)" >/dev/null
+# `keyid` maps a key file to the id claims carry, so we ask for it instead of parsing keygen's prose.
+OPUS=$(nekton keyid "$PWD/.work/keys/opus.pub")
+SONNET=$(nekton keyid "$PWD/.work/keys/sonnet.pub")
 echo "  opus   keyid = $OPUS"
 echo "  sonnet keyid = $SONNET"
 

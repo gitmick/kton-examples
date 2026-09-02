@@ -25,7 +25,7 @@ echo; echo "########## Part 2 - a foton to review ##########"
 plankton keygen "$W/keys/author" --seed "$(demoseed author)" >/dev/null
 printf "auc\n42.0\n" > "$W/result.csv"; echo "verdict=within-range" > "$W/assessment.txt"
 FOTON=$(plankton author --cmd "assess result.csv" --in "$W/result.csv" --out "$W/assessment.txt" \
-  --sign "$W/keys/author.key" --add -o "$W/foton.dsse.json" | awk '/indexed foton/{print $3}')
+  --sign "$W/keys/author.key" --add -o "$W/foton.dsse.json" --print-id)
 echo "  foton = $FOTON"
 
 echo; echo "########## Part 3 - THREE reviewers, each APPROVE with a comment file (nothing overwritten) #####"
@@ -46,7 +46,10 @@ echo "  distinct review claims on disk (append-only, nothing overwritten): $(gre
 # "nothing was overwritten" is a CLAIM, so check it rather than print it: three reviewers must show up
 # as three distinct signing keys. Printed bare, a 1 here - the overwrite this example exists to
 # disprove - would read as just another line of output.
-NKEYS=$(nekton by predicate http://purl.org/pav/reviewedBy | grep -oE 'keyid=[0-9a-f]+' | sort -u | wc -l | tr -d ' ')
+# --json gives the records themselves, so the signer is a field rather than a substring of a line.
+NKEYS=$(nekton by predicate http://purl.org/pav/reviewedBy --json | python3 -c "
+import json,sys
+print(len({s.get('keyid') for r in json.load(sys.stdin) for s in r['envelope'].get('signatures',[])}))")
 echo "  distinct signing keyids among the reviews:                         $NKEYS"
 [ "$NKEYS" -eq 3 ] || { echo "  !! expected 3 distinct signers, saw $NKEYS - reviews are being overwritten or lost" >&2; exit 1; }
 echo "  reviews recorded ABOUT the foton:"
