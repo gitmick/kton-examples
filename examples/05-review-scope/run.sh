@@ -43,7 +43,7 @@ build_review(){
     printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"%s"},"by":"reviewer-%s","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$verdict" "$who" "$REV" "$prev" > .work/rev.json
     prev=$(NEKTON_DIR=$RD nekton claim .work/rev.json "$(K $kf)" --add --print-id)
   done
-  local HEAD; HEAD=$(NEKTON_DIR=$RD nekton head "$REV" | awk '/^head:/{print $2}')
+  local HEAD; HEAD=$(NEKTON_DIR=$RD head_of "$REV")
   # CLOSE on the parent, signed by the board (the authority that initialised)
   printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/closed"},"object":{"hash":"%s"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$HEAD" "$PUB" "$PUB" > .work/close.json
   NEKTON_DIR=$PUB_DIR nekton claim .work/close.json "$(K board)" --add >/dev/null
@@ -108,9 +108,20 @@ gate BLOCKED - "$PWD/.work/r3" "$R3"
 
 echo ""
 echo "== Tamper-evidence still holds: a dangling prev never joins the chain =="
+HEAD1=$(NEKTON_DIR="$PWD/.work/r1" head_of "$R1")     # the head BEFORE the forgery, to compare against
 printf '{"subject":[{"uri":"urn:doc:x"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"forged"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"}}' "$R1" > .work/bad.json
 NEKTON_DIR="$PWD/.work/r1" nekton claim .work/bad.json "$(K board)" --add >/dev/null 2>&1
-echo -n "  head of r1 after a forged dangling link (UNCHANGED): "; NEKTON_DIR="$PWD/.work/r1" nekton head "$R1" | awk '/^head:/{print $2}'
+# head_of would (correctly) refuse here: the forged claim IS an unresolved link now. That is the
+# demonstration, so read the fields directly and assert both halves - the dangling claim is in the
+# store and counted, and the head did not move because of it.
+NEKTON_DIR="$PWD/.work/r1" nekton head "$R1" --json | python3 -c "
+import json,sys
+h=json.load(sys.stdin)
+print(f\"  head of r1 after a forged dangling link: {h['heads'][0]}\")
+print(f\"  unresolved links reported: {h['unresolved']}\")
+assert h['unresolved'] >= 1, 'the forged dangling claim was not even counted'
+assert h['heads'][0] == '$HEAD1', 'the head MOVED - a dangling prev joined the chain'
+print('  [asserted: the forged link is on record and unresolved, and the head is UNCHANGED]')"
 
 echo ""
 snapshot 05-review-scope "$PWD/.work/keys" --reg "$PUB_DIR" --reg "$PWD/.work/r1" --reg "$PWD/.work/plankton"

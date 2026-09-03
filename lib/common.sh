@@ -94,5 +94,26 @@ expect_fail(){
   fi
 }
 
+# head_of <scope-id> - the scope's ONE head, or an abort.
+#
+# `nekton head --json` reports `branched` and `unresolved` as fields rather than as prose beside the
+# answer, so a script can REQUIRE what the old `awk '/^head:/{print $2}'` silently assumed: exactly
+# one head, and no dangling link. A branched scope used to yield whichever line printed first.
+#
+# There is deliberately no `sealed` field to ask for, and that absence is load-bearing: a WITHHELD
+# later claim is not detectable in-band - the shortened chain stays internally valid - so no value
+# could answer it honestly. That question is settled by matching a published or anchored head, not
+# by reading a field. See example 05, which does exactly that as its leg 2.
+head_of(){
+  nekton head "$1" --json | python3 -c "
+import json,sys
+h=json.load(sys.stdin)
+if h['branched'] or len(h['heads'])!=1:
+    sys.exit(f\"  !! scope has {len(h['heads'])} head(s), branched={h['branched']} - refusing to pick one\")
+if h['unresolved']:
+    sys.exit(f\"  !! {h['unresolved']} unresolved link(s) - the head is not the whole chain\")
+print(h['heads'][0])"
+}
+
 # Reading a registry: one file per (sub)nekton, plus the legacy per-claim form.
 source "$(dirname "${BASH_SOURCE[0]}")/records.sh"

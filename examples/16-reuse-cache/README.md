@@ -76,6 +76,8 @@ Two fotons, one action key, two different outputs — the disagreement is the pi
 
 ---
 
-One wart, and it is ours to fix upstream: `plankton reuse` has no `--json`, unlike `show`, `producer`,
-`uses`, `lineage` and `reproductions` (kton #57). So `run.sh` reads its hit count off a printed line —
-the single place in this repo that still parses prose to get a number.
+`plankton reuse --json` (kton #74) carries per hit what the printed form only hints at in a stderr
+note: `declaredSigner` and `verified: false`. That is the right place for it. An action key binds
+inputs and protocol and never the signer, so the hits **compete**, and the keyid on each is the
+envelope's unauthenticated hint — anyone choosing a hit mechanically has to see that on the record
+they act on, not in a warning next to it.
