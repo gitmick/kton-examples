@@ -21,9 +21,11 @@ plankton keygen "$W/keys/alice" --seed "$(demoseed alice)" >/dev/null   # runs i
 plankton keygen "$W/keys/mallory" --seed "$(demoseed mallory)" >/dev/null   # runs the same thing later
 
 # hits <statement> - how many prior computations plankton reports for this action key.
-# (`reuse` has no --json yet, unlike show/producer/uses/lineage/reproductions, so this reads the
-# count off the line. It is the one place in this repo that still parses prose; see the README.)
-hits(){ plankton reuse "$1" 2>/dev/null | sed -n 's/^cache: HIT -> \([0-9]*\) prior.*/\1/p'; }
+# --json carries per hit what the printed form only hints at in a stderr note: `declaredSigner` and
+# `verified: false`. That belongs on the record you act on, not in a warning beside it - an action
+# key binds inputs and protocol, never the signer, so the hits COMPETE and the keyid on each is the
+# envelope's unauthenticated hint.
+hits(){ plankton reuse "$1" --json 2>/dev/null | python3 -c "import json,sys;print(len(json.load(sys.stdin)['hits']))"; }
 
 echo "########## Part 1 - alice records a computation ##########"
 echo "id,conc"  > "$W/pk.csv"; printf '1,4.2\n' >> "$W/pk.csv"

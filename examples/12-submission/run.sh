@@ -188,7 +188,7 @@ locate "$F/qc-rep.pdf" "https://sponsor.example/reviews/qc-report.pdf" qc
 locate "$F/lead-rep.pdf" "https://sponsor.example/reviews/lead-report.pdf" lead
 # a general (non-GxP) approval reuses schema.org (example 11)
 nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set decision=https://schema.org/AcceptAction --set comment="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --add >/dev/null
-HEAD=$(nekton head "$SCOPE" | awk '/head:/{print $2}')
+HEAD=$(head_of "$SCOPE")
 echo "  seed -> gxp:reviewed(qc,pass) -> gxp:reviewed(lead,pass) sealed; HEAD=$HEAD"
 
 echo; echo "########## ACT 5b - explicit residual-risk acceptance (risk/accept) ##########"
@@ -249,7 +249,7 @@ echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dss
 # gate would read the environment from an envelope nobody checked was the attested fit. This is a pure
 # hash re-derivation - no trust, no signature needed - and it is a HARD gate (abort on mismatch).
 echo -n "  4. fit envelope binds to fit id:    "
-REID=$(plankton add "$F/fit.dsse.json" --registry "$W/verify-tmp" 2>/dev/null | awk '/indexed foton/{print $3}')
+REID=$(plankton add "$F/fit.dsse.json" --registry "$W/verify-tmp" --print-id 2>/dev/null)
 if [ "$REID" = "$FIT" ]; then echo "BOUND ($FIT)"; else echo "MISMATCH ($REID != $FIT) -> abort"; exit 1; fi
 echo    "  5. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
