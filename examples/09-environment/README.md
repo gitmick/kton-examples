@@ -17,6 +17,14 @@ exactly the fotons such an executor would `plankton add`. (For the same spectrum
 executed* - real R runs, with L0 vs L1 shown in the graph - see
 [example 10](../10-tool-spectrum/), the executed companion to this one.)
 
+Two more things worth knowing before the walkthrough, because they are easy to reconstruct wrongly:
+
+- **`spectrum define` and `spectrum check` are real, purpose-built `plankton` subcommands**, not a
+  pattern you assemble yourself out of raw claims. A spectrum is a first-class object with an id.
+- **The four stages produce five separate fotons and two claims**, not one foton that grows. `$BARE`,
+  the three reference test fotons and the qualification check are each their own immutable record;
+  they meet at shared hashes rather than by being edited. Nothing here is ever added *to* a foton.
+
 ## The arc
 
 The blocks below capture ids into shell variables and run in sequence (`plankton` and `nekton` on your

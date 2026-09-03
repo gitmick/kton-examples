@@ -6,8 +6,25 @@ nanopublications. They use the **same hash-based IRIs**, so when you load both i
 foton's provenance and the claims about it land on **one node**, ready for a reasoner. plankton
 documents; it does not reason, the RDF is just a serialization you hand to something that does.
 
-This is the advanced finale and it leans on semantic-web vocabulary (RDF, PROV, Turtle, TriG,
-triplestore). Assumes `plankton` and `nekton` are on your PATH; you have seen fotons ([01](../01-hello-foton/))
+This is the advanced finale and it leans on semantic-web vocabulary. None of it is kton's invention,
+and one line each is enough to follow along:
+
+- **RDF** — the W3C model for data as *subject–predicate–object* triples, which is the shape a nekton
+  claim already has: [RDF primer](https://www.w3.org/TR/rdf11-primer/).
+- **IRI** — Internationalized Resource Identifier, the Unicode-friendly generalization of a URL and
+  the standard way to name a thing in RDF: [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987). kton's
+  are hash-based (`pk:<sha256>`), which is why two exports meet on the same node.
+- **PROV** (PROV-O) — the W3C ontology for saying how something was produced: who did it, from what,
+  with which activity. A foton maps onto it almost directly:
+  [PROV-O](https://www.w3.org/TR/prov-o/).
+- **Turtle** and **TriG** — two text syntaxes for writing RDF down. TriG is Turtle plus *named
+  graphs*, which is what lets each nanopublication keep its own graph:
+  [Turtle](https://www.w3.org/TR/turtle/), [TriG](https://www.w3.org/TR/trig/).
+- **nanopublication** — a small, self-contained publication: an assertion, its provenance, and its
+  own publication info, each in its own named graph: [nanopub.net](https://nanopub.net/).
+- **triplestore** — a database for triples, which you query with SPARQL (examples 11 and 12 do).
+
+Assumes `plankton` and `nekton` are on your PATH; you have seen fotons ([01](../01-hello-foton/))
 and claims ([04](../04-claim/)).
 
 ## Walk through it, one command at a time

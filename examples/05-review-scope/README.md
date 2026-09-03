@@ -13,10 +13,23 @@ A single signed claim (example 04) says one thing. A **review** is a *conversati
    and becomes a **liveness** failure: the missing reviewer makes the review *incomplete*, and incomplete
    **blocks**. You cannot cut a reject out to get a clean review - you get an incomplete one, fail-closed.
 
-Nothing new in the kernel. SPEC §7.4 reserves parent→child registration and sealing as *consumer
-convention* over the seed/chain grammar; "close", "initialised" and the completeness decision are all
+Nothing new in the kernel. SPEC §7.4 — the kton protocol spec, which lives in the kernel repo at
+[`kton-protocol/kton`](https://github.com/kton-protocol/kton) rather than here — reserves parent→child
+registration and sealing as *consumer convention* over the seed/chain grammar; "close", "initialised" and the completeness decision are all
 ordinary claims plus a consumer check ([`check.py`](check.py)). "Close" is not a verb - it is a claim to
 the parent, the same shape as a verdict; the predicate is the only thing that says "closed".
+
+## Words this example needs
+
+Four of them are new here, and one is an old friend under a new name:
+
+- a **store** is a registry — the same directory-of-records from examples 01-04 (`NEKTON_DIR`). This
+  page says "store" because a review *is* one, handed over whole.
+- the **kernel** is kton's core: the part that stores, indexes and verifies records. It is not the
+  part that decides anything — `check.py` here is a *consumer*, and consumers make the decisions.
+- a claim can name a **`prev`** claim, which chains them into a sequence.
+- the **head** is the latest claim in that chain — the one nothing else points back to yet.
+- a **chain link** is any claim carrying a `prev`, i.e. a link in that sequence.
 
 ## Two words that are easy to conflate
 
@@ -42,7 +55,8 @@ the parent, the same shape as a verdict; the predicate is the only thing that sa
    conditions are on the sealed chain and anchored, the close is by the authority, **every enrolled
    reviewer delivered** (completeness), and **none rejected** (safety).
 7. **The verdict is documented in plankton, with the nekton as input.** The decision is not an ephemeral
-   print: it is authored as a plankton **foton** whose COVERED inputs are the review and the public
+   print: it is authored as a plankton **foton** whose COVERED inputs (covered = hash-verified as part
+   of the record's identity, rather than merely carried alongside it — example 09 draws the line) are the review and the public
    parent (bundled by hash) plus `check.py`, and whose output is the verdict. So it is content-addressed
    and **reproducible** - re-run the check over the same nekton and you get the same verdict (L0). That is
    the plankton/nekton division: nekton is the signed review, plankton is the reproducible decision over

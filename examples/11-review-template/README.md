@@ -12,7 +12,17 @@ SPARQL query that tests the review is complete**.
 
 ## Reused vocabulary, no minted terms
 
-The template commits to published vocabularies (per the repo's vocabulary policy):
+The template commits to published vocabularies, following the vocabulary policy written down in
+[`aliases.json`](../../aliases.json)'s own `note` field. In plain terms: **`pav:`, `schema:` and the
+rest are borrowed** from vocabularies other people already publish and maintain; **`nk:`
+(`https://kton.dev/v/`) is kton's own**, minted only where nothing existing names the concept. Two
+prefixes, because reusing a term someone else defined is worth more than a term we defined.
+
+(Careful with "repo" around here: it means *this codebase*, not a **registry** — the directory of
+records `PLANKTON_DIR`/`NEKTON_DIR` point at, which examples 01-04 introduced. Two storage-flavoured
+words, unrelated things.)
+
+The template's bindings:
 
 - the review relation is **PAV** `pav:reviewedBy`;
 - the verdict reuses **schema.org**: approve = `schema:AcceptAction`, reject = `schema:RejectAction`
