@@ -45,27 +45,47 @@ dereferences the URI, re-hashes, and pins **only if the hash matches**:
 
 ```
 nekton claim loc.json lab.key --add          # <RESULT> dcat:downloadURL file://.../result.bytes
-kton fetch "$RESULT"
-# sha256:7f6e...: 1 signed location(s) suggested
-#   [1] file://.../result.bytes  (signed by CN=lab) ... OK - 10 bytes, verified & pinned
+kton fetch --trust-keys trust-lab --allow-local "$RESULT"
+# sha256:7f6e...: 1 located-at claim(s), 1 signed by a trusted key
+#   [1] file://.../result.bytes  (verified signer key:6de19b30...) ... OK - 10 bytes, verified & pinned
 kton blob "$RESULT"
 # PINNED sha256:7f6e...        <- content-present: the bytes are here, and they hash to what was named
 ```
 
-**C. A location is a hint, not an authority.** Now an **untrusted stranger** publishes a second signed
-location pointing at *forged* bytes. `kton fetch` tries every suggestion and checks each on arrival:
+`--trust-keys` is a **directory of public keys you chose**, and it is required. The keyid printed is
+the one that actually *verified*, never the envelope's self-declared field. `--allow-local` is a
+second, separate yes: these locators are `file://`, and a signature about **content** says nothing
+about a path on **your** machine.
+
+**C. Two defences, and neither replaces the other.** An **untrusted stranger** publishes a second
+signed location pointing at *forged* bytes.
+
+**C1 - a stranger's location is never opened at all.** With only the lab trusted, the registry holds
+two located-at claims and exactly one is dereferenceable:
 
 ```
-kton fetch "$RESULT"
-# sha256:7f6e...: 2 signed location(s) suggested
-#   [1] file://.../mirror/result.bytes  (signed by CN=stranger) ... HASH MISMATCH (got sha256:aa06...) - rejected
-#   [2] file://.../store/result.bytes   (signed by CN=lab)      ... OK - 10 bytes, verified & pinned
+# located-at claims in the registry: 2    signed by a key we trust: 1
 ```
 
-The forged mirror hash-mismatches and is thrown out; a good location still verifies. This is the whole
-point of content addressing: **the hash is the authority, the URI is only a hint.** Bytes may come from
-*any* mirror - even an untrusted one, even a public CDN - because corruption or tampering is caught on
-arrival (`sha256 != hash`), never trusted. A signed pointer to bad bytes cannot fool you.
+This is the defence a hash cannot provide. Dereferencing is a **request made from your host** - and
+for `file://`, a read of your disk - and no check performed on the result retracts the request. For a
+file whose hash an attacker already knows, the content check does not even reject the outcome. So a
+stranger does not get to choose what your process opens.
+
+**C2 - and a trusted signer's bytes are still checked exactly as hard.** Trust the stranger too, put
+the good copy out of reach, and the forged location is the one tried:
+
+```
+kton fetch --trust-keys trust-both --allow-local "$RESULT"
+#   [1] file://.../store/result.bytes   ... unreachable
+#   [2] file://.../mirror/result.bytes  (verified signer key:b41627af...) ... HASH MISMATCH - rejected
+# error: no suggested location resolved to bytes matching sha256:7f6e...
+```
+
+**The trust policy decides whose location is opened; the hash decides whether what came back is what
+the record named.** The older half of that sentence is still true - content addressing self-checks on
+arrival, so *bytes* from an untrusted mirror cannot fool you. What changed is that the *request* is
+its own exposure, and that one is settled before anything is opened, not after.
 
 ## Two ways to say where the bytes are
 

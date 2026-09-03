@@ -23,10 +23,17 @@ jobs:
       - name: checkout kton-examples
         uses: actions/checkout@v4
 
+      # ref MATTERS. Without it this floats on the kernel's default branch, and a green run then says
+      # nothing about the kernel actually being developed: `14-fetch` was broken against `dev` for
+      # days while CI built `main` (~55 commits behind) and stayed green. That is the same
+      # tests-nothing-and-reports-success shape this repo keeps finding, in the other direction.
+      # Track `dev` so a kernel change that breaks an example breaks CI on the day it lands.
+      # WHEN `dev` MERGES TO `main`, CHANGE THIS - a dangling ref fails loudly, which is the point.
       - name: checkout the kton kernel (to build the reference binaries)
         uses: actions/checkout@v4
         with:
           repository: kton-protocol/kton
+          ref: dev
           path: _kton
 
       - uses: actions/setup-go@v5
