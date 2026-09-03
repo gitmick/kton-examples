@@ -9,9 +9,10 @@ This example is about that: **a key is an identity**. It answers two different q
    believe it only if you trust whoever signed that binding.
 
 Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) **Parts 1 and
-2 below run today.** Tier 3 (authority-backed identity) is described in the concept section and is now
-real for a person in [example 08](../08-sigstore-github/) - signing with a GitHub identity via
-Sigstore; SSH `allowed_signers` and a model-CA are still pending.
+2 below are runnable now.** The strongest form of identity — a certificate or allow-list from an
+authority, called *authority-backed* in [How identity works in kton](#how-identity-works-in-kton)
+below — is real for a person in [example 08](../08-sigstore-github/), signing with a GitHub identity
+via Sigstore; SSH `allowed_signers` and a model-CA are still pending.
 
 ## Part 1 - a key is an identity (self-asserted)
 
@@ -98,8 +99,11 @@ if they trust the deployer's key**. It is still one claim, one signer; no new ma
   - **self-asserted** - the `by` label (Part 1). Zero proof.
   - **attested** - a signed `sec:controller` claim (a Verifiable Credential) by someone you trust (Part 2).
   - **authority-backed** *(partially shipped)* - a certificate or an allow-list from a trusted issuer.
-    For a **person** this is now real in [example 08](../08-sigstore-github/): **Sigstore** keyless (an
-    OIDC/GitHub identity bound by a Fulcio certificate + the Rekor transparency log). Still pending:
+    For a **person** this is now real in [example 08](../08-sigstore-github/): **Sigstore** keyless — you
+    prove who you are to GitHub over **OIDC** (OpenID Connect, the standard way to prove an identity
+    through a provider you already have: [openid.net](https://openid.net/developers/how-connect-works/)),
+    **Fulcio** issues a short-lived certificate binding that identity to a throwaway key, and the
+    signature is published in **Rekor**, a public append-only transparency log. Still pending:
     **SSH signatures** (a GitHub / `allowed_signers` principal) and a **model-CA** for a model. These
     schemes need network and OS tooling, so they live in the cockpit (`kton`), not the kernels.
 - **Trust policy** - which authorities and identities you accept - is a consumer decision, never the

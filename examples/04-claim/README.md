@@ -42,13 +42,21 @@ JSON
 nekton claim review.spec.json reviewer.key review.dsse.json --add
 ```
 
-`--add` files the claim as it signs it (the same `--add` / `--registry` flags exist on `nekton
-claim`, `annotate`, and `seed`). We keep `review.dsse.json` here so we can `show`/`verify` it next.
+Three positional arguments, in that order: the **spec to sign**, the **key to sign it with**, and the
+**file to write**. So `review.dsse.json` is the *signed claim* — a DSSE-wrapped JSON envelope, the
+same shape example 01 called a foton's envelope, produced by signing `review.spec.json` with
+`reviewer.key`. `--add` files it into the registry as it signs (the same `--add` / `--registry` flags
+exist on `nekton claim`, `annotate` and `seed`); we keep the file too, so we can `show`/`verify` it
+next. Leave the third argument off and `--add` still works — you just get no file to hand anyone.
 
 The triple reads **subject** (the foton) — **reviewed** → **object** (the verdict, `"looks correct"`);
 `by` is who is *making* that statement, and the signature is what establishes them.
 
-`https://kton.dev/v/reviewed` is just an opaque IRI; the kernel stores it and never interprets what it
+`https://kton.dev/v/reviewed` is just a **label**. Specifically an *IRI* — an Internationalized
+Resource Identifier ([RFC 3987](https://www.rfc-editor.org/rfc/rfc3987)), the Unicode-friendly
+generalization of a URL and the standard way to name a thing in linked data. **Opaque** here means
+the *kernel* — the part of kton that stores, indexes and verifies records, as opposed to any tool
+built on top — keeps this string exactly as given and never tries to interpret or validate what it
 means. That cuts both ways, and it is why the choice of predicate is yours to get right. The natural
 first pick here is `pav:reviewedBy` — but that one is *passive*: "X was reviewed **by** Y", so its
 object slot belongs to the reviewer's identity. Put the verdict there and the triple says the foton
@@ -73,6 +81,13 @@ as the key that signed it.
 > Note the `by: "CN=Reviewer"` is a **self-asserted label**, anyone can type any name there. What is
 > cryptographically real is the **keyid** that `verify` reports; mapping that key to a
 > real-world identity is a trust decision you make, not something the record proves.
+
+The claim was already signed the moment step 3 wrote it — so what does step 4's `verify` add? Not the
+signature: that was there. It adds *your* check of it. Until you run it you are reading the record's
+own account of who signed it (`declared-keyid`, marked `unverified` in the `about` output above);
+after it, you have re-computed the signature against a key **you** chose and hold. The point is not
+that the record becomes trustworthy — it is that **anyone** can do this, independently, without
+asking us or the reviewer. Same declared-vs-verified split as example 01's footnote, one layer up.
 
 ## Or just run the whole thing
 
