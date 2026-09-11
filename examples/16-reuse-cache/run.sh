@@ -71,7 +71,10 @@ echo "cl=4.000" > "$W/fit2.out"
 plankton author --cmd "fit pk.csv" --in "$W/pk.csv" --out "$W/fit2.out" \
   --sign "$W/keys/alice.key" -o "$W/other.dsse.json" >/dev/null      # authored, NOT filed
 plankton reuse "$W/other.dsse.json" | sed 's/^/  /'
-plankton reuse "$W/other.dsse.json" 2>/dev/null | grep -q '^cache: MISS' || {
+# Ask the field, not the sentence. Same reason as 12's signature gate: a `grep -q` over a tool's
+# output depends on that output's shape AND on nothing following the matched line.
+plankton reuse "$W/other.dsse.json" --json 2>/dev/null \
+  | python3 -c "import json,sys; sys.exit(0 if json.load(sys.stdin)['hit'] is False else 1)" || {
   echo "  !! expected a MISS after changing an input - the action key is not covering the inputs" >&2; exit 1; }
 echo "  [asserted: MISS - inputs are part of the key]"
 

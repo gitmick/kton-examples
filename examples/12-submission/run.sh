@@ -243,7 +243,20 @@ echo -n "  2. environment fulfils spectrum:    "
 sh "$T/strip-banner.sh" "$F/test-covariate.ref"  > "$F/re.cov.ref.canon"
 sh "$T/strip-banner.sh" "$F/test-covariate.cand" > "$F/re.cov.cand.canon"
 if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1 && cmp -s "$F/re.cov.ref.canon" "$F/re.cov.cand.canon"; then echo "fully fulfilled (regulator re-normalized the L1 member)"; else echo "NOT fully fulfilled -> abort"; exit 1; fi
-echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -q '\bVALID\b'; then echo "VALID"; else echo "INVALID -> abort"; exit 1; fi
+# Read the EXIT CODE, not the wording. `plankton verify` defines one (0 genuine and storable,
+# 1 tampered, 2 wrong key, 3 genuine but ingest would refuse it) and a gate should turn on that.
+# Grepping the output for "VALID" used to work and then silently stopped: the 0.2 kernel added a
+# fifth line ("structure: VALID") after the one that matched, so `grep -q` exited first and killed
+# the writer with SIGPIPE - pipefail turned a passing check into "INVALID -> abort".
+echo -n "  3. analyst signature on the FIT:    "
+VRC=0; plankton verify "$F/fit.dsse.json" "$(key analyst).pub" >/dev/null 2>&1 || VRC=$?
+case "$VRC" in
+  0) echo "VALID (signature genuine, and the record is one this store would accept)" ;;
+  1) echo "TAMPERED -> abort"; exit 1 ;;
+  2) echo "WRONG KEY - not signed by the analyst -> abort"; exit 1 ;;
+  3) echo "signature genuine but the record would be REFUSED on ingest -> abort"; exit 1 ;;
+  *) echo "plankton verify exited $VRC -> abort"; exit 1 ;;
+esac
 # BIND the envelope to the id the gate uses: re-derive fit.dsse.json's foton id with the kernel (a
 # fresh throwaway registry recomputes it from the bytes) and assert it EQUALS $FIT. Without this, the
 # gate would read the environment from an envelope nobody checked was the attested fit. This is a pure
