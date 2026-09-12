@@ -107,8 +107,20 @@ plankton spectrum check "$F/pmxtools.spectrum.json" \
   --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" | tee "$F/fulfilment.txt" | sed 's/^/    /'   # 3/3 must hold (pipefail)
 # B1/D6: do not let "3/3 fulfilled" ride as a bare prose assertion on the qualifies-as claim. Back it
 # with a reproducible spectrum-check FOTON that commits to the exact spectrum + candidate result files,
-# so the qualification CARRIES ITS CORPUS (re-derivable), and the release gate can REQUIRE that foton
-# rather than trust a naked binding. (This is example 10's pattern, adopted here.)
+# so the qualification CARRIES ITS CORPUS: anyone can re-run the check over those exact inputs and get
+# the same tally. (This is example 10's pattern, adopted here.)
+#
+# BE PRECISE ABOUT WHAT THAT BUYS THE SPARQL GATE, WHICH IS LESS THAN IT LOOKS. release.rq requires the
+# qualification to cite a check foton that `prov:used` this env-spectrum, and then filters on
+# membersFulfilled == membersTotal - numbers the AUTHOR of the qualification writes. The tally the cited
+# foton actually recorded lives in that foton's OUTPUT BYTES, not in the exported RDF, so no query over
+# this graph can reach it. A check that FAILED carries the same prov:used edge as one that passed.
+# Cite a 2/3 foton, assert 3/3, and env-qualified lights (kton security/attacks/envtally-CF2.sh, which
+# runs an honest control alongside the attack so the branch is known to be live).
+# The guarantee is real but it lives in ACT 8a below, where the regulator RE-RUNS `spectrum check`
+# itself and aborts on a partial pass. README's "used the spectrum is not passed the spectrum" says
+# this correctly; this comment used to say the gate "can REQUIRE that foton rather than trust a naked
+# binding", which credited the query with a check only the re-run performs.
 CHECK=$(plankton author --cmd "plankton spectrum check pmxtools-1.2.0" \
   --in "$F/pmxtools.spectrum.json" --in "$F/test-onecomp.ref" --in "$F/test-twocomp.ref" --in "$F/test-covariate.cand" \
   --out "$F/fulfilment.txt" --sign "$(key qc).key" --add --print-id)
