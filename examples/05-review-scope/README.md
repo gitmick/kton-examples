@@ -23,6 +23,11 @@ the parent, the same shape as a verdict; the predicate is the only thing that sa
 
 Four of them are new here, and one is an old friend under a new name:
 
+- a **seed** is the first record of a scope: a self-signed claim with no `prev`, which every later
+  claim in that scope chains back to. Its own claim id **is** the scope id, so "the scope" and "its
+  first record" are the same hash. `nekton seed` writes one. Examples 01-04 never needed it because
+  a loose claim belongs to no conversation; a review is a conversation, so it starts with one.
+  The **seedchain** is that seed plus everything chained onto it.
 - a **store** is a registry — the same directory-of-records from examples 01-04 (`NEKTON_DIR`). This
   page says "store" because a review *is* one, handed over whole.
 - the **kernel** is kton's core: the part that stores, indexes and verifies records. It is not the
@@ -61,6 +66,93 @@ Four of them are new here, and one is an old friend under a new name:
    and **reproducible** - re-run the check over the same nekton and you get the same verdict (L0). That is
    the plankton/nekton division: nekton is the signed review, plankton is the reproducible decision over
    it - example 12's "nekton in, verdict out".
+
+## Walk through it, one command at a time
+
+The lifecycle above as commands. Everything is typed in one directory and the whole thing runs — this
+is the happy path; `run.sh` then does the two scenarios where it must refuse.
+
+```
+mkdir -p /tmp/ex05 && cd /tmp/ex05
+nekton keygen board ; nekton keygen reviewer-a
+PUBDIR="$PWD/public" ; REVDIR="$PWD/review"     # two stores: the public record, and the review
+W='"when":"2026-07-16T00:00:00Z"'               # a fixed instant, so this is reproducible
+```
+
+**1. Seed the public parent, then the review as its own store under it.** `--parent` rides inside the
+signed seed, so it cannot be stripped later. The seed's claim id **is** the scope id.
+
+```
+PUB=$(NEKTON_DIR="$PUBDIR" nekton seed drug-reviews \
+        --sign board.key --by 'CN=Board' --when 2026-07-16T00:00:00Z --add --print-id)
+REV=$(NEKTON_DIR="$REVDIR" nekton seed review-42 --parent "$PUB" \
+        --sign board.key --by 'CN=Board' --when 2026-07-16T00:00:00Z --add --print-id)
+KA=$(nekton keyid reviewer-a.pub)               # the id a claim carries for this key
+```
+
+**2. Initialise the conditions** — who is enrolled — as the review's first chain link, signed by the
+board. Signing this is what makes the board the close authority: the party that sets the rules is the
+one that may close.
+
+```
+cat > init.json <<JSON
+{ "subject":[{"hash":"$REV"}], "predicateBody":{
+    "predicate":{"uri":"https://kton.dev/v/review-initialised"},
+    "reviewers":["$KA"], "by":"CN=Board", $W, "scope":"$REV", "prev":"$REV" } }
+JSON
+HINIT=$(NEKTON_DIR="$REVDIR" nekton claim init.json board.key --add --print-id)
+```
+
+**3. Anchor those conditions back to the parent**, naming the review and the init head. Now the
+ruleset is double-locked: the chain seal stops a rollback inside the review, and the parent pins
+which ruleset was in force.
+
+```
+cat > anchor.json <<JSON
+{ "subject":[{"hash":"$REV"}], "predicateBody":{
+    "predicate":{"uri":"https://kton.dev/v/review-initialised"},
+    "object":{"hash":"$HINIT"}, "by":"CN=Board", $W, "scope":"$PUB", "prev":"$PUB" } }
+JSON
+NEKTON_DIR="$PUBDIR" nekton claim anchor.json board.key --add
+```
+
+**4. The reviewer delivers**, chaining onto the init head.
+
+```
+cat > deliver.json <<JSON
+{ "subject":[{"hash":"$REV"}], "predicateBody":{
+    "predicate":{"uri":"https://kton.dev/v/reviewed"}, "object":{"value":"pass"},
+    "by":"CN=Reviewer A", $W, "scope":"$REV", "prev":"$HINIT" } }
+JSON
+NEKTON_DIR="$REVDIR" nekton claim deliver.json reviewer-a.key --add
+```
+
+**5. Read the head and close on the parent**, by that same authority. "Close" is not a verb — it is an
+ordinary claim whose predicate says `closed`.
+
+```
+HEAD=$(NEKTON_DIR="$REVDIR" nekton head "$REV" --json \
+       | python3 -c "import json,sys; print(json.load(sys.stdin)['heads'][0])")
+
+cat > close.json <<JSON
+{ "subject":[{"hash":"$REV"}], "predicateBody":{
+    "predicate":{"uri":"https://kton.dev/v/closed"}, "object":{"hash":"$HEAD"},
+    "by":"CN=Board", $W, "scope":"$PUB", "prev":"$PUB" } }
+JSON
+NEKTON_DIR="$PUBDIR" nekton claim close.json board.key --add
+```
+
+**6. The gate decides**, from the two stores alone:
+
+```
+python3 <path-to-repo>/examples/05-review-scope/check.py "$REVDIR" "$PUBDIR" "$REV"
+# gate read 3 record(s) from the review and 3 from the public parent
+# RELEASE: COMPLETE - 1 enrolled reviewers all delivered a pass, sealed at sha256:..., closed by its own authority
+```
+
+Nothing above is a kton verb for "review" or "close": every step is an ordinary signed claim, and the
+predicate is the only thing that says what it means. The decision is `check.py`'s — a consumer's, not
+the kernel's.
 
 ## The exhibit - `bash run.sh` runs three scenarios
 

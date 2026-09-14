@@ -41,7 +41,7 @@ plankton keygen author >/dev/null; nekton keygen lab >/dev/null
 printf "conc\n4.2\n3.8\n"  > pk.csv
 echo   "cl=4.000"          > fit.out          # a stand-in for what your local R produced
 BARE=$(plankton author --cmd "Rscript fit.R" --in pk.csv --out fit.out \
-        --sign author.key --add | awk '/indexed foton/{print $3}')
+        --sign author.key --add --print-id)
 ```
 
 `$BARE` is a foton: inputs, command, output, all by hash. The bytes are pinned - but it says nothing
@@ -89,7 +89,7 @@ Now author the analysis *under* that qualified environment:
 
 ```
 QUAL=$(plankton author --cmd "Rscript fit.R" --in pk.csv --out fit.out \
-        --environment "$SPECID" --sign author.key --add | awk '/indexed foton/{print $3}')
+        --environment "$SPECID" --sign author.key --add --print-id)
 ```
 
 `--environment` rides inside the protocol descriptor, so it is **COVERED** - part of `protocol.ref`,

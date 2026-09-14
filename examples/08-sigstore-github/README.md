@@ -12,9 +12,17 @@ has **no live graph snapshot** (the identity is yours and personal; run it yours
 
 ## Walk through it
 
-**1. (automatic) Make a kton record to sign.** Any signed foton or claim envelope works:
+**1. (automatic) Make a kton record to sign.** Any signed foton or claim envelope works — here we
+make one from scratch, since the steps below need a real envelope on disk:
 
 ```
+mkdir -p /tmp/ex08 && cd /tmp/ex08
+export PLANKTON_DIR="$PWD/plankton"
+
+plankton keygen analyst
+printf "id,auc\n1,42.0\n"    > result.csv
+echo   "verdict=within-range" > assessment.txt
+
 plankton author --cmd "assess result.csv" --in result.csv --out assessment.txt \
     --sign analyst.key --add -o foton.dsse.json
 ```

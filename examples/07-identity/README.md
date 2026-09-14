@@ -8,11 +8,9 @@ This example is about that: **a key is an identity**. It answers two different q
 2. *Who is that key, really?* - a separate, signed statement binds a key to a named principal. You
    believe it only if you trust whoever signed that binding.
 
-Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) **Parts 1 and
-2 below are runnable now.** The strongest form of identity — a certificate or allow-list from an
-authority, called *authority-backed* in [How identity works in kton](#how-identity-works-in-kton)
-below — is real for a person in [example 08](../08-sigstore-github/), signing with a GitHub identity
-via Sigstore; SSH `allowed_signers` and a model-CA are still pending.
+Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) Both parts
+below are runnable now; what is and is not yet shipped for the *strongest* form of identity is set
+out where that form is defined, in [How identity works in kton](#how-identity-works-in-kton).
 
 ## Part 1 - a key is an identity (self-asserted)
 
@@ -20,8 +18,9 @@ via Sigstore; SSH `allowed_signers` and a model-CA are still pending.
 public key: it *is* the cryptographic identity.
 
 ```
-OPUS=$(nekton keygen opus     | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
-SONNET=$(nekton keygen sonnet | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
+nekton keygen opus ; nekton keygen sonnet
+OPUS=$(nekton keyid opus.pub)          # the id claims carry, asked for rather than parsed out
+SONNET=$(nekton keyid sonnet.pub)
 echo "$OPUS $SONNET"          # e.g. <opus keyid> <sonnet keyid>
 ```
 

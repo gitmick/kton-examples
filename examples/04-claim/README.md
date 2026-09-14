@@ -24,7 +24,7 @@ export PLANKTON_DIR=./plankton-data NEKTON_DIR=./nekton-data
 echo raw > data.csv ; echo fit > model.txt
 # --add authors + files the foton in one step; the id it prints is what we capture:
 FOTON=$(plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
-    --sign analyst.key --add | awk '/indexed foton/{print $3}')
+    --sign analyst.key --add --print-id)
 echo "$FOTON"                    # sha256:...
 ```
 

@@ -10,6 +10,40 @@ same foton, checks the review was done correctly (different participants, nothin
 the template itself **registered as a federated record**, and finally **exports the RDF and runs a
 SPARQL query that tests the review is complete**.
 
+## Setup
+
+Everything below is typed in one directory. The two `NEKTON_*` variables are the part people miss:
+templates and aliases are **federated data, not built into the binary**, so nekton has to be told
+where they are or `--template review/decision` fails with `no template "review/decision" in
+./templates`. Point them at this repository's curated set:
+
+```
+git clone https://github.com/gitmick/kton-examples && cd kton-examples
+export NEKTON_TEMPLATES="$PWD/templates"      # the curated template set (data, not code)
+export NEKTON_ALIASES="$PWD/aliases.json"     # short names -> canonical IRIs
+
+mkdir -p /tmp/ex11 && cd /tmp/ex11
+export PLANKTON_DIR="$PWD/plankton"           # the results registry
+export NEKTON_DIR="$PWD/nekton"               # the reviews registry
+```
+
+Then an identity and a foton to review, so the reviewers below have something to point at:
+
+```
+plankton keygen author
+printf "auc\n42.0\n" > result.csv
+echo "verdict=within-range"  > assessment.txt
+plankton author --cmd "assess result.csv" --in result.csv --out assessment.txt \
+    --sign author.key --add -o foton.dsse.json
+```
+
+Each reviewer needs a key and a comment file:
+
+```
+nekton keygen alice
+printf "# alice\nReproduced locally; AUC within range. Approve.\n" > alice.md
+```
+
 ## Reused vocabulary, no minted terms
 
 The template commits to published vocabularies, following the vocabulary policy written down in

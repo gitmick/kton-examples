@@ -36,7 +36,7 @@ plankton keygen analyst ; nekton keygen reviewer
 export PLANKTON_DIR=./plankton-data NEKTON_DIR=./nekton-data
 echo raw > data.csv ; echo model > model.txt
 FOTON=$(plankton author --cmd "fit data.csv model.txt" --in data.csv --out model.txt \
-    --sign analyst.key --add | awk '/indexed foton/{print $3}')
+    --sign analyst.key --add --print-id)
 
 cat > review.spec.json <<JSON
 { "subject":[{"hash":"$FOTON"}], "predicate":"https://kton.dev/v/reviewed",
@@ -63,7 +63,8 @@ grep nk:reviewed claim.trig
 ```
 
 **4. See the join.** Both files name the **same** node, `pk:...` (the namespace `pk:` is
-`https://kton.dev/o/`, a content hash). Load both into any RDF store and they merge there:
+`https://kton.dev/o/`, a content hash). Load both into any RDF store and they merge there. This step
+is the only one on the page that needs anything beyond the two binaries — `pip install rdflib`:
 
 ```
 python3 - <<'PY'
