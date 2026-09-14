@@ -33,6 +33,11 @@ bin/kton
 **/.work/**/exports/**
 **/.work/**/rec.json
 **/.work/**/*.err
+# A registry's own bookkeeping, which does not all live under objects/: .seq is the durable sync
+# cursor (kton #97) and sits in the registry ROOT. It carries a fresh random `epoch` per run, so 37
+# of them churned on every pass until this rule existed. Written down as a class, not a filename:
+# anything a registry maintains about itself is derived, and none of it is a carried-uri target.
+**/.work/**/.seq
 **/.work/**/*.token.json
 
 # Scratch/draft material under docs/ - never committed. (docs/findings.md is the one working

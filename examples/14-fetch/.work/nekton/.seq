@@ -1,8 +1,0 @@
-{
-  "epoch": "01d7a81d09e0357cb0ca87e44f598504",
-  "next": 3,
-  "seq": {
-    "sha256:cf0a42cc096e0cfa82d3fffce29e8333577623079313f5bc42a6e8d5b967fb5c": 1,
-    "sha256:ebed23243ced667b1dac8b20e9821e687a27e7739b8be783080381c7a0fabea0": 2
-  }
-}
