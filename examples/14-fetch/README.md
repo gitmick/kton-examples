@@ -34,7 +34,7 @@ foton; its result is named by a content hash. You hold the record - but plankton
 your local content store is empty. You cannot re-hash what you do not have.
 
 ```
-kton blob "$RESULT"
+plankton blob "$RESULT"
 # absent sha256:7f6e...     <- the record is filed; the bytes are not here
 ```
 
@@ -48,7 +48,7 @@ nekton claim loc.json lab.key --add          # <RESULT> dcat:downloadURL file://
 kton fetch --trust-keys trust-lab --allow-local "$RESULT"
 # sha256:7f6e...: 1 located-at claim(s), 1 signed by a trusted key
 #   [1] file://.../result.bytes  (verified signer key:6de19b30...) ... OK - 10 bytes, verified & pinned
-kton blob "$RESULT"
+plankton blob "$RESULT"
 # PINNED sha256:7f6e...        <- content-present: the bytes are here, and they hash to what was named
 ```
 
@@ -107,6 +107,42 @@ corrupt, `kton fetch` would fail - the record stays fully verifiable (signature 
 is simply unavailable. Bytes are **located, not stored**, and kept per a retention policy; that they
 still exist *somewhere* is a retention obligation, stated rather than assumed (Trust chapter, the
 retention boundary). Availability is never a *trust* problem - only a liveness one.
+
+## What this example needs from which binary
+
+This is the **only** example that needs the `kton` cockpit binary, and after `plankton blob`
+absorbed the blob store (kton #102) it needs exactly one command from it: **`kton fetch`**.
+Everything else here — authoring the foton, signing the `located-at` claim, asking the local store
+whether the bytes are present — is kernel.
+
+`kton fetch` cannot move into `plankton` or `nekton`, and that is a decision rather than an
+omission. The resolver says so where it lives (`kton/reference/cmd/kton/fetch.go`):
+
+> the one place a URI is dereferenced. It belongs in kton and only in kton: plankton and nekton are
+> strictly neutral, they CARRY a URI as an opaque signed string and never execute it.
+
+It is the same line the substrate draws everywhere else. plankton never executes a protocol
+([01](../01-hello-foton/)); nekton stores verification material and never evaluates it
+([15](../15-attach-material/)); and here, the kernels record *where somebody says* bytes can be had
+and never go and ask. Dereferencing is a request made **from your host** — for `file://`, a read of
+your disk — and that is an act with consequences a later hash check cannot retract. Putting it in a
+kernel would make every reader of a record a potential client of whatever a stranger signed.
+
+So if the cockpit ever leaves this repository, the cut is already drawn:
+
+| part | needs | goes where |
+|---|---|---|
+| A — a record names its bytes, the local store is empty | `plankton author`, `plankton hash`, `plankton blob` | stays |
+| the signed `dcat:downloadURL` locator itself | `nekton claim` | stays |
+| B, C1, C2 — dereference, verify on arrival, trust policy | **`kton fetch`** | goes with the cockpit |
+
+Measured rather than assumed: with the `kton` binary removed from `PATH`, sixteen of the seventeen
+examples still pass, and this one fails at the first `kton fetch` — everything above it, through
+signing and filing the locator claim, has already run.
+
+Part A plus the claim is a complete kernel-side lesson on its own: a record names bytes it does not
+hold, and the hash is the only thing that will ever decide whether what comes back is the right
+thing. What the cockpit adds is the going-and-getting.
 
 ## Run it yourself
 

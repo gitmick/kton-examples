@@ -17,7 +17,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 source ../../lib/common.sh
 
-export PLANKTON_DIR="$PWD/.work/plankton"     # results + the local content (blob) store kton pins into
+export PLANKTON_DIR="$PWD/.work/plankton"     # results + the local content (blob) store fetch pins into
 export NEKTON_DIR="$PWD/.work/nekton"         # the signed located-at claims
 rm -rf "$PWD/.work"
 mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys" "$PWD/.work/store" "$PWD/.work/mirror"
@@ -42,9 +42,9 @@ RESULT="$(plankton hash .work/result.txt)"
 echo "  foton = $FOTON"
 echo "  its result is named by content hash: $RESULT"
 # The bytes live on the producer's side (a server, an object store, a mirror), NOT in the consumer's
-# content store - plankton stores only hashes. `kton blob` asks the LOCAL store, which is empty:
+# content store - plankton stores only hashes. `plankton blob` asks the LOCAL store, which is empty:
 cp .work/result.txt .work/store/result.bytes     # the producer keeps the bytes here
-echo -n "  is the content pinned locally? "; expect_fail "the local blob lookup (the bytes are deliberately NOT held)" kton blob "$RESULT"
+echo -n "  is the content pinned locally? "; expect_fail "the local blob lookup (the bytes are deliberately NOT held)" plankton blob "$RESULT"
 echo "  -> you hold the record (the hash), but you cannot re-hash bytes you do not have."
 
 echo; echo "########## B - a signed dcat:downloadURL says WHERE; kton fetch verifies sha256==hash ##########"
@@ -54,7 +54,7 @@ printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/dcat#downlo
   "$RESULT" > .work/loc.json
 nekton claim .work/loc.json "$PWD/.work/keys/lab.key" --add >/dev/null
 "${FETCH[@]}" "$RESULT"
-echo -n "  pinned now? "; kton blob "$RESULT"
+echo -n "  pinned now? "; plankton blob "$RESULT"
 echo "  -> content-present: the bytes are here AND they hash to what the record named. Now you can"
 echo "     re-run them (that is the 'reproduced' rung, examples 03/10)."
 
