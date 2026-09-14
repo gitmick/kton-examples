@@ -73,6 +73,14 @@ jobs:
           # manual sign step - so it passes here without doing the OIDC round-trip.
           exit $fail
 
+      - name: a run changed only what it is allowed to change
+        # Must run AFTER the examples, from the checkout they ran in. Two assertions that used to be
+        # a number somebody measured by hand: nothing untracked that no rule ignores (this is how a
+        # new file class from a kernel upgrade announces itself - kton #97's <registry>/.seq arrived
+        # in 15 examples and went unnoticed for three days), and no tracked file touched outside the
+        # two examples that are volatile on purpose.
+        run: bash bin/check-churn.sh
+
       - name: every carried permalink resolves to a file this repo publishes
         # Must run AFTER the examples: it reads the records they just produced. lib/common.sh mints a
         # raw permalink for every recorded input/output, and .gitignore decides whether the file behind
