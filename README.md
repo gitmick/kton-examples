@@ -135,3 +135,9 @@ NEKTON_TEMPLATES=./templates NEKTON_ALIASES=./aliases.json \
 These illustrate the template/alias *mechanism*. Curate additions deliberately: an example here is a
 suggestion, not a standard, the normative vocabulary policy lives in the protocol's
 `spec/vocabulary.md`.
+
+## License
+
+[Apache License 2.0](LICENSE), the same licence as the
+[kton](https://github.com/kton-protocol/kton) reference implementation this repository demonstrates.
+See [NOTICE](NOTICE) — in particular for the demo keys, whose seeds are published strings.
