@@ -39,7 +39,14 @@ def carried_uris(blob: bytes):
 # checking what they POINT AT) and the snapshots the viewer serves from the published site.
 found = {}          # repo-relative path -> the file that referenced it
 scanned = 0
-for base in ("examples", "docs/data"):
+# Everything that can hold a record, not just the example registries. docs/lens-paper is the
+# second place carried permalinks appear: its corpus is built with --base pointing at the commit
+# that holds the payload files, so the check that they are actually there is the same check - and
+# the scanner used to walk past it, which would have made this guard silently partial the moment
+# that tree landed.
+for base in ("examples", "docs"):
+    if not os.path.isdir(base):
+        continue
     for dirpath, _dirs, files in os.walk(base):
         for fn in files:
             src = os.path.join(dirpath, fn)
