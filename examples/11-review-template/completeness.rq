@@ -6,8 +6,7 @@
 # unverified reject is still counted (and surfaced), never silently dropped (completeness-gate F1).
 # verdict reuses schema.org: approve = schema:AcceptAction, reject = schema:RejectAction.
 # The predicate is ACTIVE (nk:reviewed), so ?r is the verdict node, never the reviewer - the reviewer
-# comes from the signature, via prov:wasAttributedTo / nk:claimedSigner below. It was already written
-# that way; only the IRI was wrong (pav:reviewedBy, which PAV does not define).
+# comes from the signature, via prov:wasAttributedTo / nk:claimedSigner below.
 PREFIX prov:   <http://www.w3.org/ns/prov#>
 PREFIX nk:     <https://kton.dev/v/>
 PREFIX schema: <https://schema.org/>

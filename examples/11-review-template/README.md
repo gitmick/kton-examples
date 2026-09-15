@@ -59,9 +59,9 @@ words, unrelated things.)
 The template's bindings:
 
 - the review relation is kton's own `nk:reviewed` (`https://kton.dev/v/reviewed`) - active and
-  unary, so the object is the *verdict* and the reviewer comes from the signature. It used to
-  cite `pav:reviewedBy`; PAV defines no such property (see F-043), and there is no established
-  one for "reviewed by";
+  unary, so the object is the *verdict* and the reviewer comes from the signature. No published
+  ontology defines a "reviewed by" property, and a passive one would put the reviewer where the
+  verdict belongs;
 - the verdict reuses **schema.org**: approve = `schema:AcceptAction`, reject = `schema:RejectAction`
   (as the type of the review node), so `approve`/`reject` are not local strings but standard IRIs;
 - the comment is a **file**, hashed to a content ref and attached as `nk:evidence`.
