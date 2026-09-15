@@ -126,7 +126,7 @@ CHECK=$(plankton author --cmd "plankton spectrum check pmxtools-1.2.0" \
   --out "$F/fulfilment.txt" --sign "$(key qc).key" --add --print-id)
 echo "  fulfilment recorded as a reproducible spectrum-check foton (commits to the checked results): $CHECK"
 # the exact OCI image (CARRIED) qualifies-as the env-spectrum (signed), carrying the fulfilment foton;
-# and a gxp tool-validation claim
+# and a qa tool-validation claim
 printf "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef\n" > "$F/image.txt"
 OCI=$(plankton hash "$F/image.txt")
 # A4/B1: parse the REAL tally (N/M) from the fulfilment - a reproducible fact - and CARRY it typed on
@@ -137,9 +137,9 @@ TALLY=$(grep -oE '[0-9]+/[0-9]+ member' "$F/fulfilment.txt" | head -1 | grep -oE
 printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s","membersFulfilled":"%s","membersTotal":"%s"},"why":"image fulfils pmxtools-1.2.0 (%s members, re-derivable in the spectrum-check foton)","by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$OCI" "${ENV#sha256:}" "${CHECK#sha256:}" "$NFUL" "$NTOT" "$TALLY" > "$F/qual.json"
 nekton claim "$F/qual.json" "$(key qc).key" --add >/dev/null
 printf "%%PDF tool validation protocol\n" > "$F/toolval.pdf"
-nekton annotate "$ENV" --template gxp/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --add >/dev/null
+nekton annotate "$ENV" --template qa/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --add >/dev/null
 locate "$F/toolval.pdf" "https://cro.example/qms/SOP-CV-014/tool-validation.pdf" qc
-echo "  qualifies-as (image -> ENV) + gxp:validation-performed=pass recorded (protocol.pdf located)"
+echo "  qualifies-as (image -> ENV) + qa:validation-performed=pass recorded (protocol.pdf located)"
 
 echo; echo "########## ACT 2 - the analysis; the FIT runs the FINAL model, under the qualified env #######"
 printf "ID,TIME,DV\n1,0,0\n1,1,5.2\n1,2,3.1\n" > "$F/raw.csv"
@@ -193,21 +193,21 @@ echo; echo "########## ACT 5 - review scope: typed sign-offs with evidence, chai
 export NEKTON_DIR="$W/sponsor/nekton"
 SCOPE=$(nekton seed popPK-mABC --when "$KTON_WHEN" --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add --print-id)
 printf "%%PDF qc review\n" > "$F/qc-rep.pdf"; printf "%%PDF lead review\n" > "$F/lead-rep.pdf"
-nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
-C1=$(nekton by predicate "https://kton.dev/v/gxp/reviewed" --json | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['claimId'])")
-nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
+nekton annotate --foton "$F/fit.dsse.json" --template qa/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
+C1=$(nekton by predicate "https://kton.dev/v/qa/reviewed" --json | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['claimId'])")
+nekton annotate --foton "$F/fit.dsse.json" --template qa/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
 locate "$F/qc-rep.pdf" "https://sponsor.example/reviews/qc-report.pdf" qc
 locate "$F/lead-rep.pdf" "https://sponsor.example/reviews/lead-report.pdf" lead
-# a general (non-GxP) approval reuses schema.org (example 11)
+# a general approval, outside any quality vocabulary, reuses schema.org (example 11)
 nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set decision=https://schema.org/AcceptAction --set comment="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --add >/dev/null
 HEAD=$(head_of "$SCOPE")
-echo "  seed -> gxp:reviewed(qc,pass) -> gxp:reviewed(lead,pass) sealed; HEAD=$HEAD"
+echo "  seed -> qa:reviewed(qc,pass) -> qa:reviewed(lead,pass) sealed; HEAD=$HEAD"
 
 echo; echo "########## ACT 5b - explicit residual-risk acceptance (risk/accept) ##########"
 printf "%%PDF shrinkage sensitivity\n" > "$F/shrinkage.pdf"
 nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity=medium --set rationale="eta-shrinkage on CL 28pct; addressed by sensitivity analysis" --set mitigation="$F/shrinkage.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --add >/dev/null
 locate "$F/shrinkage.pdf" "https://sponsor.example/risk/shrinkage-sensitivity.pdf" lead
-echo "  gxp:risk-accepted (medium, mitigation.pdf located) recorded"
+echo "  qa:risk-accepted (medium, mitigation.pdf located) recorded"
 
 echo; echo "########## ACT 6 - authoritative submission signature (Sigstore keyless stand-in, example 08)"
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/submitted","object":{"id":"did:web:sponsor.example/people/submitter"},"why":"submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08","by":"did:web:sponsor.example/people/submitter","when":"2026-07-16T00:00:00Z"}' "${HEAD#sha256:}" > "$F/submit.json"

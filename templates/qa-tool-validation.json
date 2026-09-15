@@ -1,9 +1,9 @@
 {
   "schema": "https://kton.dev/template/v0",
-  "name": "gxp/review",
+  "name": "qa/tool-validation",
   "target": "foton",
-  "predicate": "gxpReviewed",
-  "context": "ctx:gxp",
+  "predicate": "validationPerformed",
+  "context": "ctx:qa",
   "fields": {
     "outcome": {
       "type": "enum",
@@ -21,18 +21,12 @@
       "role": "object",
       "widget": "text"
     },
-    "report": {
+    "protocol": {
       "type": "file",
       "mediaType": "application/pdf",
       "required": true,
       "role": "evidence",
       "widget": "file"
-    },
-    "notes": {
-      "type": "string",
-      "required": false,
-      "role": "object",
-      "widget": "textarea"
     }
   }
 }
