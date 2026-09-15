@@ -2,6 +2,26 @@
   "title": "nekton claims",
   "claims": [
     {
+      "claimId": "sha256:056d4bd075ac3ef07fbc25135857b9799c518bd78a173da0802a88dd870f519b",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyid": "1e9069577f9881d0",
+      "signerVerified": false,
+      "subjects": [
+        "sha256:77d115fdcb472bd71dce615a423db325bb4f659261954bbcd2829fb5e30ac326"
+      ],
+      "predicate": {
+        "by": "CN=qc",
+        "object": {
+          "level": "L1",
+          "reproducedBy": "https://kton.dev/o/710af683ac3f3dd8bf42ee5e49cb7593c5bc3d3e559176d1b347432ad849397b"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/reproduces"
+        },
+        "when": "2026-07-16T00:00:00Z"
+      }
+    },
+    {
       "claimId": "sha256:0bc6c6160c447895a8b229846c9dd945fa27a72303038604184a7ff455240fbb",
       "predicateType": "https://kton.dev/claim/v0",
       "keyid": "20d55a87dc01305a",
@@ -19,6 +39,34 @@
         },
         "predicate": {
           "uri": "https://kton.dev/v/pmx/model-role"
+        },
+        "when": "2026-07-16T00:00:00Z"
+      }
+    },
+    {
+      "claimId": "sha256:1e184b6697ea9642f79bec9d92ee745aa8ba28da065dc90cec396e0d3a559bb6",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyid": "723e322949dee277",
+      "signerVerified": false,
+      "subjects": [
+        "sha256:5dfbcc999da0b2b84703b35459419b02510649674e27b7460b4c650e862c3b88"
+      ],
+      "predicate": {
+        "by": "CN=lead",
+        "context": {
+          "uri": "https://kton.dev/ctx/qa"
+        },
+        "evidence": [
+          {
+            "hash": "sha256:a1940e96ac1bce682b55f558183134a1cd9300c79bba3be1a3ae0bbb8514764e"
+          }
+        ],
+        "object": {
+          "rationale": "eta-shrinkage on CL 28pct; addressed by sensitivity analysis",
+          "severity": "medium"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/qa/risk-accepted"
         },
         "when": "2026-07-16T00:00:00Z"
       }
@@ -43,41 +91,12 @@
       }
     },
     {
-      "claimId": "sha256:417ec1552d982b84d9f9152164cbb2222db72b2cbfd1d5be9ee781df7d9afb1c",
+      "claimId": "sha256:457a53cd0c4099ed32caf9bcceee4f4d97f72d88d683591a78d229d4988dc833",
       "predicateType": "https://kton.dev/claim/v0",
       "keyid": "1e9069577f9881d0",
       "signerVerified": false,
       "subjects": [
-        "sha256:657faa75ca89d14097c31fb8e779f5d21a085f428c987cb17cd85dfad91f1721"
-      ],
-      "predicate": {
-        "by": "CN=qc",
-        "context": {
-          "uri": "https://kton.dev/ctx/qa"
-        },
-        "evidence": [
-          {
-            "hash": "sha256:5c17553dee8ae9366715e8cbe8e2e42699a7fbafbce441d669a73f53d2fbcdff",
-            "mediaType": "application/pdf"
-          }
-        ],
-        "object": {
-          "outcome": "pass",
-          "sop": "SOP-CV-014"
-        },
-        "predicate": {
-          "uri": "https://kton.dev/v/qa/validation-performed"
-        },
-        "when": "2026-07-16T00:00:00Z"
-      }
-    },
-    {
-      "claimId": "sha256:490bedf1af98d8348f9a9c39969c1e6959f56948a5d96bdf83649dfd00e585a8",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyid": "1e9069577f9881d0",
-      "signerVerified": false,
-      "subjects": [
-        "sha256:852998e561b73321bea55d921c180b86e86762ffb38d02511f41461113fb48a6"
+        "sha256:5dfbcc999da0b2b84703b35459419b02510649674e27b7460b4c650e862c3b88"
       ],
       "predicate": {
         "by": "CN=qc",
@@ -103,34 +122,6 @@
       }
     },
     {
-      "claimId": "sha256:4dadd8851f0e507302e4eef2c7eb85a670c42270471b299fb317437389896441",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyid": "723e322949dee277",
-      "signerVerified": false,
-      "subjects": [
-        "sha256:852998e561b73321bea55d921c180b86e86762ffb38d02511f41461113fb48a6"
-      ],
-      "predicate": {
-        "by": "CN=lead",
-        "context": {
-          "uri": "https://kton.dev/ctx/qa"
-        },
-        "evidence": [
-          {
-            "hash": "sha256:a1940e96ac1bce682b55f558183134a1cd9300c79bba3be1a3ae0bbb8514764e"
-          }
-        ],
-        "object": {
-          "rationale": "eta-shrinkage on CL 28pct; addressed by sensitivity analysis",
-          "severity": "medium"
-        },
-        "predicate": {
-          "uri": "https://kton.dev/v/qa/risk-accepted"
-        },
-        "when": "2026-07-16T00:00:00Z"
-      }
-    },
-    {
       "claimId": "sha256:57c447466ad2f2b4e32cd86ff93f37aa40a983261baf065a8f99d7778d4730d5",
       "predicateType": "https://kton.dev/claim/v0",
       "keyid": "723e322949dee277",
@@ -145,6 +136,31 @@
         },
         "predicate": {
           "uri": "http://www.w3.org/ns/dcat#downloadURL"
+        },
+        "when": "2026-07-16T00:00:00Z"
+      }
+    },
+    {
+      "claimId": "sha256:67317b0592e793f6f5edcfe2866da61a8519041dc07298aa7fc7cb1eb99aa055",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyid": "723e322949dee277",
+      "signerVerified": false,
+      "subjects": [
+        "sha256:5dfbcc999da0b2b84703b35459419b02510649674e27b7460b4c650e862c3b88"
+      ],
+      "predicate": {
+        "by": "CN=lead",
+        "evidence": [
+          {
+            "hash": "sha256:192478f9100d8edc9482cea7f7307d1e72bbb79456e46112653ae05dffc9fed3",
+            "mediaType": "text/markdown"
+          }
+        ],
+        "object": {
+          "decision": "https://schema.org/AcceptAction"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/reviewed"
         },
         "when": "2026-07-16T00:00:00Z"
       }
@@ -187,26 +203,6 @@
         },
         "predicate": {
           "uri": "https://kton.dev/v/pmx/model-role"
-        },
-        "when": "2026-07-16T00:00:00Z"
-      }
-    },
-    {
-      "claimId": "sha256:827ee3e956c91cf4ebeba9ff7bff75b923fd5582c9ea6d584444dd68dcdb82c6",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyid": "1e9069577f9881d0",
-      "signerVerified": false,
-      "subjects": [
-        "sha256:8c93a83af591ade12a2b2127a598642a0525409bc1af8f71cc52f8822858fa94"
-      ],
-      "predicate": {
-        "by": "CN=qc",
-        "object": {
-          "level": "L1",
-          "reproducedBy": "https://kton.dev/o/c350a798809572a6646d71ee6d779ae149d441ad5d916e9e46971906b56c8a86"
-        },
-        "predicate": {
-          "uri": "https://kton.dev/v/reproduces"
         },
         "when": "2026-07-16T00:00:00Z"
       }
@@ -284,31 +280,6 @@
       }
     },
     {
-      "claimId": "sha256:bd73b7f2eecdaeceabc814da4ab7afe0b28320f7d89280323a6cb7bad728f96c",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyid": "723e322949dee277",
-      "signerVerified": false,
-      "subjects": [
-        "sha256:852998e561b73321bea55d921c180b86e86762ffb38d02511f41461113fb48a6"
-      ],
-      "predicate": {
-        "by": "CN=lead",
-        "evidence": [
-          {
-            "hash": "sha256:192478f9100d8edc9482cea7f7307d1e72bbb79456e46112653ae05dffc9fed3",
-            "mediaType": "text/markdown"
-          }
-        ],
-        "object": {
-          "decision": "https://schema.org/AcceptAction"
-        },
-        "predicate": {
-          "uri": "http://purl.org/pav/reviewedBy"
-        },
-        "when": "2026-07-16T00:00:00Z"
-      }
-    },
-    {
       "claimId": "sha256:c2838ce1a8641e714862007ec70932253983ba619772dd6fb7598251067afd93",
       "predicateType": "https://kton.dev/claim/v0",
       "keyid": "723e322949dee277",
@@ -324,37 +295,6 @@
         "predicate": {
           "uri": "http://www.w3.org/ns/dcat#downloadURL"
         },
-        "when": "2026-07-16T00:00:00Z"
-      }
-    },
-    {
-      "claimId": "sha256:cfaef48f0e050c74218a66eaaf3d63cdc590a57802d9aa247406e29693918ed4",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyid": "723e322949dee277",
-      "signerVerified": false,
-      "subjects": [
-        "sha256:852998e561b73321bea55d921c180b86e86762ffb38d02511f41461113fb48a6"
-      ],
-      "predicate": {
-        "by": "CN=lead",
-        "context": {
-          "uri": "https://kton.dev/ctx/qa"
-        },
-        "evidence": [
-          {
-            "hash": "sha256:192478f9100d8edc9482cea7f7307d1e72bbb79456e46112653ae05dffc9fed3",
-            "mediaType": "application/pdf"
-          }
-        ],
-        "object": {
-          "outcome": "pass",
-          "sop": "SOP-REV-002"
-        },
-        "predicate": {
-          "uri": "https://kton.dev/v/qa/reviewed"
-        },
-        "prev": "sha256:490bedf1af98d8348f9a9c39969c1e6959f56948a5d96bdf83649dfd00e585a8",
-        "scope": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
         "when": "2026-07-16T00:00:00Z"
       }
     },
@@ -378,12 +318,12 @@
       }
     },
     {
-      "claimId": "sha256:d8a7e2b174fe1a4f3de26629ede023a148abf1da9e87c460073e3cce0f5b6c09",
+      "claimId": "sha256:db0f410f6d5b9e837b651060b240663b9ea3857c11bf983bcbebb39b3317da79",
       "predicateType": "https://kton.dev/claim/v0",
       "keyid": "128e74542def6e1c",
       "signerVerified": false,
       "subjects": [
-        "sha256:cfaef48f0e050c74218a66eaaf3d63cdc590a57802d9aa247406e29693918ed4"
+        "sha256:df7d2b63d5449bfa2278f80b2e341f5786c2bc243a038b2948d53462ed7ff221"
       ],
       "predicate": {
         "by": "did:web:sponsor.example/people/submitter",
@@ -417,7 +357,67 @@
       }
     },
     {
-      "claimId": "sha256:e446e2fe325b78554c2f51310c52f604e6660f7067c1c06c15bbe522704ab204",
+      "claimId": "sha256:df7d2b63d5449bfa2278f80b2e341f5786c2bc243a038b2948d53462ed7ff221",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyid": "723e322949dee277",
+      "signerVerified": false,
+      "subjects": [
+        "sha256:5dfbcc999da0b2b84703b35459419b02510649674e27b7460b4c650e862c3b88"
+      ],
+      "predicate": {
+        "by": "CN=lead",
+        "context": {
+          "uri": "https://kton.dev/ctx/qa"
+        },
+        "evidence": [
+          {
+            "hash": "sha256:192478f9100d8edc9482cea7f7307d1e72bbb79456e46112653ae05dffc9fed3",
+            "mediaType": "application/pdf"
+          }
+        ],
+        "object": {
+          "outcome": "pass",
+          "sop": "SOP-REV-002"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/qa/reviewed"
+        },
+        "prev": "sha256:457a53cd0c4099ed32caf9bcceee4f4d97f72d88d683591a78d229d4988dc833",
+        "scope": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
+        "when": "2026-07-16T00:00:00Z"
+      }
+    },
+    {
+      "claimId": "sha256:e836caed5b73a331dc297e0eac846ff7f8a610a44ebf3864c251142b007964fc",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyid": "1e9069577f9881d0",
+      "signerVerified": false,
+      "subjects": [
+        "sha256:9edd4a874896a27db61744bc02784300205536785e411c058f6e981e802d6d84"
+      ],
+      "predicate": {
+        "by": "CN=qc",
+        "context": {
+          "uri": "https://kton.dev/ctx/qa"
+        },
+        "evidence": [
+          {
+            "hash": "sha256:5c17553dee8ae9366715e8cbe8e2e42699a7fbafbce441d669a73f53d2fbcdff",
+            "mediaType": "application/pdf"
+          }
+        ],
+        "object": {
+          "outcome": "pass",
+          "sop": "SOP-CV-014"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/qa/validation-performed"
+        },
+        "when": "2026-07-16T00:00:00Z"
+      }
+    },
+    {
+      "claimId": "sha256:f85d850d388f9bee8094c836d1abff22274655402459b795dee016e1953173b8",
       "predicateType": "https://kton.dev/claim/v0",
       "keyid": "1e9069577f9881d0",
       "signerVerified": false,
@@ -427,8 +427,8 @@
       "predicate": {
         "by": "CN=qc",
         "object": {
-          "fulfilment": "https://kton.dev/o/4e01fbc2f4b16c46e1360d8ffee4255c084ef4fe5554c3617ea279f283b27102",
-          "id": "https://kton.dev/o/657faa75ca89d14097c31fb8e779f5d21a085f428c987cb17cd85dfad91f1721",
+          "fulfilment": "https://kton.dev/o/44cc5590e51ca76b053779258fe109f25bbf84eaecd5a021de669ac04b629176",
+          "id": "https://kton.dev/o/9edd4a874896a27db61744bc02784300205536785e411c058f6e981e802d6d84",
           "membersFulfilled": "3",
           "membersTotal": "3"
         },

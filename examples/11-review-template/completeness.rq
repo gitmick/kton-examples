@@ -5,7 +5,9 @@
 # stops a signed REJECT from vanishing when its signer key is absent from the export trust-keys: an
 # unverified reject is still counted (and surfaced), never silently dropped (completeness-gate F1).
 # verdict reuses schema.org: approve = schema:AcceptAction, reject = schema:RejectAction.
-PREFIX pav:    <http://purl.org/pav/>
+# The predicate is ACTIVE (nk:reviewed), so ?r is the verdict node, never the reviewer - the reviewer
+# comes from the signature, via prov:wasAttributedTo / nk:claimedSigner below. It was already written
+# that way; only the IRI was wrong (pav:reviewedBy, which PAV does not define).
 PREFIX prov:   <http://www.w3.org/ns/prov#>
 PREFIX nk:     <https://kton.dev/v/>
 PREFIX schema: <https://schema.org/>
@@ -13,7 +15,7 @@ PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?verdict ?verified (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
   GRAPH ?review {
-    ?foton pav:reviewedBy ?r .
+    ?foton nk:reviewed ?r .          # active, unary: the OBJECT is the verdict node,
     ?r rdf:type ?verdict .
   }
   {

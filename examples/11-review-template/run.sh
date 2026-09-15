@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 11 - review template: the classical way to author a claim is a TEMPLATE, not hand-written JSON.
 # A `review/decision` template turns "approve/reject this foton + attach a comment file" into one
-# `nekton annotate` call, with the vocabulary REUSED (no minted terms): pav:reviewedBy for the review
+# `nekton annotate` call, with the vocabulary chosen once in the template: nk:reviewed for the review
 # relation, schema.org AcceptAction/RejectAction for the verdict. Three independent reviewers each
 # approve; nothing is overwritten (every review is its own content-addressed signed claim). Then we
 # register the template itself in a separate nekton registry (it is federated data), export the RDF,
@@ -47,7 +47,7 @@ echo "  distinct review claims on disk (append-only, nothing overwritten): $(gre
 # as three distinct signing keys. Printed bare, a 1 here - the overwrite this example exists to
 # disprove - would read as just another line of output.
 # --json gives the records themselves, so the signer is a field rather than a substring of a line.
-NKEYS=$(nekton by predicate http://purl.org/pav/reviewedBy --json | python3 -c "
+NKEYS=$(nekton by predicate https://kton.dev/v/reviewed --json | python3 -c "
 import json,sys
 print(len({s.get('keyid') for r in json.load(sys.stdin) for s in r['envelope'].get('signatures',[])}))")
 echo "  distinct signing keyids among the reviews:                         $NKEYS"

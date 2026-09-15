@@ -58,14 +58,17 @@ words, unrelated things.)
 
 The template's bindings:
 
-- the review relation is **PAV** `pav:reviewedBy`;
+- the review relation is kton's own `nk:reviewed` (`https://kton.dev/v/reviewed`) - active and
+  unary, so the object is the *verdict* and the reviewer comes from the signature. It used to
+  cite `pav:reviewedBy`; PAV defines no such property (see F-043), and there is no established
+  one for "reviewed by";
 - the verdict reuses **schema.org**: approve = `schema:AcceptAction`, reject = `schema:RejectAction`
   (as the type of the review node), so `approve`/`reject` are not local strings but standard IRIs;
 - the comment is a **file**, hashed to a content ref and attached as `nk:evidence`.
 
 ```
 nekton templates --show review/decision
-#   predicate: http://purl.org/pav/reviewedBy
+#   predicate: https://kton.dev/v/reviewed
 #   fields:  decision  enum  REQUIRED  {https://schema.org/AcceptAction|https://schema.org/RejectAction}
 #            comment   file  optional  role=evidence
 ```
@@ -82,7 +85,7 @@ nekton annotate --foton foton.dsse.json --template review/decision \
 
 `--foton` resolves the subject to the foton's id (so the review joins plankton's index; `nekton about
 <fotonId>` and plankton lineage align on the same hash). The claim comes out as
-`foton pav:reviewedBy [ a schema:AcceptAction ; nk:evidence <comment> ]`, signed by Alice.
+`foton nk:reviewed [ a schema:AcceptAction ; nk:evidence <comment> ]`, signed by Alice.
 
 ## Did we review it correctly?
 
@@ -113,7 +116,7 @@ of it, abridged for readability:
 
 ```
 SELECT ?verdict (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
-  GRAPH ?review { ?foton pav:reviewedBy ?r . ?r rdf:type ?verdict . }
+  GRAPH ?review { ?foton nk:reviewed ?r . ?r rdf:type ?verdict . }
   ?review prov:wasAttributedTo ?reviewer .
   FILTER(?verdict IN (schema:AcceptAction, schema:RejectAction))
 } GROUP BY ?verdict

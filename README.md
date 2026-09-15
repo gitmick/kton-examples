@@ -114,14 +114,15 @@ authoring them, are *federated data*, deliberately kept out of the protocol repo
 
 - **`aliases.json`** - CURIE/term sugar that resolves to canonical IRIs *before* a claim is built, so
   the signed wire form always carries the full IRI. Vocabulary policy: reuse a published ontology
-  wherever one fits - **PROV** (lineage), **PAV** (`pav:reviewedBy` for general review), **DCAT**
+  wherever one fits - **PROV** (lineage), **PAV** (`pav:createdBy` and the authoring terms), **DCAT**
   (`dcat:downloadURL` for location), **schema.org** (`AcceptAction`/`RejectAction` for a review verdict),
   the **W3C Security Vocabulary** (`sec:controller` for a key -> principal binding), **OWL/SKOS**
   (equivalence/hierarchy). The regulated **`qa:*`**
-  terms are reserved for a quality process that actually keeps records; ordinary review uses `pav:reviewedBy`.
+  terms are reserved for a quality process that actually keeps records; an ordinary review uses
+  `nk:reviewed`, because no published ontology defines a `reviewed by` property (F-043).
 - **`templates/`** - example authoring templates (`kton.dev/template/v0`) consumed by `nekton
   annotate`: `prov-derived-from.json` (a plain PROV lineage claim, the minimal mechanism demo);
-  `review-decision.json` (a general review: approve/reject a foton with `pav:reviewedBy` +
+  `review-decision.json` (a general review: approve/reject a foton with `nk:reviewed` +
   `schema:AcceptAction`/`RejectAction` and a file comment - see [example 11](examples/11-review-template/));
   `qa-review.json`, `qa-tool-validation.json`, `risk-accept.json` (quality-process examples);
   `election-vote-initialised.json`, `election-count-finished.json` (a liquid-democracy governance
