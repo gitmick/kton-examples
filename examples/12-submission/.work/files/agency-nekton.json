@@ -47,31 +47,32 @@
       }
     },
     {
-      "claimId": "sha256:51e1321e53abb78df8047c840a2cd8b8d929576a7bfc25fe00b828885f7521b0",
+      "claimId": "sha256:4a1b1a0ba9d8c6d8d509b166a72dbb35652183ab414d65785529caba31f18175",
       "predicateType": "https://kton.dev/claim/v0",
       "keyids": [
-        "723e322949dee277"
+        "1e9069577f9881d0"
       ],
       "signerVerified": false,
       "subjects": [
-        "sha256:d09461f24acbc4b63a0082a239dda5a5ac161e40aa4eb077562b349b38bb8e94"
+        "sha256:36d346c1f7dc323a658c1234f9a20faad048fa1ad11293817a91fff60ade78ad"
       ],
       "predicate": {
-        "by": "CN=lead",
+        "by": "CN=qc",
         "context": {
           "uri": "https://kton.dev/ctx/qa"
         },
         "evidence": [
           {
-            "hash": "sha256:a1940e96ac1bce682b55f558183134a1cd9300c79bba3be1a3ae0bbb8514764e"
+            "hash": "sha256:5c17553dee8ae9366715e8cbe8e2e42699a7fbafbce441d669a73f53d2fbcdff",
+            "mediaType": "application/pdf"
           }
         ],
         "object": {
-          "rationale": "eta-shrinkage on CL 28pct; addressed by sensitivity analysis",
-          "severity": "medium"
+          "outcome": "pass",
+          "sop": "SOP-CV-014"
         },
         "predicate": {
-          "uri": "https://kton.dev/v/qa/risk-accepted"
+          "uri": "https://kton.dev/v/qa/validation-performed"
         },
         "when": "2026-07-16T00:00:00Z"
       }
@@ -98,28 +99,55 @@
       }
     },
     {
-      "claimId": "sha256:670805450db33ba82664ad60582cd0c69e578b0e6a99e267ee5683c238989365",
+      "claimId": "sha256:6e96518d11951a2560e0b7035af452eb075220ce4efd859fe939e46e084cb4b8",
       "predicateType": "https://kton.dev/claim/v0",
       "keyids": [
-        "1e9069577f9881d0"
+        "128e74542def6e1c"
       ],
       "signerVerified": false,
       "subjects": [
-        "sha256:b53f5b03d430496dbb775928407b9cb807095b17eb9cf99b6d6951cc154d3cd7"
+        "sha256:b875ecd1f5c355bfcde78ae6b3b1401874c3f7a14583b62136bba576f1e24dcb"
       ],
       "predicate": {
-        "by": "CN=qc",
+        "by": "did:web:sponsor.example/people/submitter",
         "object": {
-          "fulfilment": "https://kton.dev/o/439e3a3468e38e1b98720021f22745cb7981d30ea234d7ac92af413b63342101",
-          "id": "https://kton.dev/o/7618bcdcd186013f0207a49a09880f27aecef80fa256b581a8ecc9809c86b011",
-          "membersFulfilled": "3",
-          "membersTotal": "3"
+          "id": "did:web:sponsor.example/people/submitter"
         },
         "predicate": {
-          "uri": "https://kton.dev/v/qualifies-as"
+          "uri": "https://kton.dev/v/submitted"
         },
         "when": "2026-07-16T00:00:00Z",
-        "why": "image fulfils pmxtools-1.2.0 (3/3 members, re-derivable in the spectrum-check foton)"
+        "why": "submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08"
+      }
+    },
+    {
+      "claimId": "sha256:733a4b6a1fdfd33c42b117a6093ea096407e8a530a468e824341a5824a375475",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyids": [
+        "723e322949dee277"
+      ],
+      "signerVerified": false,
+      "subjects": [
+        "sha256:2647ccd2b9cb0bc5f0dabe8b9504df50314daf56a7d02e88c28e3aa43d598395"
+      ],
+      "predicate": {
+        "by": "CN=lead",
+        "context": {
+          "uri": "https://kton.dev/ctx/qa"
+        },
+        "evidence": [
+          {
+            "hash": "sha256:a1940e96ac1bce682b55f558183134a1cd9300c79bba3be1a3ae0bbb8514764e"
+          }
+        ],
+        "object": {
+          "rationale": "eta-shrinkage on CL 28pct; addressed by sensitivity analysis",
+          "severity": "medium"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/qa/risk-accepted"
+        },
+        "when": "2026-07-16T00:00:00Z"
       }
     },
     {
@@ -169,14 +197,14 @@
       }
     },
     {
-      "claimId": "sha256:8cf230a459640b0840f17afbf91ad278c7d7966bb28c3b39b7a95c4d7e36d8a9",
+      "claimId": "sha256:7fabc84bb07c86ef49e2809000da1c8112294eefb19e984d4d22b59820b07593",
       "predicateType": "https://kton.dev/claim/v0",
       "keyids": [
         "723e322949dee277"
       ],
       "signerVerified": false,
       "subjects": [
-        "sha256:d09461f24acbc4b63a0082a239dda5a5ac161e40aa4eb077562b349b38bb8e94"
+        "sha256:2647ccd2b9cb0bc5f0dabe8b9504df50314daf56a7d02e88c28e3aa43d598395"
       ],
       "predicate": {
         "by": "CN=lead",
@@ -196,14 +224,39 @@
       }
     },
     {
-      "claimId": "sha256:963ddd3203e4306e69f1c6012376c1b4aff8e7aaea8c141c120a96658369c565",
+      "claimId": "sha256:800208e07151484fbde75a170fdf8cb0e97899305422befd33ce02013b0b8553",
       "predicateType": "https://kton.dev/claim/v0",
       "keyids": [
         "1e9069577f9881d0"
       ],
       "signerVerified": false,
       "subjects": [
-        "sha256:7618bcdcd186013f0207a49a09880f27aecef80fa256b581a8ecc9809c86b011"
+        "sha256:b53f5b03d430496dbb775928407b9cb807095b17eb9cf99b6d6951cc154d3cd7"
+      ],
+      "predicate": {
+        "by": "CN=qc",
+        "object": {
+          "fulfilment": "https://kton.dev/o/dad567bab91015b657fcd482687c868112f3ff5600ca2d6ce1969244c21267d4",
+          "id": "https://kton.dev/o/36d346c1f7dc323a658c1234f9a20faad048fa1ad11293817a91fff60ade78ad",
+          "membersFulfilled": "3",
+          "membersTotal": "3"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/qualifies-as"
+        },
+        "when": "2026-07-16T00:00:00Z",
+        "why": "image fulfils pmxtools-1.2.0 (3/3 members, re-derivable in the spectrum-check foton)"
+      }
+    },
+    {
+      "claimId": "sha256:8487371170a4c59929359eb8edac89a52f48ffa2f017f2371282c5a77487efc0",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyids": [
+        "1e9069577f9881d0"
+      ],
+      "signerVerified": false,
+      "subjects": [
+        "sha256:2647ccd2b9cb0bc5f0dabe8b9504df50314daf56a7d02e88c28e3aa43d598395"
       ],
       "predicate": {
         "by": "CN=qc",
@@ -212,39 +265,19 @@
         },
         "evidence": [
           {
-            "hash": "sha256:5c17553dee8ae9366715e8cbe8e2e42699a7fbafbce441d669a73f53d2fbcdff",
+            "hash": "sha256:6bb3da168a596028419e8406526bda2ae169cbadef7c4e46da0f892db45d02fd",
             "mediaType": "application/pdf"
           }
         ],
         "object": {
           "outcome": "pass",
-          "sop": "SOP-CV-014"
+          "sop": "SOP-REV-002"
         },
         "predicate": {
-          "uri": "https://kton.dev/v/qa/validation-performed"
+          "uri": "https://kton.dev/v/qa/reviewed"
         },
-        "when": "2026-07-16T00:00:00Z"
-      }
-    },
-    {
-      "claimId": "sha256:9a0a57d2a577349df57bba09e62c804f3a140665b18bd068c5ba2ca76ba6c4ba",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyids": [
-        "1e9069577f9881d0"
-      ],
-      "signerVerified": false,
-      "subjects": [
-        "sha256:6f017dde46eb23f1e539e06f4ada016125cb77f3e976041f6e6a8ac680459e7a"
-      ],
-      "predicate": {
-        "by": "CN=qc",
-        "object": {
-          "level": "L1",
-          "reproducedBy": "https://kton.dev/o/e610288766bf4ed02e78861fd4ffe17c954b857733a1108559632c4543afd582"
-        },
-        "predicate": {
-          "uri": "https://kton.dev/v/reproduces"
-        },
+        "prev": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
+        "scope": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
         "when": "2026-07-16T00:00:00Z"
       }
     },
@@ -304,6 +337,39 @@
         "by": "did:web:sponsor.example/people/lead",
         "genesis": true,
         "scope": "popPK-mABC",
+        "when": "2026-07-16T00:00:00Z"
+      }
+    },
+    {
+      "claimId": "sha256:b875ecd1f5c355bfcde78ae6b3b1401874c3f7a14583b62136bba576f1e24dcb",
+      "predicateType": "https://kton.dev/claim/v0",
+      "keyids": [
+        "723e322949dee277"
+      ],
+      "signerVerified": false,
+      "subjects": [
+        "sha256:2647ccd2b9cb0bc5f0dabe8b9504df50314daf56a7d02e88c28e3aa43d598395"
+      ],
+      "predicate": {
+        "by": "CN=lead",
+        "context": {
+          "uri": "https://kton.dev/ctx/qa"
+        },
+        "evidence": [
+          {
+            "hash": "sha256:192478f9100d8edc9482cea7f7307d1e72bbb79456e46112653ae05dffc9fed3",
+            "mediaType": "application/pdf"
+          }
+        ],
+        "object": {
+          "outcome": "pass",
+          "sop": "SOP-REV-002"
+        },
+        "predicate": {
+          "uri": "https://kton.dev/v/qa/reviewed"
+        },
+        "prev": "sha256:8487371170a4c59929359eb8edac89a52f48ffa2f017f2371282c5a77487efc0",
+        "scope": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
         "when": "2026-07-16T00:00:00Z"
       }
     },
@@ -371,61 +437,6 @@
       }
     },
     {
-      "claimId": "sha256:d29c96022529d9cff18077c71e698f4cf3546533d610aac96fc623fa113b7ccf",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyids": [
-        "723e322949dee277"
-      ],
-      "signerVerified": false,
-      "subjects": [
-        "sha256:d09461f24acbc4b63a0082a239dda5a5ac161e40aa4eb077562b349b38bb8e94"
-      ],
-      "predicate": {
-        "by": "CN=lead",
-        "context": {
-          "uri": "https://kton.dev/ctx/qa"
-        },
-        "evidence": [
-          {
-            "hash": "sha256:192478f9100d8edc9482cea7f7307d1e72bbb79456e46112653ae05dffc9fed3",
-            "mediaType": "application/pdf"
-          }
-        ],
-        "object": {
-          "outcome": "pass",
-          "sop": "SOP-REV-002"
-        },
-        "predicate": {
-          "uri": "https://kton.dev/v/qa/reviewed"
-        },
-        "prev": "sha256:f72996c74d60f20e803de7de60662e2cca8d1d9f881051771a5b01a3cf5760db",
-        "scope": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
-        "when": "2026-07-16T00:00:00Z"
-      }
-    },
-    {
-      "claimId": "sha256:dba2bb415a0de3ca679983066875a92a6ef9537c57123ada8d2579ccd13471ff",
-      "predicateType": "https://kton.dev/claim/v0",
-      "keyids": [
-        "128e74542def6e1c"
-      ],
-      "signerVerified": false,
-      "subjects": [
-        "sha256:d29c96022529d9cff18077c71e698f4cf3546533d610aac96fc623fa113b7ccf"
-      ],
-      "predicate": {
-        "by": "did:web:sponsor.example/people/submitter",
-        "object": {
-          "id": "did:web:sponsor.example/people/submitter"
-        },
-        "predicate": {
-          "uri": "https://kton.dev/v/submitted"
-        },
-        "when": "2026-07-16T00:00:00Z",
-        "why": "submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08"
-      }
-    },
-    {
       "claimId": "sha256:dc0eebc2fbd148a31275cfd69e3bf91bd9fda3d7fce405b9056a1fe8b449c0a6",
       "predicateType": "https://kton.dev/claim/v0",
       "keyids": [
@@ -447,35 +458,24 @@
       }
     },
     {
-      "claimId": "sha256:f72996c74d60f20e803de7de60662e2cca8d1d9f881051771a5b01a3cf5760db",
+      "claimId": "sha256:fd7b798f05778f5fe8b2c0b2c1af32037c1a363083aff7c3e48da47defb49741",
       "predicateType": "https://kton.dev/claim/v0",
       "keyids": [
         "1e9069577f9881d0"
       ],
       "signerVerified": false,
       "subjects": [
-        "sha256:d09461f24acbc4b63a0082a239dda5a5ac161e40aa4eb077562b349b38bb8e94"
+        "sha256:9871dc661eb3f53f8f418f29897ffa788c5d45c1197239d619934534a315fe67"
       ],
       "predicate": {
         "by": "CN=qc",
-        "context": {
-          "uri": "https://kton.dev/ctx/qa"
-        },
-        "evidence": [
-          {
-            "hash": "sha256:6bb3da168a596028419e8406526bda2ae169cbadef7c4e46da0f892db45d02fd",
-            "mediaType": "application/pdf"
-          }
-        ],
         "object": {
-          "outcome": "pass",
-          "sop": "SOP-REV-002"
+          "level": "L1",
+          "reproducedBy": "https://kton.dev/o/e9479bc2c12d1261b86e987a41b232571a9c27c25062657c771ad59c07d4f0df"
         },
         "predicate": {
-          "uri": "https://kton.dev/v/qa/reviewed"
+          "uri": "https://kton.dev/v/reproduces"
         },
-        "prev": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
-        "scope": "sha256:ab2b82084120d49512d166bfcaaaf1f625c1d1c17da166f657b166d1d39a6dbf",
         "when": "2026-07-16T00:00:00Z"
       }
     },
