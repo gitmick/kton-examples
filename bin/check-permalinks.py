@@ -57,8 +57,21 @@ if not found:
     print("  (refusing to report success for a check that had nothing to check)", file=sys.stderr)
     sys.exit(2)
 
-tracked = set(subprocess.run(["git", "ls-files"], capture_output=True, text=True, check=True)
-              .stdout.split("\n"))
+# --against-ref <ref>: the RELEASE question, which is not the same one. The default check asks
+# "is this path tracked HERE" - true on any branch, including one whose files have never been
+# published. A carried permalink names a ref (KTON_RAW_COMMIT, `main` by default), and a reader
+# follows it against THAT. Examples 15-17 are tracked here and absent from main, so their published
+# links 404 until this branch lands. Opt-in rather than always-on, because until a merge that
+# failure is expected and would only teach people to ignore a red check.
+ref = None
+if "--against-ref" in sys.argv:
+    ref = sys.argv[sys.argv.index("--against-ref") + 1]
+    print(f"check-permalinks: resolving against the ref a reader would follow: {ref}")
+    tracked = set(subprocess.run(["git", "ls-tree", "-r", "--name-only", ref],
+                                 capture_output=True, text=True, check=True).stdout.split("\n"))
+else:
+    tracked = set(subprocess.run(["git", "ls-files"], capture_output=True, text=True, check=True)
+                  .stdout.split("\n"))
 broken = sorted((p, src) for p, src in found.items() if p not in tracked)
 
 print(f"check-permalinks: {len(found)} distinct carried permalink target(s) across {scanned} file(s)")
@@ -66,7 +79,9 @@ if broken:
     print(f"  !! {len(broken)} permalink(s) point at a file this repo does NOT track - they will 404:",
           file=sys.stderr)
     for p, src in broken:
-        state = "exists locally but is untracked/ignored" if os.path.exists(p) else "does not exist"
+        where = f"on {ref}" if ref else "locally"
+        state = (f"not {where}, though it exists in this checkout" if os.path.exists(p)
+                 else f"does not exist {where}")
         print(f"     {p}  ({state})", file=sys.stderr)
         print(f"       referenced from {src}", file=sys.stderr)
     print("  Either track those files (see the .work/ rules in .gitignore) or stop locating them"
