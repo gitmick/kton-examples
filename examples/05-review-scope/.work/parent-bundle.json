@@ -7,7 +7,7 @@
       "keyids": [
         "e68885c64df830ed"
       ],
-      "signerVerified": false,
+      "signerVerified": "unchecked",
       "subjects": [
         "sha256:ad17ad270ccb108172dddb0acff39b05ee4c630af9e29c94fa741b2812a99d65"
       ],
@@ -30,7 +30,7 @@
       "keyids": [
         "e68885c64df830ed"
       ],
-      "signerVerified": false,
+      "signerVerified": "unchecked",
       "subjects": [
         "sha256:ad17ad270ccb108172dddb0acff39b05ee4c630af9e29c94fa741b2812a99d65"
       ],
@@ -53,7 +53,7 @@
       "keyids": [
         "e68885c64df830ed"
       ],
-      "signerVerified": false,
+      "signerVerified": "unchecked",
       "subjects": [
         "urn:nekton:scope:drug-reviews"
       ],

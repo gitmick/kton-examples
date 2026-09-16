@@ -43,7 +43,11 @@ build_review(){
     printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"%s"},"by":"reviewer-%s","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$verdict" "$who" "$REV" "$prev" > .work/rev.json
     prev=$(NEKTON_DIR=$RD nekton claim .work/rev.json "$(K $kf)" --add --print-id)
   done
-  local HEAD; HEAD=$(NEKTON_DIR=$RD head_of "$REV")
+  local HEAD; HEAD=$(NEKTON_DIR=$RD head_of "$REV") || true
+  # head_of refuses a branched or unresolved chain and says so. That refusal cannot reach the caller:
+  # this function runs inside a command substitution, where errexit does not abort the script. Sealing
+  # over the empty string would record a close that names nothing, so stop here instead.
+  [ -n "$HEAD" ] || exit 1
   # CLOSE on the parent, signed by the board (the authority that initialised)
   printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/closed"},"object":{"hash":"%s"},"by":"CN=Board","when":"2026-07-16T00:00:00Z","scope":"%s","prev":"%s"}}' "$REV" "$HEAD" "$PUB" "$PUB" > .work/close.json
   NEKTON_DIR=$PUB_DIR nekton claim .work/close.json "$(K board)" --add >/dev/null
@@ -73,6 +77,7 @@ gate(){
 echo ""
 echo "########## Scenario 1: both enrolled reviewers PASS - the review is complete ##########"
 R1=$(build_review review-happy "$PWD/.work/r1" a:pass b:pass)
+[ -n "$R1" ] || exit 1   # build_review stopped; its reason is above
 echo "== Hand it over: the review store is self-contained; a recipient checks the seedchain INTACT (leg 1) =="
 cp -r "$PWD/.work/r1" "$PWD/.work/handed"
 NEKTON_DIR="$PWD/.work/handed" nekton head "$R1" | sed 's/^/    /'
@@ -95,6 +100,7 @@ echo "  verdict documented as plankton foton $VERDICT (inputs = the review + par
 echo ""
 echo "########## Scenario 2: reviewer b REJECTS - a reject BLOCKS (it cannot be hidden) ##########"
 R2=$(build_review review-reject "$PWD/.work/r2" a:pass b:reject)
+[ -n "$R2" ] || exit 1   # build_review stopped; its reason is above
 gate BLOCKED - "$PWD/.work/r2" "$R2"
 
 echo ""
@@ -104,6 +110,7 @@ echo "########## Scenario 3: strip b's reject by closing WITHOUT it - now the re
 # -> BLOCKED. That is the whole point: you cannot cut the reject out to get a clean review; you get an
 # incomplete one, and incomplete fails closed.
 R3=$(build_review review-strip "$PWD/.work/r3" a:pass)
+[ -n "$R3" ] || exit 1   # build_review stopped; its reason is above
 gate BLOCKED - "$PWD/.work/r3" "$R3"
 
 echo ""
