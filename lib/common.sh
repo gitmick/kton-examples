@@ -37,7 +37,7 @@ demoseed() { printf 'kton-examples/demo/%s/%s' "$EXNAME" "$1" | sha256sum | cut 
 # from the directory the example is authoring IN; the pin below is the ONE line rewritten at each
 # release/migration (gitmick -> kton-protocol, main -> the release commit SHA).
 KTON_RAW_REPO="${KTON_RAW_REPO:-gitmick/kton-examples}"
-KTON_RAW_COMMIT="${KTON_RAW_COMMIT:-main}"            # PIN: set to the release commit SHA at publish
+KTON_RAW_COMMIT="${KTON_RAW_COMMIT:-v0.2.0}"          # PIN: the published ref these records point at
 
 plankton() {
   if [ "${1:-}" != "author" ]; then command plankton "$@"; return; fi
