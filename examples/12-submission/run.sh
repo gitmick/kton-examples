@@ -194,7 +194,12 @@ export NEKTON_DIR="$W/sponsor/nekton"
 SCOPE=$(nekton seed popPK-mABC --when "$KTON_WHEN" --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add --print-id)
 printf "%%PDF qc review\n" > "$F/qc-rep.pdf"; printf "%%PDF lead review\n" > "$F/lead-rep.pdf"
 nekton annotate --foton "$F/fit.dsse.json" --template qa/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
-C1=$(nekton by predicate "https://kton.dev/v/qa/reviewed" --json | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['claimId'])")
+# .records holds bare envelopes (SPEC §12); the claim id is a key of the summary beside them.
+C1=$(nekton by predicate "https://kton.dev/v/qa/reviewed" --json | python3 -c "
+import json,sys
+d=json.load(sys.stdin); ids=list(d['summary'])
+assert len(ids)==1, f'expected one qa:reviewed claim here, saw {len(ids)}'
+print(ids[0])")
 nekton annotate --foton "$F/fit.dsse.json" --template qa/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
 locate "$F/qc-rep.pdf" "https://sponsor.example/reviews/qc-report.pdf" qc
 locate "$F/lead-rep.pdf" "https://sponsor.example/reviews/lead-report.pdf" lead

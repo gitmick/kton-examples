@@ -46,10 +46,11 @@ echo "  distinct review claims on disk (append-only, nothing overwritten): $(gre
 # "nothing was overwritten" is a CLAIM, so check it rather than print it: three reviewers must show up
 # as three distinct signing keys. Printed bare, a 1 here - the overwrite this example exists to
 # disprove - would read as just another line of output.
-# --json gives the records themselves, so the signer is a field rather than a substring of a line.
+# --json answers the SPEC §12 record-query wire form: .records is an array of bare DSSE envelopes,
+# so the signer is a field rather than a substring of a line.
 NKEYS=$(nekton by predicate https://kton.dev/v/reviewed --json | python3 -c "
 import json,sys
-print(len({s.get('keyid') for r in json.load(sys.stdin) for s in r['envelope'].get('signatures',[])}))")
+print(len({s.get('keyid') for e in json.load(sys.stdin)['records'] for s in e.get('signatures',[])}))")
 echo "  distinct signing keyids among the reviews:                         $NKEYS"
 [ "$NKEYS" -eq 3 ] || { echo "  !! expected 3 distinct signers, saw $NKEYS - reviews are being overwritten or lost" >&2; exit 1; }
 echo "  reviews recorded ABOUT the foton:"

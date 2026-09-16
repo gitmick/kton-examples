@@ -64,7 +64,8 @@ echo "result=999 (forged)" > .work/mirror/result.bytes
 printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/dcat#downloadURL","object":{"uri":"file://.work/mirror/result.bytes"},"by":"CN=stranger","when":"2026-07-16T00:00:00Z"}' \
   "$RESULT" > .work/bad.json
 nekton claim .work/bad.json "$PWD/.work/keys/stranger.key" --add >/dev/null
-CLAIMED=$(nekton about "$RESULT" --json 2>/dev/null | jq 'length')
+# count the records, not the wire form's fields: .records is the array SPEC §12 pins.
+CLAIMED=$(nekton about "$RESULT" --json 2>/dev/null | jq '.records | length')
 SEEN=$("${FETCH[@]}" "$RESULT" 2>&1 | sed -n 's/.*, \([0-9]*\) signed by a trusted key.*/\1/p')
 echo "  located-at claims in the registry: $CLAIMED    signed by a key we trust: $SEEN"
 [ "$CLAIMED" = "2" ] && [ "$SEEN" = "1" ] || { echo "  ASSERTION FAILED: expected 2 claims, 1 trusted (got $CLAIMED / $SEEN)" >&2; exit 1; }
