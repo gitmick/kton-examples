@@ -14,8 +14,8 @@ export PLANKTON_DIR=".work/plankton"
 export NEKTON_DIR=".work/nekton"
 rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" ".work/keys"
 W=".work"
-plankton keygen "$W/keys/author" >/dev/null
-nekton  keygen "$W/keys/lab"    >/dev/null
+plankton keygen "$W/keys/author" --seed "$(demoseed author)" >/dev/null
+nekton  keygen "$W/keys/lab" --seed "$(demoseed lab)"    >/dev/null
 printf "conc\n4.2\n3.8\n5.1\n4.6\n" > "$W/pk.csv"          # the shared test fixture
 TESTS="test-glm test-summary test-predict"
 declare -A REFID CANDID REFOUT CANDOUT LEVEL
@@ -25,7 +25,7 @@ for t in $TESTS; do
   Rscript "tests/$t.R" "$W/pk.csv" > "$W/$t.ref.out"       # <-- the test ACTUALLY runs
   REFID[$t]=$(plankton author --cmd "Rscript tests/$t.R pk.csv" \
     --in "$W/pk.csv" --in "tests/$t.R" --out "$W/$t.ref.out" \
-    --sign "$W/keys/author.key" --add | awk '/indexed foton/{print $3}')
+    --sign "$W/keys/author.key" --add --print-id)
   REFOUT[$t]=$(plankton hash "$W/$t.ref.out")
   printf "  %-13s -> %s   (%s)\n" "$t" "${REFOUT[$t]}" "$(head -c 40 "$W/$t.ref.out" | tr -d '\n')"
 done
@@ -40,7 +40,7 @@ for t in $TESTS; do
   Rscript "tests/$t.R" "$W/pk.csv" > "$W/$t.cand.out"      # <-- runs again, independently
   CANDID[$t]=$(plankton author --cmd "Rscript tests/$t.R pk.csv" \
     --in "$W/pk.csv" --in "tests/$t.R" --out "$W/$t.cand.out" \
-    --environment "$CANDENV" --sign "$W/keys/author.key" --add | awk '/indexed foton/{print $3}')
+    --environment "$CANDENV" --sign "$W/keys/author.key" --add --print-id)
   CANDOUT[$t]=$(plankton hash "$W/$t.cand.out")
   if [ "${CANDOUT[$t]}" = "${REFOUT[$t]}" ]; then eq="IDENTICAL bytes"; else eq="DIFFERS (volatile line)"; fi
   printf "  %-13s -> %s   [%s]\n" "$t" "${CANDOUT[$t]}" "$eq"
@@ -60,8 +60,9 @@ echo "  normalizer potential: $POT"
 echo "  registered as application fotons (a potential IS their shared protocol ref):"
 plankton uses "${REFOUT[test-predict]}"  | sed 's/^/    ref-run  consumed by /'
 plankton uses "${CANDOUT[test-predict]}" | sed 's/^/    cand-run consumed by /'
-echo -n "  raw test-predict         : "; plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}" || true
-echo -n "  test-predict via potential: "; plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}" --via "$POT" || true
+echo -n "  raw test-predict         : "; expect_fail "the RAW comparison (that is why a normalizer exists)" plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}"
+# no `|| true`: this one is SUPPOSED to succeed, and the whole stage is pointless if it stops doing so.
+echo -n "  test-predict via potential: "; plankton reproduces "${REFOUT[test-predict]}" "${CANDOUT[test-predict]}" --via "$POT"
 
 echo; echo "############ STAGE D: DEFINE the tool spectrum, then CHECK the candidate against it ##########"
 plankton spectrum define --id "mypkg-1.2.0-suite" --of "the mypkg 1.2.0 test suite (one foton per test)" \
@@ -75,14 +76,14 @@ echo "  tool-spectrum id: $SPECID"
 plankton spectrum check "$W/mypkg.spectrum.json" \
   --candidate "test-glm=${CANDOUT[test-glm]}" \
   --candidate "test-summary=${CANDOUT[test-summary]}" \
-  --candidate "test-predict=${CANDOUT[test-predict]}" | tee "$W/fulfilment.txt" | sed 's/^/  /' || true
+  --candidate "test-predict=${CANDOUT[test-predict]}" | tee "$W/fulfilment.txt" | sed 's/^/  /'   # 3/3 must hold (pipefail)
 # F2 / D6: back the "3/3 fulfilled" with a reproducible spectrum-check FOTON that commits to the exact
 # candidate result hashes (its inputs) - so the tally is RE-DERIVABLE, not asserted in a free-text why.
 # Same pattern as the release gate (D6) and the enrolled review scope: a closed-world set + a
 # reproducible check, so completeness is re-derivable.
 CHECK=$(plankton author --cmd "plankton spectrum check mypkg-1.2.0-suite" \
   --in "$W/mypkg.spectrum.json" --in "$W/test-glm.cand.out" --in "$W/test-summary.cand.out" --in "$W/test-predict.cand.out" \
-  --out "$W/fulfilment.txt" --sign "$W/keys/author.key" --add | awk '/indexed foton/{print $3}')
+  --out "$W/fulfilment.txt" --sign "$W/keys/author.key" --add --print-id)
 echo "  fulfilment recorded as a reproducible foton (commits to the candidate result hashes): $CHECK"
 
 echo; echo "############ STAGE E: record the fulfilment so the GRAPH shows it ############"

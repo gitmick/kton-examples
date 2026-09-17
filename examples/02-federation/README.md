@@ -37,7 +37,7 @@ plankton keygen bob
 echo "raw,data"     > dataset.csv
 echo "cleaned,data" > cleaned.csv
 echo "model=fit"    > model.txt
-MODEL=$(plankton hash model.txt)     # the file we will query the lineage of, in every act
+MODEL=$(plankton hash model.txt)     # model.txt's HASH - what the lineage queries take, in every act
 ```
 
 ## Act 1 - two people, one shared registry

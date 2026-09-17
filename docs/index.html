@@ -214,12 +214,60 @@
       <div class="links"><a href="viewer.html?union=data/14-fetch/union.json&keys=data/14-fetch/keys.json&names=data/14-fetch/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/14-fetch/README.md">read &rarr;</a></div>
     </div>
     <div class="card">
+      <div class="n">15</div><h3>Evidence from outside kton</h3>
+      <p>Records arrive carrying proof in vocabularies kton does not speak: a Sigstore bundle, a Rekor
+      entry, an RFC 3161 timestamp, an eIDAS signature. <code>attach</code> binds that evidence to a
+      record's content address and <code>material</code> hands it back &mdash; and the kernel never says
+      whether it is any good, because <i>which issuers count</i> is your trust policy, not a fact about
+      bytes. A verifier that is not kton does that half. Watch the id: an outside attestation commits to
+      the envelope <i>payload</i>, and a foton id is not its payload hash.</p>
+      <div class="links"><a href="viewer.html?union=data/15-attach-material/union.json&keys=data/15-attach-material/keys.json&names=data/15-attach-material/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/15-attach-material/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">16</div><h3>Has this been computed already?</h3>
+      <p>The <b>action key</b> covers inputs and protocol &mdash; and deliberately not the output, which is
+      the thing you were going to compute. So a cache HIT means &ldquo;somebody asked the same
+      question&rdquo;, never &ldquo;here is the answer&rdquo;: two signers can hit one key and disagree about
+      the result. <code>plankton reuse</code> says so on every hit, and refuses a foton whose protocol
+      <code>ref</code> contradicts its own descriptor.</p>
+      <div class="links"><a href="viewer.html?union=data/16-reuse-cache/union.json&keys=data/16-reuse-cache/keys.json&names=data/16-reuse-cache/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/16-reuse-cache/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">17</div><h3>&#8635;N &mdash; and how to inflate it</h3>
+      <p>How many <i>independent</i> signers produced this exact output? Two honest labs converge on one
+      foton carrying two signatures &mdash; agreement is a co-signature, not a second document. Then an
+      attacker relabels a keyid she does not hold, three times, and &#8635;4 appears out of nothing.
+      Nothing is detected and nothing is blocked; <code>--trust-keys</code> simply asks the other
+      question, and it collapses back to &#8635;2.</p>
+      <div class="links"><a href="viewer.html?union=data/17-reproductions/union.json&keys=data/17-reproductions/keys.json&names=data/17-reproductions/names.json">open the graph &rarr;</a><a href="https://github.com/gitmick/kton-examples/blob/main/examples/17-reproductions/README.md">read &rarr;</a></div>
+    </div>
+    <div class="card">
       <div class="n">&#9876;</div><h3>Red team &mdash; adversarial engagement <span style="font-weight:400;color:var(--dim)">(its own repo)</span></h3>
       <p>The hardest test of &ldquo;trust no one&rdquo;: an adversarial security engagement against kton,
       <b>documented in kton itself</b> &mdash; each attack is a foton, each finding a signed claim, and the
       regression suite a spectrum. Two dozen attacks (co-signature drop, normalizer forge, federation
       withholding, four-eyes graph-poll, viewer XSS &hellip;) with the fixes that closed them.</p>
       <div class="links"><a href="https://github.com/gitmick/kton-redteam">read the engagement &rarr;</a></div>
+    </div>
+  </div>
+
+  <h2>Lensed papers</h2>
+  <p class="sub">A paper read through its records. The figures are the same images the analysis wrote;
+  the lens looks each one up by output hash and shows what produced it, who signed it, and whether
+  anyone else got the same bytes. Nothing in the text is taken on trust.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="n">&#9636;</div><h3>Population PK of mABC</h3>
+      <p>A full pharmacometrics write-up - base model, covariate model, reproducibility - where every
+      figure carries its foton, and the reproduction section is a claim rather than a sentence.</p>
+      <div class="links"><a href="lens-paper.html">open the paper &rarr;</a></div>
+    </div>
+    <div class="card">
+      <div class="n">&#9635;</div><h3>Multi-foton output</h3>
+      <p>The smaller case, and the more awkward one: one figure that two parties produced
+      independently. The lens shows both producers on the same image instead of picking one.</p>
+      <div class="links"><a href="lens-multi.html">open the paper &rarr;</a></div>
     </div>
   </div>
 
@@ -256,7 +304,7 @@
   </ul>
   <p class="sub">The full argument - honesty, completeness, freshness, finality, and graded
   verification, each with its boundary - is in the protocol's
-  <a href="https://github.com/gitmick/plankton/blob/main/docs/trust.md">Trust chapter</a>.</p>
+  <a href="https://github.com/kton-protocol/kton/blob/v0.2.0/docs/trust.md">Trust chapter</a>.</p>
 
   <footer>
     Run them yourself once the reference binaries are available (see the

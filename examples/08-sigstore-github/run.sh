@@ -14,9 +14,9 @@ if [ ! -f "$W/foton.dsse.json" ]; then
   export PLANKTON_DIR="$W/plankton"
   printf "id,auc\n1,42.0\n"          > "$W/result.csv"
   echo   "verdict=within-range"       > "$W/assessment.txt"
-  [ -f "$W/author.key" ] || plankton keygen "$W/author" >/dev/null 2>&1
+  [ -f "$W/analyst.key" ] || plankton keygen "$W/analyst" --seed "$(demoseed analyst)" >/dev/null 2>&1
   plankton author --cmd "assess result.csv" --in "$W/result.csv" --out "$W/assessment.txt" \
-    --sign "$W/author.key" --add -o "$W/foton.dsse.json" >/dev/null
+    --sign "$W/analyst.key" --add -o "$W/foton.dsse.json" >/dev/null
 fi
 REC="$W/foton.dsse.json"
 echo "kton record to sign: foton.dsse.json"

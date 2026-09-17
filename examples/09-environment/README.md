@@ -17,6 +17,14 @@ exactly the fotons such an executor would `plankton add`. (For the same spectrum
 executed* - real R runs, with L0 vs L1 shown in the graph - see
 [example 10](../10-tool-spectrum/), the executed companion to this one.)
 
+Two more things worth knowing before the walkthrough, because they are easy to reconstruct wrongly:
+
+- **`spectrum define` and `spectrum check` are real, purpose-built `plankton` subcommands**, not a
+  pattern you assemble yourself out of raw claims. A spectrum is a first-class object with an id.
+- **The four stages produce five separate fotons and two claims**, not one foton that grows. `$BARE`,
+  the three reference test fotons and the qualification check are each their own immutable record;
+  they meet at shared hashes rather than by being edited. Nothing here is ever added *to* a foton.
+
 ## The arc
 
 The blocks below capture ids into shell variables and run in sequence (`plankton` and `nekton` on your
@@ -33,7 +41,7 @@ plankton keygen author >/dev/null; nekton keygen lab >/dev/null
 printf "conc\n4.2\n3.8\n"  > pk.csv
 echo   "cl=4.000"          > fit.out          # a stand-in for what your local R produced
 BARE=$(plankton author --cmd "Rscript fit.R" --in pk.csv --out fit.out \
-        --sign author.key --add | awk '/indexed foton/{print $3}')
+        --sign author.key --add --print-id)
 ```
 
 `$BARE` is a foton: inputs, command, output, all by hash. The bytes are pinned - but it says nothing
@@ -81,7 +89,7 @@ Now author the analysis *under* that qualified environment:
 
 ```
 QUAL=$(plankton author --cmd "Rscript fit.R" --in pk.csv --out fit.out \
-        --environment "$SPECID" --sign author.key --add | awk '/indexed foton/{print $3}')
+        --environment "$SPECID" --sign author.key --add --print-id)
 ```
 
 `--environment` rides inside the protocol descriptor, so it is **COVERED** - part of `protocol.ref`,

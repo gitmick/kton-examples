@@ -22,8 +22,8 @@ export NEKTON_DIR="$PWD/.work/nekton"
 export NEKTON_ALIASES="$PWD/../../aliases.json"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys"
 cd "$PWD/.work"
-plankton keygen keys/author >/dev/null    # produces the results
-nekton  keygen keys/lab    >/dev/null     # signs the environment statements
+plankton keygen keys/author --seed "$(demoseed author)" >/dev/null    # produces the results
+nekton  keygen keys/lab --seed "$(demoseed lab)"    >/dev/null     # signs the environment statements
 
 # the exact container the analyst ran in (a digest-pinned image). Same one all the way through.
 OCI="oci://rocker/r-ver:4.3.2@sha256:d34db33fcaf00000000000000000000000000000000000000000000000000beef"
@@ -34,7 +34,7 @@ printf "id,conc\n1,4.2\n2,3.8\n" > pk.csv
 printf 'd <- read.csv("pk.csv"); cat(sprintf("cl=%%.3f\\n", mean(d$conc)))\n' > fit.R
 printf "cl=4.000\n" > fit.out                                   # what your local R produced
 BARE=$(plankton author --cmd "Rscript fit.R" --in pk.csv --in fit.R --out fit.out \
-  --sign keys/author.key --add | awk '/indexed foton/{print $3}')
+  --sign keys/author.key --add --print-id)
 echo "  foton: $BARE"
 echo "  no environment recorded: reproducible BYTES, but silent about the R stack behind them."
 
@@ -71,7 +71,7 @@ echo "  env-spectrum id: $SPECID"
 echo
 echo "  now author the analysis UNDER that qualified environment (--environment). It is COVERED:"
 QUAL=$(plankton author --cmd "Rscript fit.R" --in pk.csv --in fit.R --out fit.out \
-  --environment "$SPECID" --sign keys/author.key --add | awk '/indexed foton/{print $3}')
+  --environment "$SPECID" --sign keys/author.key --add --print-id)
 echo "    unqualified foton: $BARE"
 echo "    qualified   foton: $QUAL"
 echo "    -> different foton id and action key: 'produced under a qualified-R env' is a DISTINCT"
@@ -88,11 +88,20 @@ plankton spectrum check mypkg.spectrum.json \
 echo
 echo "  -- a WRONG-version image (mypkg 1.3.0): one test result differs -> qualification refused: --"
 printf "test-predict: FAIL (predict.glm output changed in 1.3.0)\n" > cand-test-predict.result
-if plankton spectrum check mypkg.spectrum.json \
-  --candidate "test-glm=$(plankton hash cand-test-glm.result)" \
-  --candidate "test-summary=$(plankton hash cand-test-summary.result)" \
-  --candidate "test-predict=$(plankton hash cand-test-predict.result)" 2>&1 | sed 's/^/    /'
-then :; else echo "    (exit nonzero: partial fulfilment is NON-fulfilment, SPEC Clause 10)"; fi
+# AUTHOR the wrong-version result, exactly as a real run in that image would. Without this its hash
+# names nothing the registry has seen, and the check below refuses it as "not a recorded foton
+# output" - which it would do for a random hash too. That is a different sentence from "it ran and
+# produced something else", and only the second is what this stage claims to show.
+plankton author --cmd "Rscript run-suite.R  # in the 1.3.0 image" \
+  --in fit.R --out cand-test-predict.result --sign keys/author.key --add >/dev/null
+# expect_fail, not `if … then :;`. The old form ACCEPTED success silently: with a candidate that
+# happened to reproduce, this stage printed "3/3 member(s) fulfilled" directly under the heading
+# "qualification refused" and exited 0. A negative control that cannot fail is not a control.
+expect_fail "the spectrum check (partial fulfilment is NON-fulfilment, SPEC Clause 10)" \
+  plankton spectrum check mypkg.spectrum.json \
+    --candidate "test-glm=$(plankton hash cand-test-glm.result)" \
+    --candidate "test-summary=$(plankton hash cand-test-summary.result)" \
+    --candidate "test-predict=$(plankton hash cand-test-predict.result)"
 
 echo; echo "############ STAGE 4b: SIGN the binding - this exact image qualifies-as the env-spectrum ##"
 echo "  fulfilment is a reproducible FACT; ACCEPTING the image as qualified is a signed claim on top:"

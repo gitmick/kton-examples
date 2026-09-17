@@ -12,17 +12,32 @@ has **no live graph snapshot** (the identity is yours and personal; run it yours
 
 ## Walk through it
 
-**1. (automatic) Make a kton record to sign.** Any signed foton or claim envelope works:
+**1. (automatic) Make a kton record to sign.** Any signed foton or claim envelope works — here we
+make one from scratch, since the steps below need a real envelope on disk:
 
 ```
+mkdir -p /tmp/ex08 && cd /tmp/ex08
+export PLANKTON_DIR="$PWD/plankton"
+
+plankton keygen analyst
+printf "id,auc\n1,42.0\n"    > result.csv
+echo   "verdict=within-range" > assessment.txt
+
 plankton author --cmd "assess result.csv" --in result.csv --out assessment.txt \
-    --sign author.key --add -o foton.dsse.json
+    --sign analyst.key --add -o foton.dsse.json
 ```
 
-That record is already signed once, on the **inside**, by the foton's own author (`author.key`). The
+That record is already signed once, on the **inside**, by the foton's own author (`analyst.key`). The
 GitHub signature you add next is a second, **outer** attestation over the whole record's hash: a
 different party vouching for the record, independent of whoever authored it. Inner signature = who made
 the record; outer signature = who is willing to stand behind it under their real-world identity.
+
+**Is it always a later, separate step?** Yes — by construction, not just for the walkthrough. A
+Sigstore signature is made over a *finished* record's bytes, and the record is not finished until it
+is signed, so the outer signature cannot be part of authoring it. That is also why it is useful: the
+two signatures can come from different parties at different times, and a record can collect several
+outer attestations over its life without any of them touching what it says. In a pipeline you would
+author on the machine that did the work and Sigstore-sign in CI, where the OIDC identity lives.
 
 **2. (you run this) Sign it with your GitHub identity.** This step is **interactive and the output below is
 illustrative** — you run it locally, and **no `sig.bundle`, certificate, or Rekor entry is committed to this
@@ -45,7 +60,7 @@ leak.
 **3. (automatic) Verify: valid signature, the right identity, logged in Rekor.**
 
 ```
-# discover the identity that signed (accepts any, for inspection only):
+# does the signature check out at all? (accepts ANY identity - it does not tell you whose)
 cosign verify-blob --new-bundle-format --bundle sig.bundle \
     --certificate-identity-regexp '.+' --certificate-oidc-issuer-regexp '.+' foton.dsse.json
 # Verified OK
@@ -56,8 +71,16 @@ cosign verify-blob --new-bundle-format --bundle sig.bundle \
     --certificate-oidc-issuer https://github.com/login/oauth  foton.dsse.json
 ```
 
-The identity lives in the certificate's SAN (an `email:...`), and the OIDC issuer
-`https://github.com/login/oauth` says GitHub vouched for it. A verifier trusts **Fulcio** (the CA) and
+**The first command does not tell you who signed.** Its whole output is `Verified OK` — with `.+` it
+accepts whatever identity is in the bundle and reports nothing about it, which is only useful as a
+"is this bundle intact at all" check. To *read* the identity you go to the certificate: `run.sh`
+pulls it out of the bundle and prints the SAN with `openssl x509 -ext subjectAltName`. Do that first,
+then substitute what you see for `you@example.com` in the pinned command — for a GitHub OIDC login
+that is the email on your GitHub account, and the issuer is `https://github.com/login/oauth`.
+
+The identity lives in the certificate's **SAN** — Subject Alternative Name, the X.509 extension that
+carries the identities a certificate is for, here an `email:...` — and the OIDC issuer says GitHub
+vouched for it. A verifier trusts **Fulcio** (the CA) and
 **Rekor** (the log), not you.
 
 ## How this fits kton

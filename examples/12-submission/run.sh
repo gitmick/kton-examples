@@ -22,10 +22,10 @@ W=".work"; rm -rf "$W"; mkdir -p "$W"/{files,keys}
 for org in cro sponsor agency; do mkdir -p "$W/$org/plankton" "$W/$org/nekton"; done
 F="$W/files"; T="$EXDIR/tools"
 key(){ echo "$W/keys/$1"; }
-for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" >/dev/null; done
+for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" --seed "$(demoseed "$k")" >/dev/null; done
 keyiri(){ echo "https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest())")"; }
 keyid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest()[:16])"; }
-pauthor(){ plankton author "$@" --add | awk '/indexed foton/{print $3}'; }
+pauthor(){ plankton author "$@" --add --print-id; }
 # locate <file> <url> <signer>: record a signed dcat:downloadURL so the regulator can FETCH the bytes
 # it holds a content hash for (verifying sha256 == hash on arrival). Location is a signed claim, plural
 # and post-hoc; the kernels never dereference it (that is kton's job).
@@ -90,7 +90,7 @@ plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-re
 POT=$(python3 -c "import json,base64,glob;
 import os
 best=None
-for f in glob.glob('$PLANKTON_DIR/objects/sha256/*.json'):
+for f in glob.glob('$PLANKTON_DIR/objects/**/*.json', recursive=True):
  import json;r=json.load(open(f));import base64
  s=json.loads(base64.b64decode(r['envelope']['payload']))
  if s['predicate']['protocol'].get('kind')=='normalize': best=s['predicate']['protocol']['ref']
@@ -104,17 +104,29 @@ echo "  env-spectrum id (ENV) = $ENV"
 echo "  the pinned docker image is checked against the spectrum:"
 plankton spectrum check "$F/pmxtools.spectrum.json" \
   --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" \
-  --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" | tee "$F/fulfilment.txt" | sed 's/^/    /' || true
+  --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" | tee "$F/fulfilment.txt" | sed 's/^/    /'   # 3/3 must hold (pipefail)
 # B1/D6: do not let "3/3 fulfilled" ride as a bare prose assertion on the qualifies-as claim. Back it
 # with a reproducible spectrum-check FOTON that commits to the exact spectrum + candidate result files,
-# so the qualification CARRIES ITS CORPUS (re-derivable), and the release gate can REQUIRE that foton
-# rather than trust a naked binding. (This is example 10's pattern, adopted here.)
+# so the qualification CARRIES ITS CORPUS: anyone can re-run the check over those exact inputs and get
+# the same tally. (This is example 10's pattern, adopted here.)
+#
+# BE PRECISE ABOUT WHAT THAT BUYS THE SPARQL GATE, WHICH IS LESS THAN IT LOOKS. release.rq requires the
+# qualification to cite a check foton that `prov:used` this env-spectrum, and then filters on
+# membersFulfilled == membersTotal - numbers the AUTHOR of the qualification writes. The tally the cited
+# foton actually recorded lives in that foton's OUTPUT BYTES, not in the exported RDF, so no query over
+# this graph can reach it. A check that FAILED carries the same prov:used edge as one that passed.
+# Cite a 2/3 foton, assert 3/3, and env-qualified lights (kton security/attacks/envtally-CF2.sh, which
+# runs an honest control alongside the attack so the branch is known to be live).
+# The guarantee is real but it lives in ACT 8a below, where the regulator RE-RUNS `spectrum check`
+# itself and aborts on a partial pass. README's "used the spectrum is not passed the spectrum" says
+# this correctly; this comment used to say the gate "can REQUIRE that foton rather than trust a naked
+# binding", which credited the query with a check only the re-run performs.
 CHECK=$(plankton author --cmd "plankton spectrum check pmxtools-1.2.0" \
   --in "$F/pmxtools.spectrum.json" --in "$F/test-onecomp.ref" --in "$F/test-twocomp.ref" --in "$F/test-covariate.cand" \
-  --out "$F/fulfilment.txt" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+  --out "$F/fulfilment.txt" --sign "$(key qc).key" --add --print-id)
 echo "  fulfilment recorded as a reproducible spectrum-check foton (commits to the checked results): $CHECK"
 # the exact OCI image (CARRIED) qualifies-as the env-spectrum (signed), carrying the fulfilment foton;
-# and a gxp tool-validation claim
+# and a qa tool-validation claim
 printf "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef\n" > "$F/image.txt"
 OCI=$(plankton hash "$F/image.txt")
 # A4/B1: parse the REAL tally (N/M) from the fulfilment - a reproducible fact - and CARRY it typed on
@@ -125,9 +137,9 @@ TALLY=$(grep -oE '[0-9]+/[0-9]+ member' "$F/fulfilment.txt" | head -1 | grep -oE
 printf '{"subject":[{"hash":"%s","uri":"oci://ghcr.io/cro/pmxtools:1.2.0"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s","membersFulfilled":"%s","membersTotal":"%s"},"why":"image fulfils pmxtools-1.2.0 (%s members, re-derivable in the spectrum-check foton)","by":"CN=qc","when":"2026-07-16T00:00:00Z"}' "$OCI" "${ENV#sha256:}" "${CHECK#sha256:}" "$NFUL" "$NTOT" "$TALLY" > "$F/qual.json"
 nekton claim "$F/qual.json" "$(key qc).key" --add >/dev/null
 printf "%%PDF tool validation protocol\n" > "$F/toolval.pdf"
-nekton annotate "$ENV" --template gxp/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --sign "$(key qc).key" --add >/dev/null
+nekton annotate "$ENV" --template qa/tool-validation --set outcome=pass --set sop="SOP-CV-014" --set protocol="$F/toolval.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --add >/dev/null
 locate "$F/toolval.pdf" "https://cro.example/qms/SOP-CV-014/tool-validation.pdf" qc
-echo "  qualifies-as (image -> ENV) + gxp:validation-performed=pass recorded (protocol.pdf located)"
+echo "  qualifies-as (image -> ENV) + qa:validation-performed=pass recorded (protocol.pdf located)"
 
 echo; echo "########## ACT 2 - the analysis; the FIT runs the FINAL model, under the qualified env #######"
 printf "ID,TIME,DV\n1,0,0\n1,1,5.2\n1,2,3.1\n" > "$F/raw.csv"
@@ -141,7 +153,7 @@ Rscript "$T/gof.R" "$F/run1.ext" > "$F/diagnostics.txt"
 # Best practice: the analysis CODE is provenance too - record each script as a foton input (relative
 # name, so no absolute path leaks), so the trail says exactly which code produced each result.
 CLEAN=$(pauthor --cmd "Rscript tools/clean.R raw.csv analysis.csv" --in "$F/raw.csv" --in "tools/clean.R" --out "$F/analysis.csv" --sign "$(key analyst).key")
-FIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" | awk '/indexed foton/{print $3}')
+FIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1.ext" --environment "$ENV" --sign "$(key analyst).key" --add -o "$F/fit.dsse.json" --print-id)
 GOF=$(pauthor --cmd "Rscript tools/gof.R run1.ext" --in "$F/run1.ext" --in "tools/gof.R" --out "$F/diagnostics.txt" --sign "$(key analyst).key")
 # Best practice: point at least one dcat:downloadURL at a REAL, commit-pinned raw URL of a committed
 # file, so "the regulator can fetch the bytes and re-hash" is demonstrable, not gestured at. fit.R is
@@ -152,9 +164,9 @@ echo "  clean -> FIT (runs run12.mod, --environment ENV COVERED, code recorded +
 
 echo; echo "########## ACT 3 - the model-development tree (pmx/model-role: base -> covariate -> final) ###"
 export NEKTON_DIR="$W/cro/nekton"
-nekton annotate "$(plankton hash "$F/run1.mod")"  --template pmx/model-role --set role=base --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
-nekton annotate "$(plankton hash "$F/run7.mod")"  --template pmx/model-role --set role=covariate --set parent="$(plankton hash "$F/run1.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
-nekton annotate "$(plankton hash "$F/run12.mod")" --template pmx/model-role --set role=final --set parent="$(plankton hash "$F/run7.mod")" --by "CN=analyst" --sign "$(key analyst).key" --add >/dev/null
+nekton annotate "$(plankton hash "$F/run1.mod")"  --template pmx/model-role --set role=base --by "CN=analyst" --when "$KTON_WHEN" --sign "$(key analyst).key" --add >/dev/null
+nekton annotate "$(plankton hash "$F/run7.mod")"  --template pmx/model-role --set role=covariate --set parent="$(plankton hash "$F/run1.mod")" --by "CN=analyst" --when "$KTON_WHEN" --sign "$(key analyst).key" --add >/dev/null
+nekton annotate "$(plankton hash "$F/run12.mod")" --template pmx/model-role --set role=final --set parent="$(plankton hash "$F/run7.mod")" --by "CN=analyst" --when "$KTON_WHEN" --sign "$(key analyst).key" --add >/dev/null
 echo "  signed model tree: run1=base -> run7=covariate -> run12=final (the FIT ran run12)"
 
 echo; echo "########## ACT 4 - independent reproduction by QC (real re-run, authored as a foton) ########"
@@ -162,14 +174,15 @@ echo; echo "########## ACT 4 - independent reproduction by QC (real re-run, auth
 # run, but a distinct signer and its own output), so the re-run is a visible parallel branch from
 # analysis.csv - not a dangling file. This is what makes reproduction show up in the lineage.
 Rscript "$T/fit.R" "$F/analysis.csv" > "$F/run1-qc.ext"
-QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add | awk '/indexed foton/{print $3}')
+QCFIT=$(plankton author --cmd "Rscript tools/fit.R analysis.csv" --in "$F/analysis.csv" --in "$F/run12.mod" --in "tools/fit.R" --out "$F/run1-qc.ext" --environment "$ENV" --sign "$(key qc).key" --add --print-id)
 echo "  QC re-ran the fit -> $QCFIT (same action key as the analyst's, independent signer + output)"
 sh "$T/strip-banner.sh" "$F/run1.ext"    > "$F/fit.ref.canon"
 sh "$T/strip-banner.sh" "$F/run1-qc.ext" > "$F/fit.qc.canon"
 plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/run1.ext"    --out "$F/fit.ref.canon" --sign "$(key qc).key" --add >/dev/null
 plankton author --cmd "$NORMCMD" --kind normalize --environment "$NENV" --env-ref "$NORMREF" --in "tools/strip-banner.sh" --in "$F/run1-qc.ext" --out "$F/fit.qc.canon" --sign "$(key qc).key" --add >/dev/null
-echo -n "  plankton reproduces (raw): "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" || true
-echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT" || true
+echo -n "  plankton reproduces (raw): "; expect_fail "the RAW comparison (the run banners differ by design)" plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")"
+# no `|| true`: L1 reproduction is what the release gate later requires, so it must really hold here.
+echo -n "  plankton reproduces --via normalizer: "; plankton reproduces "$(plankton hash "$F/run1.ext")" "$(plankton hash "$F/run1-qc.ext")" --via "$POT"
 # QC signs the reproduction as a claim that CONNECTS the two runs: subject = the analyst's output,
 # level = L1 (what the gate checks), and reproducedBy = QC's re-run foton - so the graph draws the
 # edge "the analyst's fit is reproduced by QC's fit", not two unlinked fotons.
@@ -178,23 +191,28 @@ nekton claim "$F/repro.json" "$(key qc).key" --add >/dev/null; echo "  QC signed
 
 echo; echo "########## ACT 5 - review scope: typed sign-offs with evidence, chained + sealed (04/05/11) #"
 export NEKTON_DIR="$W/sponsor/nekton"
-SCOPE=$(nekton seed popPK-mABC --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add | grep -oE 'sha256:[0-9a-f]+' | head -1)
+SCOPE=$(nekton seed popPK-mABC --when "$KTON_WHEN" --sign "$(key lead).key" --by "did:web:sponsor.example/people/lead" --add --print-id)
 printf "%%PDF qc review\n" > "$F/qc-rep.pdf"; printf "%%PDF lead review\n" > "$F/lead-rep.pdf"
-nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
-C1=$(nekton by predicate "https://kton.dev/v/gxp/reviewed" | head -1 | awk '{print $1}')
-nekton annotate --foton "$F/fit.dsse.json" --template gxp/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
+nekton annotate --foton "$F/fit.dsse.json" --template qa/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/qc-rep.pdf" --by "CN=qc" --when "$KTON_WHEN" --sign "$(key qc).key" --scope "$SCOPE" --prev "$SCOPE" --add >/dev/null
+# .records holds bare envelopes (SPEC §12); the claim id is a key of the summary beside them.
+C1=$(nekton by predicate "https://kton.dev/v/qa/reviewed" --json | python3 -c "
+import json,sys
+d=json.load(sys.stdin); ids=list(d['summary'])
+assert len(ids)==1, f'expected one qa:reviewed claim here, saw {len(ids)}'
+print(ids[0])")
+nekton annotate --foton "$F/fit.dsse.json" --template qa/review --set outcome=pass --set sop="SOP-REV-002" --set report="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --scope "$SCOPE" --prev "$C1" --add >/dev/null
 locate "$F/qc-rep.pdf" "https://sponsor.example/reviews/qc-report.pdf" qc
 locate "$F/lead-rep.pdf" "https://sponsor.example/reviews/lead-report.pdf" lead
-# a general (non-GxP) approval reuses schema.org (example 11)
-nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set decision=https://schema.org/AcceptAction --set comment="$F/lead-rep.pdf" --by "CN=lead" --sign "$(key lead).key" --add >/dev/null
-HEAD=$(nekton head "$SCOPE" | awk '/head:/{print $2}')
-echo "  seed -> gxp:reviewed(qc,pass) -> gxp:reviewed(lead,pass) sealed; HEAD=$HEAD"
+# a general approval, outside any quality vocabulary, reuses schema.org (example 11)
+nekton annotate --foton "$F/fit.dsse.json" --template review/decision --set decision=https://schema.org/AcceptAction --set comment="$F/lead-rep.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --add >/dev/null
+HEAD=$(head_of "$SCOPE")
+echo "  seed -> qa:reviewed(qc,pass) -> qa:reviewed(lead,pass) sealed; HEAD=$HEAD"
 
 echo; echo "########## ACT 5b - explicit residual-risk acceptance (risk/accept) ##########"
 printf "%%PDF shrinkage sensitivity\n" > "$F/shrinkage.pdf"
-nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity=medium --set rationale="eta-shrinkage on CL 28pct; addressed by sensitivity analysis" --set mitigation="$F/shrinkage.pdf" --by "CN=lead" --sign "$(key lead).key" --add >/dev/null
+nekton annotate --foton "$F/fit.dsse.json" --template risk/accept --set severity=medium --set rationale="eta-shrinkage on CL 28pct; addressed by sensitivity analysis" --set mitigation="$F/shrinkage.pdf" --by "CN=lead" --when "$KTON_WHEN" --sign "$(key lead).key" --add >/dev/null
 locate "$F/shrinkage.pdf" "https://sponsor.example/risk/shrinkage-sensitivity.pdf" lead
-echo "  gxp:risk-accepted (medium, mitigation.pdf located) recorded"
+echo "  qa:risk-accepted (medium, mitigation.pdf located) recorded"
 
 echo; echo "########## ACT 6 - authoritative submission signature (Sigstore keyless stand-in, example 08)"
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/submitted","object":{"id":"did:web:sponsor.example/people/submitter"},"why":"submission head signed via Sigstore keyless (Fulcio+Rekor); real flow in example 08","by":"did:web:sponsor.example/people/submitter","when":"2026-07-16T00:00:00Z"}' "${HEAD#sha256:}" > "$F/submit.json"
@@ -242,13 +260,26 @@ echo -n "  2. environment fulfils spectrum:    "
 sh "$T/strip-banner.sh" "$F/test-covariate.ref"  > "$F/re.cov.ref.canon"
 sh "$T/strip-banner.sh" "$F/test-covariate.cand" > "$F/re.cov.cand.canon"
 if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1 && cmp -s "$F/re.cov.ref.canon" "$F/re.cov.cand.canon"; then echo "fully fulfilled (regulator re-normalized the L1 member)"; else echo "NOT fully fulfilled -> abort"; exit 1; fi
-echo -n "  3. analyst signature on the FIT:    "; if plankton verify "$F/fit.dsse.json" "$(key analyst).pub" 2>&1 | grep -q '\bVALID\b'; then echo "VALID"; else echo "INVALID -> abort"; exit 1; fi
+# Read the EXIT CODE, not the wording. `plankton verify` defines one (0 genuine and storable,
+# 1 tampered, 2 wrong key, 3 genuine but ingest would refuse it) and a gate should turn on that.
+# Grepping the output for "VALID" used to work and then silently stopped: the 0.2 kernel added a
+# fifth line ("structure: VALID") after the one that matched, so `grep -q` exited first and killed
+# the writer with SIGPIPE - pipefail turned a passing check into "INVALID -> abort".
+echo -n "  3. analyst signature on the FIT:    "
+VRC=0; plankton verify "$F/fit.dsse.json" "$(key analyst).pub" >/dev/null 2>&1 || VRC=$?
+case "$VRC" in
+  0) echo "VALID (signature genuine, and the record is one this store would accept)" ;;
+  1) echo "TAMPERED -> abort"; exit 1 ;;
+  2) echo "WRONG KEY - not signed by the analyst -> abort"; exit 1 ;;
+  3) echo "signature genuine but the record would be REFUSED on ingest -> abort"; exit 1 ;;
+  *) echo "plankton verify exited $VRC -> abort"; exit 1 ;;
+esac
 # BIND the envelope to the id the gate uses: re-derive fit.dsse.json's foton id with the kernel (a
 # fresh throwaway registry recomputes it from the bytes) and assert it EQUALS $FIT. Without this, the
 # gate would read the environment from an envelope nobody checked was the attested fit. This is a pure
 # hash re-derivation - no trust, no signature needed - and it is a HARD gate (abort on mismatch).
 echo -n "  4. fit envelope binds to fit id:    "
-REID=$(plankton add "$F/fit.dsse.json" --registry "$W/verify-tmp" 2>/dev/null | awk '/indexed foton/{print $3}')
+REID=$(plankton add "$F/fit.dsse.json" --registry "$W/verify-tmp" --print-id 2>/dev/null)
 if [ "$REID" = "$FIT" ]; then echo "BOUND ($FIT)"; else echo "MISMATCH ($REID != $FIT) -> abort"; exit 1; fi
 echo    "  5. scope head unbroken:             $HEAD"
 echo    "  (every check is mechanical over content-addressed records; the sponsor cannot fake any of it)"
@@ -267,8 +298,24 @@ PLANKTON_DIR="$W/agency/plankton" plankton export "$F/agency-plankton.json"
 # working intermediate (what rdflib parses), re-derivable from the two registry bundles above.
 plankton export --rdf --trust-keys "$W/keys" -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf --trust-keys "$W/keys" > "$F/submission.ttl"
 : > "$F/attestations.trig"
-for f in "$W/agency/nekton"/objects/sha256/*.json; do nekton export --nanopub --trust-keys "$W/keys" "$f" >> "$F/attestations.trig" 2>/dev/null; echo >> "$F/attestations.trig"; done
+# The claims ARE the gate's evidence, so read them with the asserting form and count what survives the
+# export. Both halves matter: a reader that cannot see the store returns an empty list rather than an
+# error (briefing B1), and an export that fails appends nothing while the loop marches on. Either way
+# the gate below would query a near-empty graph - and the SPARQL gate answers "not established" for
+# missing evidence, so an empty graph produces a confident-looking refusal built on nothing.
+records_required "$W/agency/nekton" "agency claims" 1 > "$F/agency-records.jsonl"
+attested=0
+while IFS= read -r rec; do
+  printf '%s\n' "$rec" > "$W/rec.json"
+  if nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$F/attestations.trig" 2>>"$W/export.err"; then
+    attested=$((attested + 1)); echo >> "$F/attestations.trig"
+  fi
+done < "$F/agency-records.jsonl"
+NREC=$(grep -c '' < "$F/agency-records.jsonl")
 echo "  nekton + plankton registries bundled (the gate's INPUT); RDF is the export step inside the decision"
+echo "  attestations.trig: $attested of $NREC agency claim(s) exported as nanopublications ($(wc -c < "$F/attestations.trig" | tr -d ' ') bytes)"
+[ "$attested" -gt 0 ] || { echo "  !! no claim exported as a nanopublication - the gate would run on an empty graph. nekton export said:" >&2
+                           sed 's/^/     /' "$W/export.err" >&2; exit 1; }
 # The verifier's OWN trust root: the authorities whose sec:controller vouchers it accepts (here the two
 # org authorities). This is what stops the sock-puppet forgery - three self-issued (or ring-signed) keys
 # are not vouched by a trusted authority, so they never count as reviewers. The trust root is written to
@@ -278,7 +325,12 @@ AUTH_CRO=$(keyid16 cro-org); AUTH_SPONSOR=$(keyid16 sponsor-org)
 printf 'trusted-authority %s  (CN=cro-org)\ntrusted-authority %s  (CN=sponsor-org)\n' "$AUTH_CRO" "$AUTH_SPONSOR" > "$F/trust-root.txt"
 if python3 -c "import rdflib" 2>/dev/null; then
   python3 "$EXDIR/release.py" "$F/submission.ttl" "$F/attestations.trig" "$EXDIR/release.rq" "$FIT" "$HEAD" "$AUTH_CRO" "$AUTH_SPONSOR" | tee "$F/verdict.txt"
-  [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "  !! GATE REGRESSION: the capstone gate did NOT return COMPLETE (release.py exited non-zero)"; exit 1; }
+  RC=${PIPESTATUS[0]}
+  case "$RC" in
+    0) : ;;
+    2) echo "  !! GATE ERROR: release.py could not run at all (it was handed an empty graph) - see above"; exit 1 ;;
+    *) echo "  !! GATE REGRESSION: the capstone gate did NOT return COMPLETE (release.py exited $RC)"; exit 1 ;;
+  esac
   # The decision is NOT a free-floating query: the agency records it as a FOTON whose INPUTS are the raw
   # registries it judged (the nekton claims + the plankton fotons, by hash) and the gate logic
   # (release.rq), under trust-root.txt; the export-to-RDF is a STEP of its command, not a rootless input.
@@ -288,11 +340,18 @@ if python3 -c "import rdflib" 2>/dev/null; then
   export PLANKTON_DIR="$W/agency/plankton"
   VERDICT=$(plankton author --cmd "release gate: export agency plankton+nekton to RDF, run release.rq over the merged graph under trust-root.txt -> verdict" \
     --in "$F/agency-plankton.json" --in "$F/agency-nekton.json" --in "release.rq" --in "$F/trust-root.txt" --out "$F/verdict.txt" \
-    --sign "$(key reviewer).key" --add | awk '/indexed foton/{print $3}')
+    --sign "$(key reviewer).key" --add --print-id)
   echo "  release decision recorded as foton $VERDICT"
   echo "    signed by the agency; its inputs ARE the nekton+plankton registries; re-run the export+gate -> same verdict (L0)"
+elif [ "${KTON_ALLOW_SKIP:-}" = "1" ]; then
+  echo "  !! RELEASE GATE SKIPPED (no rdflib, KTON_ALLOW_SKIP=1). This is NOT a pass - the capstone's"
+  echo "     whole point is the gate, and nothing above it was decided by one."
 else
-  echo "  (the release gate needs rdflib: 'pip install rdflib' - skipping)"
+  # The release gate is the payload of this example; skipping it silently and exiting 0 would make the
+  # capstone report success for a submission nobody adjudicated. CI installs rdflib.
+  echo "  the release gate needs rdflib: pip install rdflib" >&2
+  echo "  (set KTON_ALLOW_SKIP=1 to run the rest without it - it will say so out loud)" >&2
+  exit 1
 fi
 
 echo

@@ -11,7 +11,7 @@ W=".work"; rm -rf "$W"; mkdir -p "$W"; export PLANKTON_DIR="$W/reg"
 
 echo "== a kton foton, authored and signed by kton =="
 printf "id,dv\n1,4.2\n" > "$W/data.csv"; echo "cl=4.2" > "$W/fit.out"
-plankton keygen "$W/analyst" >/dev/null
+plankton keygen "$W/analyst" --seed "$(demoseed analyst)" >/dev/null
 plankton author --cmd "fit data.csv" --in "$W/data.csv" --out "$W/fit.out" \
   --sign "$W/analyst.key" -o "$W/foton.dsse.json" --add >/dev/null
 echo "  foton.dsse.json  (a DSSE envelope: payloadType application/vnd.in-toto+json)"
@@ -27,7 +27,11 @@ p = bytearray(base64.b64decode(d["payload"])); p[10] ^= 1          # flip a bit
 d["payload"] = base64.b64encode(bytes(p)).decode()
 json.dump(d, open(sys.argv[2], "w"))
 PY
-python3 "$EXDIR/verify_foreign.py" "$W/tampered.dsse.json" "$W/analyst.pub" || echo "  (rejected, as it must be)"
+# `cmd || echo "(rejected, as it must be)"` was not a control: if the verifier ever ACCEPTED the
+# tampered envelope, the echo simply would not run, the example would exit 0, and the only trace would
+# be a missing line of narration nobody diffs. expect_fail turns that into a failure.
+expect_fail "the foreign verifier on a tampered payload" python3 "$EXDIR/verify_foreign.py" "$W/tampered.dsse.json" "$W/analyst.pub"
+echo "  (rejected, as it must be)"
 
 echo; echo "The same in-toto+DSSE shape is what cosign, in-toto, and the SLSA toolchain read - a kton"
 echo "record needs no kton tool to be verified, only the signer's public key."

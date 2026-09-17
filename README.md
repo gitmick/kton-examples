@@ -48,6 +48,9 @@ two.)
 | 12 | `submission` | capstone: a regulated popPK submission across three orgs, verified by the agency with zero trust, gated by a SPARQL release query the agency records as a verdict-foton |
 | 13 | `foreign-verify` | a kton record verified by a non-kton tool (standard DSSE + Ed25519, no kton code) - records are copyable between tools |
 | 14 | `fetch` | resolve a content hash to its bytes via a signed `dcat:downloadURL`, re-hash on arrival, reject a forged mirror - the content-present verification tier |
+| 15 | `attach-material` | bind external evidence (Sigstore/Rekor/RFC 3161/eIDAS) to a record: kton carries it and never evaluates it, and a foton id is not its payload hash |
+| 16 | `reuse-cache` | the action key: has this been computed before? - and why a cache HIT is not an answer |
+| 17 | `reproductions` | ↻N independent signers for one output, and how a relabelled keyid inflates it until you pass `--trust-keys` |
 
 ## Run them yourself
 
@@ -84,9 +87,23 @@ also add to PATH):
 
 ## What is NOT here
 
-Private keys (`*.key`), the kton binaries, and the throwaway per-example working state (`.work/`) are
-git-ignored, this is a public repo. Only the run scripts, the viewer, and the (public) graph
-snapshots are published.
+Private keys (`*.key`) and the kton binaries are git-ignored - this is a public repo.
+
+`examples/*/.work/` is a split: the **data** an example reads and writes stays tracked, because every
+foton's recorded input/output carries a raw permalink to it, so you can fetch the exact bytes behind
+any node in the graph. Everything a run **derives** from that data - the registries, the public keys,
+the signed envelopes, the RDF exports, the generated claim specs - is ignored: it is rewritten on
+every run with a fresh keypair, so it can never diff cleanly, and nothing links to it.
+`bin/check-permalinks.py` holds the two halves together, failing CI if a carried permalink ever names
+a file this repo does not publish.
+
+The committed graph snapshots under `docs/data/` are **reproducible**: each example derives its demo
+keys from a fixed seed (`keygen --seed`, via `demoseed` in `lib/common.sh`) and stamps a fixed
+`--when`, so re-running an example reproduces its snapshot byte-for-byte instead of only differing by
+a fresh key. Those seeds are published strings — the keys are demo fixtures and worthless; real use
+is plain `keygen` with no `--seed`. Two examples stay volatile deliberately: `10-tool-spectrum` and
+`12-submission` print a pid/wall-clock banner, which is the very thing that makes their L0-vs-L1
+distinction demonstrable.
 
 ## Curated nekton templates
 
@@ -97,16 +114,17 @@ authoring them, are *federated data*, deliberately kept out of the protocol repo
 
 - **`aliases.json`** - CURIE/term sugar that resolves to canonical IRIs *before* a claim is built, so
   the signed wire form always carries the full IRI. Vocabulary policy: reuse a published ontology
-  wherever one fits - **PROV** (lineage), **PAV** (`pav:reviewedBy` for general review), **DCAT**
+  wherever one fits - **PROV** (lineage), **PAV** (`pav:createdBy` and the authoring terms), **DCAT**
   (`dcat:downloadURL` for location), **schema.org** (`AcceptAction`/`RejectAction` for a review verdict),
   the **W3C Security Vocabulary** (`sec:controller` for a key -> principal binding), **OWL/SKOS**
-  (equivalence/hierarchy). The regulated **`gxp:*`**
-  terms are reserved for actual GxP-validated processes; ordinary review uses `pav:reviewedBy`.
+  (equivalence/hierarchy). The regulated **`qa:*`**
+  terms are reserved for a quality process that actually keeps records; an ordinary review uses
+  `nk:reviewed`, because no published ontology defines a `reviewed by` property (F-043).
 - **`templates/`** - example authoring templates (`kton.dev/template/v0`) consumed by `nekton
   annotate`: `prov-derived-from.json` (a plain PROV lineage claim, the minimal mechanism demo);
-  `review-decision.json` (a general review: approve/reject a foton with `pav:reviewedBy` +
+  `review-decision.json` (a general review: approve/reject a foton with `nk:reviewed` +
   `schema:AcceptAction`/`RejectAction` and a file comment - see [example 11](examples/11-review-template/));
-  `gxp-review.json`, `gxp-tool-validation.json`, `risk-accept.json` (regulated GxP examples);
+  `qa-review.json`, `qa-tool-validation.json`, `risk-accept.json` (quality-process examples);
   `election-vote-initialised.json`, `election-count-finished.json` (a liquid-democracy governance
   example); `pmx-model-role.json` (a pharmacometrics domain example).
 
@@ -118,3 +136,9 @@ NEKTON_TEMPLATES=./templates NEKTON_ALIASES=./aliases.json \
 These illustrate the template/alias *mechanism*. Curate additions deliberately: an example here is a
 suggestion, not a standard, the normative vocabulary policy lives in the protocol's
 `spec/vocabulary.md`.
+
+## License
+
+[Apache License 2.0](LICENSE), the same licence as the
+[kton](https://github.com/kton-protocol/kton) reference implementation this repository demonstrates.
+See [NOTICE](NOTICE) — in particular for the demo keys, whose seeds are published strings.

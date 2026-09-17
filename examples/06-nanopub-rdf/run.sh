@@ -8,14 +8,16 @@ source ../../lib/common.sh
 export PLANKTON_DIR="$PWD/.work/plankton"
 export NEKTON_DIR="$PWD/.work/nekton"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys" "$PWD/.work/exports"
-plankton keygen "$PWD/.work/keys/analyst"  >/dev/null
-nekton  keygen "$PWD/.work/keys/reviewer" >/dev/null
+plankton keygen "$PWD/.work/keys/analyst" --seed "$(demoseed analyst)"  >/dev/null
+nekton  keygen "$PWD/.work/keys/reviewer" --seed "$(demoseed reviewer)" >/dev/null
 
 echo "== Create: a foton + a claim about it =="
 echo "raw" > .work/data.csv; echo "model" > .work/model.txt
 FOTON="$(plankton author --cmd "fit data.csv model.txt" --in .work/data.csv --out .work/model.txt \
-  --sign "$PWD/.work/keys/analyst.key" --add | awk '/indexed foton/{print $3}')"
-printf '{"subject":[{"hash":"%s"}],"predicate":"pav:reviewedBy","object":{"value":"approved"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json
+  --sign "$PWD/.work/keys/analyst.key" --add --print-id)"
+# active, unary predicate: the object is the VERDICT, the reviewer is the signer (see example 04 -
+# passive pav:reviewedBy would claim the foton was reviewed by "approved")
+printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reviewed","object":{"value":"approved"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json
 # keep the envelope file (for the nanopub export below) AND ingest, in one step
 nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json --add >/dev/null
 
@@ -26,11 +28,21 @@ plankton export --rdf --trust-keys .work/keys -o .work/exports/lineage.ttl
 grep -E "a prov:Activity|prov:wasGeneratedBy" .work/exports/lineage.ttl | sed 's/^/    /'
 echo "-- nekton claim as nanopublication (RDF/TriG) --"
 nekton export --nanopub --trust-keys .work/keys .work/review.dsse.json -o .work/exports/claim.trig 2>/dev/null
-grep -E "pav:reviewedBy" .work/exports/claim.trig | sed 's/^/    /'
+grep -E "nk:reviewed" .work/exports/claim.trig   # the export abbreviates https://kton.dev/v/ to nk: | sed 's/^/    /'
 FHEX="${FOTON#sha256:}"
 echo "-- the JOIN: both name the same node pk:${FHEX:0:16}... --"
-echo "    plankton: $(grep -c "pk:$FHEX a prov:Activity" .work/exports/lineage.ttl) activity"
-echo "    nekton:   $(grep -c "pk:$FHEX" .work/exports/claim.trig) reference(s) to the same node"
+# The join IS this example's claim, so count into variables and REQUIRE both sides. Inline
+# `$(grep -c ...)` cannot fail the run: grep prints 0 and exits 1, but a command substitution's exit
+# status is discarded inside an echo argument - so "0 activity / 0 reference(s)" would print happily
+# and the example would pass while demonstrating the exact opposite of its point.
+NACT=$(grep -c "pk:$FHEX a prov:Activity" .work/exports/lineage.ttl || true)
+NREF=$(grep -c "pk:$FHEX" .work/exports/claim.trig || true)
+echo "    plankton: $NACT activity"
+echo "    nekton:   $NREF reference(s) to the same node"
+if [ "$NACT" -lt 1 ] || [ "$NREF" -lt 1 ]; then
+  echo "  !! the two exports do NOT meet at pk:$FHEX - there is no join, which is this example's whole point" >&2
+  exit 1
+fi
 
 echo ""
 snapshot 06-nanopub-rdf "$PWD/.work/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"

@@ -1,11 +1,15 @@
 name: ci
 
 # Runs every one of the 14 examples end to end. The examples need the reference binaries
-# (plankton / nekton / kton), which are built from the sibling `plankton` repo - so this job checks
-# that repo out and builds them. While `plankton` is private, add a repo secret PLANKTON_TOKEN
-# (a fine-grained PAT with Contents: read on the plankton repo); once plankton is public the default
-# token is enough and the secret can be removed. `${{ github.repository_owner }}` makes this follow the
-# examples repo into whatever org it lives in (kton-protocol), no edit needed after the migration.
+# (plankton / nekton / kton), which are built from the kernel repo - so this job checks it out and
+# builds them.
+#
+# The kernel is kton-protocol/kton, and it is PUBLIC, so the default token is enough and no
+# PLANKTON_TOKEN secret is needed. It is named explicitly rather than derived from
+# `github.repository_owner`: this repo is still gitmick/kton-examples, so deriving it resolved to
+# gitmick/plankton - archived, private, and a month behind - which failed the checkout and SKIPPED
+# every example step. CI reported failure for a month while verifying nothing. If this repo moves to
+# kton-protocol, the line below keeps working unchanged.
 
 on:
   push:
@@ -19,12 +23,18 @@ jobs:
       - name: checkout kton-examples
         uses: actions/checkout@v4
 
-      - name: checkout the plankton kernel (to build the reference binaries)
+      # ref MATTERS. Without it this floats on the kernel's default branch, and a green run then says
+      # nothing about the kernel this suite is published against. These examples are the 0.2 suite, so
+      # they build the 0.2 kernel: `v0.2.0` is a tag, so what CI builds today is what it built at
+      # release. A moving ref would let the meaning of a green run change after publication.
+      # When the suite moves to the next kernel, this line and the KTON_RAW_COMMIT pin in
+      # lib/common.sh move together - a dangling ref fails loudly, which is the point.
+      - name: checkout the kton kernel (to build the reference binaries)
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/plankton
-          path: _plankton
-          token: ${{ secrets.PLANKTON_TOKEN || github.token }}
+          repository: kton-protocol/kton
+          ref: v0.2.0
+          path: _kton
 
       - uses: actions/setup-go@v5
         with:
@@ -34,18 +44,18 @@ jobs:
           python-version: '3.12'
       - uses: r-lib/actions/setup-r@v2
 
-      - name: toolchain (rdflib for the SPARQL gates; xxd for the OpenSSL example)
+      - name: toolchain (rdflib for the SPARQL gates; cryptography for the foreign verifier; xxd for the OpenSSL example)
         run: |
-          python -m pip install --quiet rdflib
+          python -m pip install --quiet rdflib cryptography
           command -v xxd >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y xxd; }
 
       - name: build the three reference binaries onto PATH (bin/ is gitignored)
         run: |
           set -e
           mkdir -p bin
-          ( cd _plankton/reference        && go build -trimpath -o "$GITHUB_WORKSPACE/bin/plankton" ./cmd/plankton )
-          ( cd _plankton/nekton/reference && go build -trimpath -o "$GITHUB_WORKSPACE/bin/nekton"   ./cmd/nekton   )
-          ( cd _plankton/kton/reference   && go build -trimpath -o "$GITHUB_WORKSPACE/bin/kton"     ./cmd/kton     )
+          ( cd _kton/reference        && go build -trimpath -o "$GITHUB_WORKSPACE/bin/plankton" ./cmd/plankton )
+          ( cd _kton/nekton/reference && go build -trimpath -o "$GITHUB_WORKSPACE/bin/nekton"   ./cmd/nekton   )
+          ( cd _kton/kton/reference   && go build -trimpath -o "$GITHUB_WORKSPACE/bin/kton"     ./cmd/kton     )
 
       - name: run every example end to end (snapshots regenerate; we assert exit 0)
         run: |
@@ -62,3 +72,17 @@ jobs:
           # ex-08 (Sigstore keyless) is interactive: it runs its automatic part and exits 0, printing the
           # manual sign step - so it passes here without doing the OIDC round-trip.
           exit $fail
+
+      - name: a run changed only what it is allowed to change
+        # Must run AFTER the examples, from the checkout they ran in. Two assertions that used to be
+        # a number somebody measured by hand: nothing untracked that no rule ignores (this is how a
+        # new file class from a kernel upgrade announces itself - kton #97's <registry>/.seq arrived
+        # in 15 examples and went unnoticed for three days), and no tracked file touched outside the
+        # two examples that are volatile on purpose.
+        run: bash bin/check-churn.sh
+
+      - name: every carried permalink resolves to a file this repo publishes
+        # Must run AFTER the examples: it reads the records they just produced. lib/common.sh mints a
+        # raw permalink for every recorded input/output, and .gitignore decides whether the file behind
+        # it is published - two files that know nothing about each other. This is what connects them.
+        run: python3 bin/check-permalinks.py

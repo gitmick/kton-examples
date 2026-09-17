@@ -10,18 +10,65 @@ same foton, checks the review was done correctly (different participants, nothin
 the template itself **registered as a federated record**, and finally **exports the RDF and runs a
 SPARQL query that tests the review is complete**.
 
+## Setup
+
+Everything below is typed in one directory. The two `NEKTON_*` variables are the part people miss:
+templates and aliases are **federated data, not built into the binary**, so nekton has to be told
+where they are or `--template review/decision` fails with `no template "review/decision" in
+./templates`. Point them at this repository's curated set:
+
+```
+git clone https://github.com/gitmick/kton-examples && cd kton-examples
+export NEKTON_TEMPLATES="$PWD/templates"      # the curated template set (data, not code)
+export NEKTON_ALIASES="$PWD/aliases.json"     # short names -> canonical IRIs
+
+mkdir -p /tmp/ex11 && cd /tmp/ex11
+export PLANKTON_DIR="$PWD/plankton"           # the results registry
+export NEKTON_DIR="$PWD/nekton"               # the reviews registry
+```
+
+Then an identity and a foton to review, so the reviewers below have something to point at:
+
+```
+plankton keygen author
+printf "auc\n42.0\n" > result.csv
+echo "verdict=within-range"  > assessment.txt
+plankton author --cmd "assess result.csv" --in result.csv --out assessment.txt \
+    --sign author.key --add -o foton.dsse.json
+```
+
+Each reviewer needs a key and a comment file:
+
+```
+nekton keygen alice
+printf "# alice\nReproduced locally; AUC within range. Approve.\n" > alice.md
+```
+
 ## Reused vocabulary, no minted terms
 
-The template commits to published vocabularies (per the repo's vocabulary policy):
+The template commits to published vocabularies, following the vocabulary policy written down in
+[`aliases.json`](../../aliases.json)'s own `note` field. In plain terms: **`pav:`, `schema:` and the
+rest are borrowed** from vocabularies other people already publish and maintain; **`nk:`
+(`https://kton.dev/v/`) is kton's own**, minted only where nothing existing names the concept. Two
+prefixes, because reusing a term someone else defined is worth more than a term we defined.
 
-- the review relation is **PAV** `pav:reviewedBy`;
+(Careful with "repo" around here: it means *this codebase*, not a **registry** — the directory of
+records `PLANKTON_DIR`/`NEKTON_DIR` point at, which examples 01-04 introduced. Two storage-flavoured
+words, unrelated things.)
+
+The template's bindings:
+
+- the review relation is kton's own `nk:reviewed` (`https://kton.dev/v/reviewed`) - active and
+  unary, so the object is the *verdict* and the reviewer comes from the signature. No published
+  ontology defines a "reviewed by" property, and a passive one would put the reviewer where the
+  verdict belongs;
 - the verdict reuses **schema.org**: approve = `schema:AcceptAction`, reject = `schema:RejectAction`
   (as the type of the review node), so `approve`/`reject` are not local strings but standard IRIs;
 - the comment is a **file**, hashed to a content ref and attached as `nk:evidence`.
 
 ```
 nekton templates --show review/decision
-#   predicate: http://purl.org/pav/reviewedBy
+#   predicate: https://kton.dev/v/reviewed
 #   fields:  decision  enum  REQUIRED  {https://schema.org/AcceptAction|https://schema.org/RejectAction}
 #            comment   file  optional  role=evidence
 ```
@@ -38,7 +85,7 @@ nekton annotate --foton foton.dsse.json --template review/decision \
 
 `--foton` resolves the subject to the foton's id (so the review joins plankton's index; `nekton about
 <fotonId>` and plankton lineage align on the same hash). The claim comes out as
-`foton pav:reviewedBy [ a schema:AcceptAction ; nk:evidence <comment> ]`, signed by Alice.
+`foton nk:reviewed [ a schema:AcceptAction ; nk:evidence <comment> ]`, signed by Alice.
 
 ## Did we review it correctly?
 
@@ -69,7 +116,7 @@ of it, abridged for readability:
 
 ```
 SELECT ?verdict (COUNT(DISTINCT ?reviewer) AS ?reviewers) WHERE {
-  GRAPH ?review { ?foton pav:reviewedBy ?r . ?r rdf:type ?verdict . }
+  GRAPH ?review { ?foton nk:reviewed ?r . ?r rdf:type ?verdict . }
   ?review prov:wasAttributedTo ?reviewer .
   FILTER(?verdict IN (schema:AcceptAction, schema:RejectAction))
 } GROUP BY ?verdict

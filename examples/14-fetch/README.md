@@ -34,7 +34,7 @@ foton; its result is named by a content hash. You hold the record - but plankton
 your local content store is empty. You cannot re-hash what you do not have.
 
 ```
-kton blob "$RESULT"
+plankton blob "$RESULT"
 # absent sha256:7f6e...     <- the record is filed; the bytes are not here
 ```
 
@@ -45,27 +45,47 @@ dereferences the URI, re-hashes, and pins **only if the hash matches**:
 
 ```
 nekton claim loc.json lab.key --add          # <RESULT> dcat:downloadURL file://.../result.bytes
-kton fetch "$RESULT"
-# sha256:7f6e...: 1 signed location(s) suggested
-#   [1] file://.../result.bytes  (signed by CN=lab) ... OK - 10 bytes, verified & pinned
-kton blob "$RESULT"
+kton fetch --trust-keys trust-lab --allow-local "$RESULT"
+# sha256:7f6e...: 1 located-at claim(s), 1 signed by a trusted key
+#   [1] file://.../result.bytes  (verified signer key:6de19b30...) ... OK - 10 bytes, verified & pinned
+plankton blob "$RESULT"
 # PINNED sha256:7f6e...        <- content-present: the bytes are here, and they hash to what was named
 ```
 
-**C. A location is a hint, not an authority.** Now an **untrusted stranger** publishes a second signed
-location pointing at *forged* bytes. `kton fetch` tries every suggestion and checks each on arrival:
+`--trust-keys` is a **directory of public keys you chose**, and it is required. The keyid printed is
+the one that actually *verified*, never the envelope's self-declared field. `--allow-local` is a
+second, separate yes: these locators are `file://`, and a signature about **content** says nothing
+about a path on **your** machine.
+
+**C. Two defences, and neither replaces the other.** An **untrusted stranger** publishes a second
+signed location pointing at *forged* bytes.
+
+**C1 - a stranger's location is never opened at all.** With only the lab trusted, the registry holds
+two located-at claims and exactly one is dereferenceable:
 
 ```
-kton fetch "$RESULT"
-# sha256:7f6e...: 2 signed location(s) suggested
-#   [1] file://.../mirror/result.bytes  (signed by CN=stranger) ... HASH MISMATCH (got sha256:aa06...) - rejected
-#   [2] file://.../store/result.bytes   (signed by CN=lab)      ... OK - 10 bytes, verified & pinned
+# located-at claims in the registry: 2    signed by a key we trust: 1
 ```
 
-The forged mirror hash-mismatches and is thrown out; a good location still verifies. This is the whole
-point of content addressing: **the hash is the authority, the URI is only a hint.** Bytes may come from
-*any* mirror - even an untrusted one, even a public CDN - because corruption or tampering is caught on
-arrival (`sha256 != hash`), never trusted. A signed pointer to bad bytes cannot fool you.
+This is the defence a hash cannot provide. Dereferencing is a **request made from your host** - and
+for `file://`, a read of your disk - and no check performed on the result retracts the request. For a
+file whose hash an attacker already knows, the content check does not even reject the outcome. So a
+stranger does not get to choose what your process opens.
+
+**C2 - and a trusted signer's bytes are still checked exactly as hard.** Trust the stranger too, put
+the good copy out of reach, and the forged location is the one tried:
+
+```
+kton fetch --trust-keys trust-both --allow-local "$RESULT"
+#   [1] file://.../store/result.bytes   ... unreachable
+#   [2] file://.../mirror/result.bytes  (verified signer key:b41627af...) ... HASH MISMATCH - rejected
+# error: no suggested location resolved to bytes matching sha256:7f6e...
+```
+
+**The trust policy decides whose location is opened; the hash decides whether what came back is what
+the record named.** The older half of that sentence is still true - content addressing self-checks on
+arrival, so *bytes* from an untrusted mirror cannot fool you. What changed is that the *request* is
+its own exposure, and that one is settled before anything is opened, not after.
 
 ## Two ways to say where the bytes are
 
@@ -87,6 +107,42 @@ corrupt, `kton fetch` would fail - the record stays fully verifiable (signature 
 is simply unavailable. Bytes are **located, not stored**, and kept per a retention policy; that they
 still exist *somewhere* is a retention obligation, stated rather than assumed (Trust chapter, the
 retention boundary). Availability is never a *trust* problem - only a liveness one.
+
+## What this example needs from which binary
+
+This is the **only** example that needs the `kton` cockpit binary, and after `plankton blob`
+absorbed the blob store (kton #102) it needs exactly one command from it: **`kton fetch`**.
+Everything else here — authoring the foton, signing the `located-at` claim, asking the local store
+whether the bytes are present — is kernel.
+
+`kton fetch` cannot move into `plankton` or `nekton`, and that is a decision rather than an
+omission. The resolver says so where it lives (`kton/reference/cmd/kton/fetch.go`):
+
+> the one place a URI is dereferenced. It belongs in kton and only in kton: plankton and nekton are
+> strictly neutral, they CARRY a URI as an opaque signed string and never execute it.
+
+It is the same line the substrate draws everywhere else. plankton never executes a protocol
+([01](../01-hello-foton/)); nekton stores verification material and never evaluates it
+([15](../15-attach-material/)); and here, the kernels record *where somebody says* bytes can be had
+and never go and ask. Dereferencing is a request made **from your host** — for `file://`, a read of
+your disk — and that is an act with consequences a later hash check cannot retract. Putting it in a
+kernel would make every reader of a record a potential client of whatever a stranger signed.
+
+So if the cockpit ever leaves this repository, the cut is already drawn:
+
+| part | needs | goes where |
+|---|---|---|
+| A — a record names its bytes, the local store is empty | `plankton author`, `plankton hash`, `plankton blob` | stays |
+| the signed `dcat:downloadURL` locator itself | `nekton claim` | stays |
+| B, C1, C2 — dereference, verify on arrival, trust policy | **`kton fetch`** | goes with the cockpit |
+
+Measured rather than assumed: with the `kton` binary removed from `PATH`, sixteen of the seventeen
+examples still pass, and this one fails at the first `kton fetch` — everything above it, through
+signing and filing the locator claim, has already run.
+
+Part A plus the claim is a complete kernel-side lesson on its own: a record names bytes it does not
+hold, and the hash is the only thing that will ever decide whether what comes back is the right
+thing. What the cockpit adds is the going-and-getting.
 
 ## Run it yourself
 

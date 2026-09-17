@@ -7,7 +7,7 @@ source ../../lib/common.sh
 
 export PLANKTON_DIR="$PWD/.work/registry"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
-plankton keygen "$PWD/.work/keys/me" >/dev/null
+plankton keygen "$PWD/.work/keys/me" --seed "$(demoseed me)" >/dev/null
 
 echo "== Create: record a foton whose output is a deterministic result =="
 echo "1 2 3 4" > .work/input.txt
@@ -27,7 +27,7 @@ echo -n "  reproduces (re-run): "; plankton reproduces "$REF" "$RERUN"
 echo "== a TAMPERED re-run must not reproduce (negative control) =="
 echo "sum=999" > .work/result_tampered.txt
 TAMP="$(plankton hash .work/result_tampered.txt)"
-echo -n "  reproduces (tampered): "; plankton reproduces "$REF" "$TAMP" || true
+echo -n "  reproduces (tampered): "; expect_fail "the tampered re-run" plankton reproduces "$REF" "$TAMP"
 
 echo ""
 snapshot 03-reproduce "$PWD/.work/keys" --reg "$PLANKTON_DIR"

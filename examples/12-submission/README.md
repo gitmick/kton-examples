@@ -29,7 +29,7 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
 1. **Qualify the toolchain + environment** (09/10). The `pmxtools` test suite runs in real R, one test
    per foton; two reproduce byte-identical (L0), the covariate test carries a volatile banner so it only
    matches after the normalizer (L1). The suite becomes a **spectrum**; the pinned OCI image is checked
-   `3/3` and bound to it with a signed `qualifies-as`; a `gxp:validation-performed=pass` claim carries
+   `3/3` and bound to it with a signed `qualifies-as`; a `qa:validation-performed=pass` claim carries
    the SOP + protocol PDF as hashed evidence.
 2. **Run the analysis under the qualified environment** (01/09). `raw.csv -> analysis.csv -> FIT ->
    diagnostics`, where the fit is authored `--environment <ENV>` so "produced under a qualified
@@ -49,9 +49,9 @@ Each org vouches for its own staff with a `sec:controller` Verifiable Credential
    its own reference corpus (banner-laden -> canonical pairs it must reproduce). The `--via <normalizer>`
    potential now commits to *which* qualified normalizer ran, not just a command string.
 5. **The review scope** (04/05/11). `nekton seed` opens a scope; two independent reviewers each sign a
-   `gxp:reviewed=pass` (with report PDF evidence), chained `prev -> prev` and sealed by one **head**.
+   `qa:reviewed=pass` (with report PDF evidence), chained `prev -> prev` and sealed by one **head**.
    Editing any earlier claim breaks the chain. A general approval reuses schema.org
-   (`schema:AcceptAction`). Residual risk is accepted explicitly with `gxp:risk-accepted`.
+   (`schema:AcceptAction`). Residual risk is accepted explicitly with `qa:risk-accepted`.
 6. **The submission signature** (08). Regulatory affairs signs the scope head with the org's GitHub/OIDC
    identity via Sigstore keyless (here a stand-in `nk:submitted` claim; the real Fulcio+Rekor flow is
    example 08). The agency trusts Fulcio + Rekor + GitHub, not the sponsor.
@@ -84,12 +84,12 @@ federated store holds many submissions' records at once.
 
 ```
 release checklist (six graph conditions + four-eyes decided in the driver, all bound to this submission):
-  [x] toolchain validated (gxp:validation-performed = pass)
+  [x] toolchain validated (qa:validation-performed = pass)
   [x] the fit's environment is qualified (qualifies-as citing a check foton that FULLY passed, N==M)
   [x] the fit ran the designated final model (pmx:model-role = final)
   [x] the fit's output reproduces (nk:reproduces at L0/L1)
   [x] two distinct authority-vouched PRINCIPALS reviewed, each != the verified author, no fail (driver-decided)
-  [x] residual risk explicitly accepted (gxp:risk-accepted)
+  [x] residual risk explicitly accepted (qa:risk-accepted)
   [x] the submission head is signed by a verifiable identity (nk:submitted)
 RELEASE: COMPLETE - the submission may be accepted
   (same gate bound to an unrelated hash: 0/7 conditions -> BLOCKED)
@@ -125,7 +125,7 @@ seven conditions hold **over the corpus it was handed** - no more:
   principal *pairs*, so a **single** reviewer whose one `sec:controller` binding bound `?p` twice could
   satisfy "two", and an injected edge could pollute the author binding (the ~5th distinct four-eyes
   bypass). So `release.py` now **counts** instead: it reads the fit's unique verified author from the
-  trusted plankton-lineage graph, the reviewers who signed a `gxp:reviewed=pass` of this fit, and a
+  trusted plankton-lineage graph, the reviewers who signed a `qa:reviewed=pass` of this fit, and a
   key->(principal, authority) map from `sec:controller` bindings **whose own signer is a trusted
   authority**; then it requires **>= 2 distinct principals**, each authority-vouched, each a different key
   *and* different principal from the author, and no fail. Deterministic - no pair-matching or
