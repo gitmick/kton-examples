@@ -1,0 +1,4 @@
+analysis: bill depth ~ bill length, within species
+Adelie: n=151  r=+0.391  p=6.67e-07
+Chinstrap: n=68  r=+0.654  p=1.53e-09
+Gentoo: n=123  r=+0.643  p=1.02e-15

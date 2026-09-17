@@ -1,0 +1,22 @@
+DATA SOURCE AND CITATION
+========================
+The measurements in this corpus are the Palmer Archipelago (Antarctica) penguin data,
+used unchanged.
+
+  Horst AM, Hill AP, Gorman KB (2020). palmerpenguins: Palmer Archipelago (Antarctica)
+  penguin data. R package version 0.1.0. doi:10.5281/zenodo.3960218
+  https://allisonhorst.github.io/palmerpenguins/
+
+  Gorman KB, Williams TD, Fraser WR (2014). Ecological sexual dimorphism and environmental
+  variability within a community of Antarctic penguins (genus Pygoscelis).
+  PLoS ONE 9(3):e90081. doi:10.1371/journal.pone.0090081
+
+Data were collected and made available by Dr. Kristen Gorman and the Palmer Station
+Antarctica LTER, a member of the Long Term Ecological Research Network.
+Released under CC0.
+
+WHAT IS INVENTED
+================
+Everything else. The field station, the report, its authors, the ethics committee, the
+reviewer, and the individual animal names are fabricated for a demonstration of
+provenance records. No such study exists.

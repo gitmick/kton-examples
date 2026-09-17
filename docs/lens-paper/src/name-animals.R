@@ -1,0 +1,6 @@
+a <- commandArgs(trailingOnly=TRUE); set.seed(1999)
+d <- read.csv(a[1], check.names=FALSE)
+girls <- c("Angela","Pamela","Sandra","Rita","Monica","Erica","Tina","Mary","Jessica")
+nm <- as.vector(t(outer(girls, 1:ceiling(nrow(d)/length(girls)), function(g,i) paste(g,i))))
+d <- cbind(animal_name = sample(nm, nrow(d)), ring_id = sprintf("PAL-%04d", 1:nrow(d)), d)
+write.csv(d, a[2], row.names=FALSE)

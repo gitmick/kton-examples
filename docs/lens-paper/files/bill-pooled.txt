@@ -1,0 +1,4 @@
+analysis: bill depth ~ bill length, all animals pooled
+n: 342
+r: -0.235
+p: 1.12e-05
