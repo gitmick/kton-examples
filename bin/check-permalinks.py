@@ -79,9 +79,17 @@ if "--against-ref" in sys.argv:
 else:
     tracked = set(subprocess.run(["git", "ls-files"], capture_output=True, text=True, check=True)
                   .stdout.split("\n"))
-broken = sorted((p, src) for p, src in found.items() if p not in tracked)
+# A carried locator always names a FILE. A target that is a tracked directory is therefore a base
+# prefix somebody wrote down - docs/lens-paper/build.sh documents its --base that way - and the paths
+# under it are checked on their own. Counting the prefix as a 404 would report a failure for a line
+# that is not a link.
+prefixes = {p for p in found if p not in tracked and any(t.startswith(p + "/") for t in tracked)}
+broken = sorted((p, src) for p, src in found.items() if p not in tracked and p not in prefixes)
 
 print(f"check-permalinks: {len(found)} distinct carried permalink target(s) across {scanned} file(s)")
+if prefixes:
+    print(f"  {len(prefixes)} of them name a tracked directory, so they are base prefixes: "
+          + ", ".join(sorted(prefixes)))
 if broken:
     print(f"  !! {len(broken)} permalink(s) point at a file this repo does NOT track - they will 404:",
           file=sys.stderr)
