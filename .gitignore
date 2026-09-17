@@ -40,7 +40,11 @@ bin/kton
 **/.work/**/.seq
 **/.work/**/*.token.json
 
-# Scratch/draft material under docs/ - never committed. (docs/findings.md is the one working
-# note we DO want tracked, so it's deliberately not listed here.)
+# Scratch/draft material under docs/ - never committed. docs/ is published as the project site, so
+# anything left here is published with it.
 /docs/examplesTest/
 /docs/show-hn-kton.md
+
+# The CI workflow clones the kernel here to build the reference binaries. It belongs to the run,
+# not to the repository - and check-churn.sh is right to refuse anything untracked that no rule names.
+/_kton/
