@@ -116,7 +116,7 @@ step to trust, and the verdict's input edges then point straight at the attestat
 ## What the gate proves, and what it assumes
 
 The gate is deliberately honest about its boundaries (this is the substrate's whole stance; see the
-protocol's [Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/trust.md)). It proves the
+protocol's [Trust chapter](https://github.com/kton-protocol/kton/blob/v0.3.0/docs/trust.md)). It proves the
 seven conditions hold **over the corpus it was handed** - no more:
 
 - **"two reviewers" means two distinct PRINCIPALS, each vouched by a trusted authority - not two

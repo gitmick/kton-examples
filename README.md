@@ -67,19 +67,22 @@ the graphs are already live.
 > provenance one. (Relatedly, to find where a *shared input* was consumed use `plankton uses` - the
 > downstream join - not `producer`/`lineage`, which walk toward the roots.)
 
-<details><summary>Not installed yet? Build once from source (contributors)</summary>
+<details><summary>Not installed yet?</summary>
 
-**The reference implementation is not public yet.** Until it is, you can follow every example through
-its README and the [live graphs](https://gitmick.github.io/kton-examples/) without running anything; the
-runnable binaries ship with the public release. Contributors with access build the binaries (Go, no
-dependencies) from the plankton repo onto their PATH (or into this repo's `bin/`, which the run scripts
-also add to PATH):
+The reference implementation is [kton-protocol/kton](https://github.com/kton-protocol/kton); the
+examples run against **v0.3.0**. Its [releases](https://github.com/kton-protocol/kton/releases) carry one
+archive per platform with a `.sha256` beside it - verify it, then put `plankton`, `nekton` and `kton` on
+your PATH (or into this repo's `bin/`, which the run scripts also add to PATH). The repository README
+has the exact commands. With Go 1.25 or newer, `go install` works too:
 
 ```
-( cd reference        && go build -o ~/.local/bin/plankton ./cmd/plankton )   # needed by every example
-( cd nekton/reference && go build -o ~/.local/bin/nekton   ./cmd/nekton   )   # needed from example 04 on
-( cd kton/reference   && go build -o ~/.local/bin/kton     ./cmd/kton     )   # OPTIONAL: only 08 (anchor) + 14 (fetch)
+go install kton.dev/plankton/cmd/plankton@v0.3.0   # needed by every example
+go install kton.dev/nekton/cmd/nekton@v0.3.0       # needed from example 04 on
+go install kton.dev/kton/cmd/kton@v0.3.0           # OPTIONAL: only 08 (anchor) + 14 (fetch)
 ```
+
+Without installing anything you can still follow every example through its README and the
+[live graphs](https://gitmick.github.io/kton-examples/).
 </details>
 
 ## What is NOT here

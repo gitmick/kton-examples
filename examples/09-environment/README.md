@@ -41,10 +41,17 @@ about the R version, the packages, or the OS it ran under.
 
 ### 2. Pin the exact docker image (CARRIED)
 
-You actually ran inside a digest-pinned image. A digest fixes the image byte-for-byte, but this
-concrete environment data is **CARRIED, not covered**: it must never change a foton id, because two
-different images that behave identically are not two different results. So it does not go *into* the
-foton's identity; it rides in the nekton layer as provenance - a `prov:used` claim on the result:
+You actually ran inside a digest-pinned image. A digest fixes the image byte-for-byte. Whether it
+belongs in the foton's identity depends on whether the foton declares an environment *class*
+(SPEC 6.5): **with** a class (stage 3), two images of that class are the same computation, and each
+producer's concrete image is **CARRIED** beside the record as `kton-env/v1` material, never covered.
+**Without** a class, the concrete environment is the only statement of what ran, and an authoring tool
+SHOULD keep it **covered** (the reference puts it in the descriptor as `envRef`) - otherwise two
+computations in different images collide on one action key.
+
+This stage does neither on purpose: it leaves `$BARE` as it is and records the image in the nekton
+layer as provenance - a `prov:used` claim on the result. That claim is signed, but it is not part of
+the foton, so the foton itself still does not commit to an image:
 
 ```
 OCI="oci://rocker/r-ver:4.3.2@sha256:d34db33f...beef"     # the exact image you ran in
@@ -122,8 +129,10 @@ nekton claim qualifies.spec.json lab.key --add
 
 - **env-spectrum reference** (a *qualification*) is **COVERED**: it changes the foton id, because a
   result produced under a qualified environment is a different computation.
-- **concrete env-data** (an OCI digest, a lockfile hash - *which exact stack*) is **CARRIED**: opaque
-  to the kernel, never part of any identity, bound to a spectrum by a signed `qualifies-as` claim.
+- **concrete env-data** (an OCI digest, a lockfile hash - *which exact stack*) is **CARRIED** when the
+  foton declares a class: one producer's account of its run, never part of the identity, bound to the
+  class by a signed `qualifies-as` claim. Without a declared class it is the only statement of what
+  ran, and the reference keeps it **covered** (`envRef` in the descriptor).
 
 That split is the whole point: many concrete images can fulfil one qualification, so the qualification
 is what a result commits to, and each image is separately certified to meet it.

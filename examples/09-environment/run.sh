@@ -38,11 +38,12 @@ BARE=$(plankton author --cmd "Rscript fit.R" --in pk.csv --in fit.R --out fit.ou
 echo "  foton: $BARE"
 echo "  no environment recorded: reproducible BYTES, but silent about the R stack behind them."
 
-echo; echo "############ STAGE 2: pin the exact docker image (CARRIED, opaque to plankton) ############"
+echo; echo "############ STAGE 2: pin the exact docker image (as a claim beside the foton) ############"
 echo "  you actually ran inside $OCI"
-echo "  a digest pins WHICH image byte-for-byte. Per SPEC 6.5 this concrete env-data is CARRIED: it"
-echo "  never changes a foton id (two different images that behave the same are not different results)."
-echo "  so it rides in the nekton layer as provenance - here, prov:used on the result:"
+echo "  a digest pins WHICH image byte-for-byte. SPEC 6.5: with a declared environment class (stage 3) the"
+echo "  concrete image is CARRIED and never changes a foton id; without one it SHOULD be covered (envRef)."
+echo "  here it is neither - the foton stays as it is, and the image rides in the nekton layer as provenance,"
+echo "  prov:used on the result:"
 printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/prov#used","object":{"id":"%s"},"why":"produced inside this exact image","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
   "$BARE" "$OCI" > used.spec.json
 nekton claim used.spec.json keys/lab.key used.dsse.json --add >/dev/null

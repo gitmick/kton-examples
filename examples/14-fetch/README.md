@@ -15,7 +15,7 @@ Verifying the **record** - its signature (who signed) and its id (integrity) - n
 It works offline, forever, and is exactly what [example 01](../01-hello-foton/) and multi-source read
 ([example 02](../02-federation/)) give you. Verifying the **content** - that a file really hashes to its
 recorded hash, or that re-running reproduces it - needs the actual **bytes**, which travel separately.
-So assurance is a ladder (the protocol's [Trust chapter](https://github.com/gitmick/plankton/blob/main/docs/trust.md),
+So assurance is a ladder (the protocol's [Trust chapter](https://github.com/kton-protocol/kton/blob/v0.3.0/docs/trust.md),
 section 5):
 
 | rung | proves | needs |
@@ -75,8 +75,8 @@ arrival (`sha256 != hash`), never trusted. A signed pointer to bad bytes cannot 
   holds a hash for.
 - **The carried FileRef `uri` (the author's inline hint).** A foton's own FileRef may carry a `uri`
   alongside the hash - the producer's single suggestion, riding *with* the record. It is carried, not
-  covered, so it never changes the foton id. (Exposing it through `plankton author` is
-  [plankton issue #22](https://github.com/gitmick/plankton/issues/22).)
+  covered, so it never changes the foton id. (`plankton author --located PATH=URL` records where a
+  file's bytes live; it does not change the foton id either.)
 
 Both are hints under the same rule: the hash decides, the URI only points.
 
