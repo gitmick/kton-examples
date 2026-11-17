@@ -1,0 +1,6 @@
+foton sha256:16adc85a2d8c6fe89412c046d35a030075e1ff1ef3334236bf43bd5ae83f4f16
+  llm      approve  not counted: software agent
+  ana      approve  counted
+approvals by people: 1
+rejects: 0
+four eyes, people only: no

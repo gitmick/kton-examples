@@ -1,0 +1,260 @@
+@prefix agent: <https://kton.dev/agent/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix nk: <https://kton.dev/v/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix pav: <http://purl.org/pav/> .
+@prefix pk: <https://kton.dev/o/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+# pre-Trusty: this np id stands in for the not-yet-minted Trusty URI (it equals the source
+# claim id here) - do NOT read that coincidence as hash equality; the binding is prov:wasDerivedFrom (spec §14).
+@prefix this: <https://kton.dev/np/c5604da1e859af1f0c676378cb3b0e7d661b11e3c1e54d1cc3170b65ecacb667.> .
+@prefix sub: <https://kton.dev/np/c5604da1e859af1f0c676378cb3b0e7d661b11e3c1e54d1cc3170b65ecacb667.#> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  agent:c6b507abd9600b09 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> sub:o .
+  sub:o
+    <https://kton.dev/v/lab/uri> prov:SoftwareAgent .
+}
+
+sub:provenance {
+  sub:assertion
+    prov:wasAttributedTo agent:87003132a162d5f3 ;
+    nk:signerVerified true ;
+    prov:generatedAtTime "2026-11-18T10:00:00Z"^^xsd:dateTime .
+}
+
+sub:pubinfo {
+  this:
+    prov:wasDerivedFrom pk:c5604da1e859af1f0c676378cb3b0e7d661b11e3c1e54d1cc3170b65ecacb667 ;
+    pav:createdBy agent:87003132a162d5f3 ;
+    dct:creator agent:87003132a162d5f3 ;
+    dct:created "2026-11-18T10:00:00Z"^^xsd:dateTime ;
+    nk:scope pk:07318faa4c170e82cb0827570361d7241e8d0cdef45ed54a163268df4ce2d692 ;
+    nk:prev pk:07318faa4c170e82cb0827570361d7241e8d0cdef45ed54a163268df4ce2d692 ;
+    rdfs:label "michael" .
+  agent:87003132a162d5f3 rdfs:label "michael" .
+  this:
+    nk:signedAs "in-toto/DSSE" ;
+    nk:signatureAlgorithm "ed25519" ;
+    nk:keyid "87003132a162d5f3" ;
+    nk:dsseSignature "xBAgZBLmFLhQjRYgnWfbOgVpOY+wlS9PtSjcKR9pzFGJiExbXh9JLRn0eiRlxu9xz/HSnfUbNTgB7B+rarJyBg==" .
+}
+
+@prefix agent: <https://kton.dev/agent/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix nk: <https://kton.dev/v/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix pav: <http://purl.org/pav/> .
+@prefix pk: <https://kton.dev/o/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+# pre-Trusty: this np id stands in for the not-yet-minted Trusty URI (it equals the source
+# claim id here) - do NOT read that coincidence as hash equality; the binding is prov:wasDerivedFrom (spec §14).
+@prefix this: <https://kton.dev/np/7d63059f803089ac5bf7e1de2be18b26259d2beff5d57f418d239445078c9c60.> .
+@prefix sub: <https://kton.dev/np/7d63059f803089ac5bf7e1de2be18b26259d2beff5d57f418d239445078c9c60.#> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  agent:c8e20aa11e30b573 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> sub:o .
+  sub:o
+    <https://kton.dev/v/lab/uri> prov:Person .
+}
+
+sub:provenance {
+  sub:assertion
+    prov:wasAttributedTo agent:87003132a162d5f3 ;
+    nk:signerVerified true ;
+    prov:generatedAtTime "2026-11-18T10:00:00Z"^^xsd:dateTime .
+}
+
+sub:pubinfo {
+  this:
+    prov:wasDerivedFrom pk:7d63059f803089ac5bf7e1de2be18b26259d2beff5d57f418d239445078c9c60 ;
+    pav:createdBy agent:87003132a162d5f3 ;
+    dct:creator agent:87003132a162d5f3 ;
+    dct:created "2026-11-18T10:00:00Z"^^xsd:dateTime ;
+    nk:scope pk:07318faa4c170e82cb0827570361d7241e8d0cdef45ed54a163268df4ce2d692 ;
+    nk:prev pk:c5604da1e859af1f0c676378cb3b0e7d661b11e3c1e54d1cc3170b65ecacb667 ;
+    rdfs:label "michael" .
+  agent:87003132a162d5f3 rdfs:label "michael" .
+  this:
+    nk:signedAs "in-toto/DSSE" ;
+    nk:signatureAlgorithm "ed25519" ;
+    nk:keyid "87003132a162d5f3" ;
+    nk:dsseSignature "DPqByq3ARa5ia1j1n9OWoe5b11L1nIqVJ+/mdW9EKZlmY6fUQ4KuQ7dcBPME5aRIbbWdz24eOgdK+dhLlJmOAg==" .
+}
+
+@prefix agent: <https://kton.dev/agent/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix nk: <https://kton.dev/v/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix pav: <http://purl.org/pav/> .
+@prefix pk: <https://kton.dev/o/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+# pre-Trusty: this np id stands in for the not-yet-minted Trusty URI (it equals the source
+# claim id here) - do NOT read that coincidence as hash equality; the binding is prov:wasDerivedFrom (spec §14).
+@prefix this: <https://kton.dev/np/bd2991ba18b7477731aa36d815ebc35d7eb8431d5b4598f2305685a7203cbf4f.> .
+@prefix sub: <https://kton.dev/np/bd2991ba18b7477731aa36d815ebc35d7eb8431d5b4598f2305685a7203cbf4f.#> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  agent:6e7040a316323aca <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> sub:o .
+  sub:o
+    <https://kton.dev/v/lab/uri> prov:Person .
+}
+
+sub:provenance {
+  sub:assertion
+    prov:wasAttributedTo agent:87003132a162d5f3 ;
+    nk:signerVerified true ;
+    prov:generatedAtTime "2026-11-18T10:00:00Z"^^xsd:dateTime .
+}
+
+sub:pubinfo {
+  this:
+    prov:wasDerivedFrom pk:bd2991ba18b7477731aa36d815ebc35d7eb8431d5b4598f2305685a7203cbf4f ;
+    pav:createdBy agent:87003132a162d5f3 ;
+    dct:creator agent:87003132a162d5f3 ;
+    dct:created "2026-11-18T10:00:00Z"^^xsd:dateTime ;
+    nk:scope pk:07318faa4c170e82cb0827570361d7241e8d0cdef45ed54a163268df4ce2d692 ;
+    nk:prev pk:7d63059f803089ac5bf7e1de2be18b26259d2beff5d57f418d239445078c9c60 ;
+    rdfs:label "michael" .
+  agent:87003132a162d5f3 rdfs:label "michael" .
+  this:
+    nk:signedAs "in-toto/DSSE" ;
+    nk:signatureAlgorithm "ed25519" ;
+    nk:keyid "87003132a162d5f3" ;
+    nk:dsseSignature "vvpzTS0+zvsxy8VpLJUc8MIM5tmZKo8paY9uR/HFh7cMuiR0qnwmbhASSboLfXXf4vbfouf6E+Dqxd7DxfFRDw==" .
+}
+
+@prefix agent: <https://kton.dev/agent/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix nk: <https://kton.dev/v/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix pav: <http://purl.org/pav/> .
+@prefix pk: <https://kton.dev/o/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+# pre-Trusty: this np id stands in for the not-yet-minted Trusty URI (it equals the source
+# claim id here) - do NOT read that coincidence as hash equality; the binding is prov:wasDerivedFrom (spec §14).
+@prefix this: <https://kton.dev/np/117dd99eebe6a3af5dd33ed2e797cf73bf2154aaa2b3159dd4191ca9dd7ebab2.> .
+@prefix sub: <https://kton.dev/np/117dd99eebe6a3af5dd33ed2e797cf73bf2154aaa2b3159dd4191ca9dd7ebab2.#> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  pk:16adc85a2d8c6fe89412c046d35a030075e1ff1ef3334236bf43bd5ae83f4f16 nk:reviewed sub:o .
+  sub:o
+    <https://kton.dev/v/lab/value> "approve" .
+}
+
+sub:provenance {
+  sub:assertion
+    prov:wasAttributedTo agent:c8e20aa11e30b573 ;
+    nk:signerVerified true ;
+    prov:generatedAtTime "2026-11-18T10:00:00Z"^^xsd:dateTime .
+}
+
+sub:pubinfo {
+  this:
+    prov:wasDerivedFrom pk:117dd99eebe6a3af5dd33ed2e797cf73bf2154aaa2b3159dd4191ca9dd7ebab2 ;
+    pav:createdBy agent:c8e20aa11e30b573 ;
+    dct:creator agent:c8e20aa11e30b573 ;
+    dct:created "2026-11-18T10:00:00Z"^^xsd:dateTime ;
+    nk:scope pk:eec5cd218f6cd04b919a1ea8150f9d9ee1efa420115dcebcf2371dba17c66f9f ;
+    nk:prev pk:d09c0fa787d3a682e872ec9d87e5d8b8aa5a2d067b40968e8f98f6447ce736c4 ;
+    rdfs:label "ana" .
+  agent:c8e20aa11e30b573 rdfs:label "ana" .
+  this:
+    nk:signedAs "in-toto/DSSE" ;
+    nk:signatureAlgorithm "ed25519" ;
+    nk:keyid "c8e20aa11e30b573" ;
+    nk:dsseSignature "mHQ3nOo6TSsbfqU/f+2C2BFVy695hwlZuJpGUwZMR06JY0HqtKeZdPs5xfm/2VKr3EW3m4i4yT9T3v2wpK7rCA==" .
+}
+
+@prefix agent: <https://kton.dev/agent/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix nk: <https://kton.dev/v/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix pav: <http://purl.org/pav/> .
+@prefix pk: <https://kton.dev/o/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+# pre-Trusty: this np id stands in for the not-yet-minted Trusty URI (it equals the source
+# claim id here) - do NOT read that coincidence as hash equality; the binding is prov:wasDerivedFrom (spec §14).
+@prefix this: <https://kton.dev/np/5273edb136390dbed9661327197d5313c341e14d6b9dee103bd7c8328e05654c.> .
+@prefix sub: <https://kton.dev/np/5273edb136390dbed9661327197d5313c341e14d6b9dee103bd7c8328e05654c.#> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  pk:16adc85a2d8c6fe89412c046d35a030075e1ff1ef3334236bf43bd5ae83f4f16 nk:reviewed sub:o .
+  sub:o
+    <https://kton.dev/v/lab/value> "approve" .
+}
+
+sub:provenance {
+  sub:assertion
+    prov:wasAttributedTo agent:6e7040a316323aca ;
+    nk:signerVerified true ;
+    prov:generatedAtTime "2026-11-18T10:00:00Z"^^xsd:dateTime .
+}
+
+sub:pubinfo {
+  this:
+    prov:wasDerivedFrom pk:5273edb136390dbed9661327197d5313c341e14d6b9dee103bd7c8328e05654c ;
+    pav:createdBy agent:6e7040a316323aca ;
+    dct:creator agent:6e7040a316323aca ;
+    dct:created "2026-11-18T10:00:00Z"^^xsd:dateTime ;
+    nk:scope pk:eec5cd218f6cd04b919a1ea8150f9d9ee1efa420115dcebcf2371dba17c66f9f ;
+    nk:prev pk:117dd99eebe6a3af5dd33ed2e797cf73bf2154aaa2b3159dd4191ca9dd7ebab2 ;
+    rdfs:label "ben" .
+  agent:6e7040a316323aca rdfs:label "ben" .
+  this:
+    nk:signedAs "in-toto/DSSE" ;
+    nk:signatureAlgorithm "ed25519" ;
+    nk:keyid "6e7040a316323aca" ;
+    nk:dsseSignature "mSbl8FNmHgUWm0uSu62DE5MB7LIv4fqzskjtZ7nuwQtqeOraRp6A/GSExHHsvbCU/eWSNyLnx4Nhz6C7fo+dCA==" .
+}
+
