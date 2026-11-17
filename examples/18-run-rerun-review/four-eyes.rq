@@ -1,14 +1,30 @@
-# Four eyes, people only. Who approved this foton with a verified signature? Did they sign the foton
-# themselves? And what did the review's owner (?owner, bound by the caller) declare them to be: a
-# prov:Person or a prov:SoftwareAgent? Runs over the review's nanopublications + the plankton lineage.
+# The review rule, complete: four eyes, people only. Anchored by its hash before anyone reviews.
+#
+# For each reviewed foton: an approval counts if its signature verifies, its signer did not sign the
+# foton, and the review's owner (the signer of the rule) declared the signer a prov:Person and not a
+# prov:SoftwareAgent. Four eyes = at least two counted approvals and no reject.
+# Runs over the review's nanopublications + the foton's lineage, with the union of all graphs as default.
 PREFIX nk:   <https://kton.dev/v/>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-SELECT ?who ?verdict ?isAuthor ?isPerson ?isAgent WHERE {
-  ?a prov:wasAttributedTo ?who ;
-     nk:signerVerified true .
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?foton
+       (COUNT(DISTINCT ?counted) AS ?approvalsByPeople)
+       (COUNT(DISTINCT ?rejecter) AS ?rejects)
+       (GROUP_CONCAT(DISTINCT ?note; separator=", ") AS ?reviewers)
+       (IF(COUNT(DISTINCT ?counted) >= 2 && COUNT(DISTINCT ?rejecter) = 0, "yes", "no") AS ?fourEyesPeopleOnly)
+WHERE {
+  ?rule prov:wasAttributedTo ?owner ; nk:signerVerified true .
+  GRAPH ?rule { ?scope nk:review-initialised ?r }
+  ?a prov:wasAttributedTo ?who ; nk:signerVerified true .
   GRAPH ?a { ?foton nk:reviewed ?o . ?o ?p ?verdict . }
-  BIND(EXISTS { ?foton nk:claimedSigner ?who } AS ?isAuthor)
-  BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:Person } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?isPerson)
-  BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:SoftwareAgent } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?isAgent)
+  OPTIONAL { ?who rdfs:label ?label }
+  BIND(EXISTS { ?foton nk:claimedSigner ?who } AS ?author)
+  BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:Person } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?person)
+  BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:SoftwareAgent } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?agent)
+  BIND(IF(?agent, "software agent", IF(?author, "signed the foton", IF(!?person, "not declared a person", ""))) AS ?why)
+  BIND(IF(STR(?verdict) = "approve" && ?why = "", ?who, ?unbound) AS ?counted)
+  BIND(IF(STR(?verdict) = "reject", ?who, ?unbound) AS ?rejecter)
+  BIND(CONCAT(COALESCE(?label, STR(?who)), " ", STR(?verdict), IF(?why = "", "", CONCAT(" (not counted: ", ?why, ")"))) AS ?note)
 }
+GROUP BY ?foton

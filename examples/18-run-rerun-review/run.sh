@@ -7,8 +7,9 @@
 #   3. ana and ben review it, in a review scope of its own. michael, who owns the review, first says
 #      which keys are people and which is an agent; the rule is anchored in the parent before anyone
 #      reviews; the seal of the finished review goes back into the parent.
-#   4. Is the review valid? A SPARQL query decides: four eyes, people only, nobody approving their own
-#      work. Its verdict is a foton, so plankton can re-derive it: same inputs, same verdict bytes (L0).
+#   4. Is the review valid? four-eyes.rq decides, in Oxigraph: four eyes, people only, nobody approving
+#      their own work. The check is a foton whose inputs are the signed records themselves (both scopes,
+#      the foton), the trusted keys, the rule and check.sh; rerun it and plankton compares: L0.
 #      A rehearsal where the llm approves shows that an agent's approval does not count.
 #
 # Every input and output carries a raw GitHub permalink (lib/common.sh), so a viewer can fetch the
@@ -20,6 +21,8 @@ source ../../lib/common.sh
 W=.work; D="$PWD/$W"
 rm -rf "$W"; mkdir -p "$W/keys" "$W/run" "$W/check"
 for who in llm michael ana ben; do plankton keygen "$W/keys/$who" --seed "$(demoseed "$who")" >/dev/null 2>&1; done
+mkdir -p trust; cp "$W"/keys/*.pub trust/      # the keys we trust: public halves only, committed
+export OXIGRAPH="oxigraph/oxigraph@sha256:10677fb643f8c5a7bfb03dd8f7971c79a84b01e795c24201c8cfa12fd569f1c0"
 K(){ echo "$W/keys/$1.key"; }
 kid(){ plankton keyid "$W/keys/$1.pub"; }
 WHEN="2026-11-18T10:00:00Z"
@@ -83,35 +86,37 @@ review(){
     "$REV" "$HEAD" "$WHEN" "$PUB" "$anchor")")
   echo "   $NAME: rule (four-eyes.rq) -> anchored in the parent -> $* -> sealed in the parent"
 }
-# check <name>: export what the query reads, run it, record the verdict as a foton signed by michael
+# check <name>: the review check as a recorded step. Its inputs are the signed records themselves (the
+# parent scope, the review scope, the foton), the keys we trust, the rule and the script; its output is
+# the verdict. check.sh projects the records to RDF and asks Oxigraph (pinned by digest) four-eyes.rq.
 check(){
-  local NAME="$1" C="$W/check/$1"; mkdir -p "$C"; : > "$C/review.trig"
-  cat "$W/kinds" "$W/$NAME.deliveries" | while read -r id; do
-    for dir in "$PUBD" "$D/$NAME"; do
-      NEKTON_DIR="$dir" nekton export --nanopub "$id" --trust-keys "$W/keys" >> "$C/review.trig" 2>/dev/null && { echo >> "$C/review.trig"; break; }
-    done
-  done
-  plankton export --rdf -o "$C/lineage.ttl" >/dev/null
-  cp four-eyes.rq four-eyes.py "$C/"
-  (cd "$C" && python3 four-eyes.py lineage.ttl review.trig four-eyes.rq "$F" "$(plankton keyid "$D/keys/michael.pub")" verdict.txt | sed 's/^/     /')
-  plankton author --cmd "python3 four-eyes.py lineage.ttl review.trig four-eyes.rq $F $(kid michael)" \
-    --in "four-eyes.py=$C/four-eyes.py" --in "four-eyes.rq=$C/four-eyes.rq" --in "lineage.ttl=$C/lineage.ttl" \
-    --in "review.trig=$C/review.trig" --out "verdict.txt=$C/verdict.txt" --sign "$(K michael)" --add --print-id 2>/dev/null > "$C/foton.txt"
+  local NAME="$1" C="$W/check/$1"; mkdir -p "$C"
+  local fr="$PLANKTON_DIR/objects/sha256/${F#sha256:}.json"
+  local ps; ps=$(ls "$PUBD"/objects/scope/*.nekton.jsonl); local rs; rs=$(ls "$D/$NAME"/objects/scope/*.nekton.jsonl)
+  fr="${fr#"$PWD"/}"; ps="${ps#"$PWD"/}"; rs="${rs#"$PWD"/}"
+  ./check.sh trust "$fr" "$ps" "$rs" > "$C/verdict.csv"
+  sed 's/^/     /' "$C/verdict.csv"
+  local ins=(--in check.sh --in four-eyes.rq --in "$fr" --in "$ps" --in "$rs") k
+  for k in trust/*.pub; do ins+=(--in "$k"); done
+  plankton author --cmd "./check.sh trust $fr $ps $rs   (oxigraph 0.5.12, ${OXIGRAPH##*@})" \
+    "${ins[@]}" --out "$C/verdict.csv" --sign "$(K michael)" --add --print-id 2>/dev/null > "$C/foton.txt"
+  echo "$fr $ps $rs" > "$C/inputs"
 }
 review review-whales ana:approve ben:approve
 
 echo "== 4. is the review valid? plankton checks"
 check review-whales
 echo "   verdict recorded as foton $(cat "$W/check/review-whales/foton.txt")"
-# re-derive: run the same query on the same inputs elsewhere; the verdict must be the same bytes
-T="$W/check/rederive"; mkdir -p "$T"; cp "$W/check/review-whales"/{four-eyes.py,four-eyes.rq,lineage.ttl,review.trig} "$T/"
-(cd "$T" && python3 four-eyes.py lineage.ttl review.trig four-eyes.rq "$F" "$(plankton keyid "$D/keys/michael.pub")" verdict.txt >/dev/null)
-echo -n "   re-derived: "; plankton reproduces "$(plankton hash "$W/check/review-whales/verdict.txt")" "$(plankton hash "$T/verdict.txt")"
+# re-derive: anyone with the same records, keys and rule runs the check again; same verdict bytes?
+read -r fr ps rs < "$W/check/review-whales/inputs"
+./check.sh trust "$fr" "$ps" "$rs" > "$W/check/rederived.csv"
+echo -n "   re-derived: "; plankton reproduces "$(plankton hash "$W/check/review-whales/verdict.csv")" "$(plankton hash "$W/check/rederived.csv")" | head -1
 
 echo
 snapshot 18-run-rerun-review "$D/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR" --reg "$PUBD" --reg "$D/review-whales"
 
-# after the snapshot, so the graph shows only the real review
+# after the snapshot, and on a copy of the parent, so the graph and the committed inputs show only the real review
 echo "-- rehearsal: ana and the llm approve; the llm's approval does not count"
+cp -r "$PUBD" "$D/rehearsal-public"; PUBD="$D/rehearsal-public"
 review review-llm ana:approve llm:approve
 check review-llm

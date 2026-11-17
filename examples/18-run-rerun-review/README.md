@@ -33,27 +33,29 @@ in the parent.
 
 ## 4. Is the review valid? plankton checks
 
-`four-eyes.rq` runs over the review's nanopublications and the plankton lineage. It counts an approval
-only if its signature verifies, its signer did not sign the foton, and michael declared the signer a
-person. Four eyes means at least two such approvals and no reject.
+The whole rule is one SPARQL query, `four-eyes.rq`; its hash is what the review anchored. It counts an
+approval only if its signature verifies, its signer did not sign the foton, and michael declared the
+signer a person and not a software agent. Four eyes means at least two such approvals and no reject.
+
+`check.sh` is the check as one recorded step. Its inputs are the signed records themselves: the parent
+scope and the review scope (their `.nekton.jsonl`), the foton's record, the keys we trust (`trust/`),
+the rule and the script. It projects them with the kernel's own projections (`plankton export --rdf`,
+`nekton export --nanopub`), loads them into Oxigraph, pinned by digest, and runs the query:
 
 ```
-ben      approve  counted
-ana      approve  counted
-approvals by people: 2
-four eyes, people only: yes
+foton,approvalsByPeople,rejects,reviewers,fourEyesPeopleOnly
+…/16adc85a…,2,0,"ben approve, ana approve",yes
 ```
 
-The verdict is not a printout: it is a foton whose inputs are the query, the script, the lineage and
-the review. Run it again on the same inputs and plankton compares the bytes: **L0**.
+The verdict is a foton over those inputs. Run the check again and plankton compares the bytes: **L0**.
 
 The script ends with a rehearsal that is not in the graph: ana and the llm approve.
 
 ```
-llm      approve  not counted: software agent
-ana      approve  counted
-four eyes, people only: no
+…/16adc85a…,1,0,"ana approve, llm approve (not counted: software agent)",no
 ```
+
+The same cycle with the cockpit's verbs: [COCKPIT.md](COCKPIT.md).
 
 ## Look at it
 
