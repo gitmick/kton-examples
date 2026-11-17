@@ -98,7 +98,9 @@ check(){
   sed 's/^/     /' "$C/verdict.csv"
   local ins=(--in check.sh --in four-eyes.rq --in "$fr" --in "$ps" --in "$rs") k
   for k in trust/*.pub; do ins+=(--in "$k"); done
-  plankton author --cmd "./check.sh trust $fr $ps $rs   (oxigraph 0.5.12, ${OXIGRAPH##*@})" \
+  # its inputs include record files, which carry the run's permalinks; so its own permalinks point at the
+  # commit that holds those records (KTON_RECORDS_COMMIT), not at the one that holds the run's bytes
+  KTON_RAW_COMMIT="${KTON_RECORDS_COMMIT:-${KTON_RAW_COMMIT:-}}" plankton author --cmd "./check.sh trust $fr $ps $rs   (oxigraph 0.5.12, ${OXIGRAPH##*@})" \
     "${ins[@]}" --out "$C/verdict.csv" --sign "$(K michael)" --add --print-id 2>/dev/null > "$C/foton.txt"
   echo "$fr $ps $rs" > "$C/inputs"
 }
