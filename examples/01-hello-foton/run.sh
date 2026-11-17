@@ -14,7 +14,7 @@ rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
 
 echo "== Create =="
 # 1) an identity. keygen writes me.key (PRIVATE - keep it) and me.pub (PUBLIC - share it).
-plankton keygen "$PWD/.work/keys/me" >/dev/null
+plankton keygen "$PWD/.work/keys/me" --seed "$(demoseed me)" >/dev/null
 
 # 2) the files the computation consumes/produces. plankton stores NO bytes, only their content
 #    hashes, so the files can live anywhere; we just need them to hash.

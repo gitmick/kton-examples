@@ -11,8 +11,11 @@ rm -rf "$PWD/.work"; mkdir -p "$NEKTON_DIR" "$PWD/.work/keys"
 echo "########## Part 1 - a key is an identity (self-asserted) ##########"
 # Give two models their own signing keys. The keyid is the fingerprint of the public key: it IS the
 # cryptographic identity. The human 'by' label, by contrast, is just text anyone could type.
-OPUS=$(nekton keygen "$PWD/.work/keys/opus"     | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
-SONNET=$(nekton keygen "$PWD/.work/keys/sonnet" | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
+nekton keygen "$PWD/.work/keys/opus"   --seed "$(demoseed opus)"   >/dev/null
+nekton keygen "$PWD/.work/keys/sonnet" --seed "$(demoseed sonnet)" >/dev/null
+# `keyid` maps a key file to the id claims carry, so we ask for it instead of parsing keygen's prose.
+OPUS=$(nekton keyid "$PWD/.work/keys/opus.pub")
+SONNET=$(nekton keyid "$PWD/.work/keys/sonnet.pub")
 echo "  opus   keyid = $OPUS"
 echo "  sonnet keyid = $SONNET"
 
@@ -37,7 +40,7 @@ echo "########## Part 2 - binding a key to a named model (attested) ##########"
 # Who says keyid $OPUS really belongs to 'claude-opus-4-8'? An AUTHORITY signs an identity claim
 # ABOUT the key. A consumer believes the attribution only if they trust that authority. Note this is
 # just another single-signed claim (decision: one claim, one signer) - no new machinery.
-nekton keygen "$PWD/.work/keys/deployer" >/dev/null
+nekton keygen "$PWD/.work/keys/deployer" --seed "$(demoseed deployer)" >/dev/null
 # The key's IRI is its full content hash (the keyid is that hash's first 16 hex). The binding is a
 # lightweight Verifiable Credential: <key> sec:controller <principal>, sec: = W3C Security Vocabulary.
 # Written as a full IRI because the bare `nekton claim` path does not resolve aliases (annotate does).

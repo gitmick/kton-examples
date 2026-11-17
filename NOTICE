@@ -1,0 +1,12 @@
+kton-examples
+Copyright 2026 The kton authors
+
+This product includes software developed as part of the kton project
+(https://github.com/kton-protocol/kton), licensed under the Apache License,
+Version 2.0.
+
+The example registries, graph snapshots and demo identities under examples/
+and docs/ are fixtures. The signing keys they contain are derived from
+published seed strings (see `demoseed` in lib/common.sh) and are therefore
+public and worthless; they exist so that a run reproduces byte for byte, and
+must never be used to sign anything real.

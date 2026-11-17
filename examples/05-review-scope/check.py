@@ -13,17 +13,50 @@
 #     A close by anyone else does not count (condition B: not "any" close, the authorised one).
 # Then: every enrolled reviewer must have a delivery in the sealed chain (completeness), and none may be a
 # reject (safety). Miss either and the gate BLOCKS.
-import json, base64, glob, sys
+#
+# EXIT CODES - a verdict and a non-run are NOT the same thing:
+#   0  COMPLETE   - the gate ran and passed
+#   1  BLOCKED    - the gate ran and refused
+#   2  GATE ERROR - the gate could not run (it read nothing, so it has no opinion to give)
+# 2 exists because of the failure this gate actually had: it read zero claims, printed BLOCKED, and the
+# example passed anyway behind a `|| true`. An empty read looked exactly like a considered refusal. It
+# must not: an empty store, or one written in a layout this reader does not know (briefing B1), is a
+# broken gate, not a blocked release.
+import json, base64, glob, os, sys
 
 REV_DIR, PUB_DIR, REV = sys.argv[1:4]
 INIT = "https://kton.dev/v/review-initialised"
 CLOSED = "https://kton.dev/v/closed"
 REVIEWED = "https://kton.dev/v/reviewed"
 
+def store_records(reg):
+    """Every record in a registry, as parsed dicts.
+
+    A registry files a scope's claims as ONE FILE PER (SUB)NEKTON -
+    objects/scope/<scope_id>.nekton.jsonl and objects/unscoped.nekton.jsonl, one record per line -
+    and older stores kept one file per claim at objects/<algo>/<hash>.json. Read both, so a
+    non-recursive glob can never silently show you half a store.
+    """
+    out = []
+    for f in sorted(glob.glob(os.path.join(reg, "objects", "**", "*.nekton.jsonl"), recursive=True)):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    try:
+                        out.append(json.loads(line))
+                    except Exception:
+                        continue
+    for f in sorted(glob.glob(os.path.join(reg, "objects", "**", "*.json"), recursive=True)):
+        try:
+            out.append(json.load(open(f)))
+        except Exception:
+            continue
+    return out
+
 def load(d):
     recs = {}
-    for f in glob.glob(d + "/objects/sha256/*.json"):
-        r = json.load(open(f))
+    for r in store_records(d):
         cid = r.get("claimId") or r.get("fotonId")
         if not cid or "envelope" not in r:
             continue
@@ -35,6 +68,12 @@ def load(d):
 def fail(msg):
     print(f"  RELEASE: BLOCKED - {msg}")
     sys.exit(1)
+
+def gate_error(msg):
+    """The gate could not run. Distinct from BLOCKED, and distinct from PASS."""
+    print(f"  GATE ERROR - {msg}")
+    print("  (this is NOT a verdict: the gate read nothing, so it has nothing to say about the review)")
+    sys.exit(2)
 
 def subj_has(r, val):
     v = val.replace("sha256:", "")
@@ -48,6 +87,15 @@ def subj_has(r, val):
     return False
 
 rev, pub = load(REV_DIR), load(PUB_DIR)
+
+# 0. COVERAGE, before any verdict: prove there was something to judge. Every rule below is of the form
+# "no record satisfies X -> BLOCKED", so on an empty read all of them fire and the gate refuses for the
+# wrong reason - it would look like a decision when it is a broken read. State what was actually read.
+print(f"  gate read {len(rev)} record(s) from the review and {len(pub)} from the public parent")
+if not rev:
+    gate_error(f"read 0 records from the review store {REV_DIR}")
+if not pub:
+    gate_error(f"read 0 records from the public parent store {PUB_DIR}")
 
 # 1. the initialise claim (in the review): its conditions + its signer = the close authority
 init = [(cid, r) for cid, r in rev.items() if r["body"].get("predicate", {}).get("uri") == INIT]

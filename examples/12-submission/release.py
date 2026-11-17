@@ -6,6 +6,15 @@
 # checklist and a verdict, then re-runs the gate bound to an unrelated hash to show it is
 # submission-specific.
 # Usage: release.py submission.ttl attestations.trig release.rq fitHash headHash [trustedKeyid ...]
+#
+# EXIT CODES - a verdict and a non-run are NOT the same thing:
+#   0  COMPLETE   - every condition met
+#   1  BLOCKED    - the gate ran and a condition is missing (a real refusal)
+#   2  GATE ERROR - the gate could not run: the RDF it was handed is empty
+# 2 matters because every condition here is monotone ("some record establishes X"), so on an empty
+# graph all seven simply fail and the gate prints a full checklist of unticked boxes - a confident
+# refusal built on nothing read. That is indistinguishable from an honest BLOCKED unless it is
+# separated out here. See docs/briefing-2026-09.md B3.
 import sys
 import rdflib
 
@@ -41,6 +50,16 @@ for (s, p, o, _g) in list(ds.quads((None, None, None, None))):
 for k in trusted_keyids:
     dg.add((rdflib.URIRef(AG + k), rdflib.RDF.type, NK_TRUSTED))
 
+# COVERAGE, before any verdict: the gate must have been handed something to judge.
+n_lineage = len(ds.get_context(LINEAGE))
+n_attest = sum(1 for _ in ds.quads((None, None, None, None))) - n_lineage
+print(f"  gate loaded {n_lineage} lineage triple(s) + {n_attest} attestation quad(s)")
+if not n_lineage or not n_attest:
+    which = ttl if not n_lineage else trig
+    print(f"  GATE ERROR - {which} loaded empty; refusing to render a checklist over nothing")
+    print("  (this is NOT a verdict: an empty graph fails every condition for the wrong reason)")
+    sys.exit(2)
+
 query = open(query_path).read()  # runs UNMODIFIED - no string surgery
 
 def satisfied(fit, head):
@@ -53,7 +72,7 @@ def satisfied(fit, head):
 # injected graph edge could pollute the author. We instead COUNT here, in Python, over the same verified
 # facts - deterministically, so there is no pair-matching or graph-pollution surface:
 #   author    = the fit's UNIQUE verified signer, read ONLY from the trusted plankton-lineage graph;
-#   reviewers = keys that signed a gxp:reviewed=pass OF THIS FIT;
+#   reviewers = keys that signed a qa:reviewed=pass OF THIS FIT;
 #   voucher   = a key -> (principal, authority) map from sec:controller bindings whose OWN signer is a
 #               trusted authority (a self-issued / ring binding never appears, since ?a a nk:TrustedAuthority).
 # A review counts only if the reviewer is authority-vouched, is a DIFFERENT KEY from the author, and a
@@ -64,15 +83,15 @@ def satisfied(fit, head):
 # policy a verifier may layer on by requiring reviewer authorities != the author's authority.
 AGNS = "https://kton.dev/agent/"
 Q = """
-PREFIX gxp:  <https://kton.dev/v/gxp/>
+PREFIX qa:   <https://kton.dev/v/qa/>
 PREFIX nk:   <https://kton.dev/v/>
 PREFIX lab:  <https://kton.dev/v/lab/>
 PREFIX sec:  <https://w3id.org/security#>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 """
 Q_AUTHOR  = Q + 'SELECT ?a WHERE { GRAPH <urn:kton:lineage> { ?fit prov:wasAttributedTo ?a . ?fit nk:signerVerified true . } }'
-Q_REVIEW  = Q + 'SELECT DISTINCT ?r WHERE { GRAPH ?g { ?fit gxp:reviewed ?o . ?o nk:outcome "pass" . } ?g prov:wasAttributedTo ?r . }'
-Q_FAIL    = Q + 'ASK { ?fit gxp:reviewed ?o . ?o nk:outcome "fail" . }'
+Q_REVIEW  = Q + 'SELECT DISTINCT ?r WHERE { GRAPH ?g { ?fit qa:reviewed ?o . ?o nk:outcome "pass" . } ?g prov:wasAttributedTo ?r . }'
+Q_FAIL    = Q + 'ASK { ?fit qa:reviewed ?o . ?o nk:outcome "fail" . }'
 Q_VOUCH   = Q + 'SELECT ?k ?p ?auth WHERE { GRAPH ?gb { ?k sec:controller ?cb . ?cb lab:id ?p . } ?gb prov:wasAttributedTo ?auth . ?auth a nk:TrustedAuthority . }'
 def _after(u, pre):
     s = str(u); return s[len(pre):] if s.startswith(pre) else s
@@ -106,12 +125,12 @@ def independent_reviews(fit):
     return len(independent) >= 2                 # two DISTINCT independent qualified principals
 
 REQUIRED = [
-    ("tool-validated",          "toolchain validated (gxp:validation-performed = pass)"),
+    ("tool-validated",          "toolchain validated (qa:validation-performed = pass)"),
     ("env-qualified",           "the fit's environment is qualified (qualifies-as citing a check foton that FULLY passed: membersFulfilled == membersTotal)"),
     ("final-model",             "the fit ran the designated final model (pmx:model-role = final)"),
     ("reproduces",              "the fit's output reproduces (nk:reproduces at L0/L1)"),
     ("two-independent-reviews", "two distinct authority-vouched PRINCIPALS reviewed, each != the verified author, no fail (computed in the driver, not the graph)"),
-    ("risk-accepted",           "residual risk explicitly accepted (gxp:risk-accepted)"),
+    ("risk-accepted",           "residual risk explicitly accepted (qa:risk-accepted)"),
     ("submission-signed",       "the submission head is signed by a verifiable identity (nk:submitted)"),
 ]
 

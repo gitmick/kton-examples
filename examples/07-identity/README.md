@@ -8,10 +8,9 @@ This example is about that: **a key is an identity**. It answers two different q
 2. *Who is that key, really?* - a separate, signed statement binds a key to a named principal. You
    believe it only if you trust whoever signed that binding.
 
-Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) **Parts 1 and
-2 below run today.** Tier 3 (authority-backed identity) is described in the concept section and is now
-real for a person in [example 08](../08-sigstore-github/) - signing with a GitHub identity via
-Sigstore; SSH `allowed_signers` and a model-CA are still pending.
+Assumes `nekton` is on your PATH. (Claims are introduced in [example 04](../04-claim/).) Both parts
+below are runnable now; what is and is not yet shipped for the *strongest* form of identity is set
+out where that form is defined, in [How identity works in kton](#how-identity-works-in-kton).
 
 ## Part 1 - a key is an identity (self-asserted)
 
@@ -19,8 +18,9 @@ Sigstore; SSH `allowed_signers` and a model-CA are still pending.
 public key: it *is* the cryptographic identity.
 
 ```
-OPUS=$(nekton keygen opus     | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
-SONNET=$(nekton keygen sonnet | grep -oE 'keyid=[0-9a-f]+' | cut -d= -f2)
+nekton keygen opus ; nekton keygen sonnet
+OPUS=$(nekton keyid opus.pub)          # the id claims carry, asked for rather than parsed out
+SONNET=$(nekton keyid sonnet.pub)
 echo "$OPUS $SONNET"          # e.g. <opus keyid> <sonnet keyid>
 ```
 
@@ -47,9 +47,9 @@ nekton claim sonnet.spec.json sonnet.key --add
 
 ```
 nekton by signer "$OPUS"
-# sha256:...  predicate=nk:assessed  by=claude-opus-4-8  keyid=<opus keyid>
+# sha256:...  predicate=nk:assessed  by=claude-opus-4-8  declared-keyid=<opus keyid> (unverified)
 nekton by signer "$SONNET"
-# sha256:...  predicate=nk:assessed  by=claude-sonnet-5  keyid=<sonnet keyid>
+# sha256:...  predicate=nk:assessed  by=claude-sonnet-5  declared-keyid=<sonnet keyid> (unverified)
 ```
 
 That is the whole mechanism: **give a model a key, and every claim it makes is attributable to that
@@ -78,7 +78,7 @@ printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#control
   "$KEYIRI" > identity.spec.json
 nekton claim identity.spec.json deployer.key --add
 nekton about "$KEYIRI"
-# sha256:...  predicate=https://w3id.org/security#controller  by=CN=Deployment  keyid=<deployer keyid>
+# sha256:...  predicate=https://w3id.org/security#controller  by=CN=Deployment  declared-keyid=<deployer keyid> (unverified)
 ```
 
 The predicate is written as a full IRI because the bare `nekton claim` path stores it verbatim; the
@@ -98,8 +98,11 @@ if they trust the deployer's key**. It is still one claim, one signer; no new ma
   - **self-asserted** - the `by` label (Part 1). Zero proof.
   - **attested** - a signed `sec:controller` claim (a Verifiable Credential) by someone you trust (Part 2).
   - **authority-backed** *(partially shipped)* - a certificate or an allow-list from a trusted issuer.
-    For a **person** this is now real in [example 08](../08-sigstore-github/): **Sigstore** keyless (an
-    OIDC/GitHub identity bound by a Fulcio certificate + the Rekor transparency log). Still pending:
+    For a **person** this is now real in [example 08](../08-sigstore-github/): **Sigstore** keyless — you
+    prove who you are to GitHub over **OIDC** (OpenID Connect, the standard way to prove an identity
+    through a provider you already have: [openid.net](https://openid.net/developers/how-connect-works/)),
+    **Fulcio** issues a short-lived certificate binding that identity to a throwaway key, and the
+    signature is published in **Rekor**, a public append-only transparency log. Still pending:
     **SSH signatures** (a GitHub / `allowed_signers` principal) and a **model-CA** for a model. These
     schemes need network and OS tooling, so they live in the cockpit (`kton`), not the kernels.
 - **Trust policy** - which authorities and identities you accept - is a consumer decision, never the
@@ -129,3 +132,5 @@ that signed it - and which authority vouched, and whether you trust it, is exact
 not display. The label is "who this key claims to be, per a signature," never "verified identity."
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/07-identity/union.json&keys=data/07-identity/keys.json&names=data/07-identity/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

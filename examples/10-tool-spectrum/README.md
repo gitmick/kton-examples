@@ -112,3 +112,5 @@ bash run.sh
 ## See it
 
 [Open the graph](https://gitmick.github.io/kton-examples/viewer.html?union=data/10-tool-spectrum/union.json&keys=data/10-tool-spectrum/keys.json&names=data/10-tool-spectrum/names.json)
+
+*(a pre-generated snapshot of the canonical `run.sh`, checked into the repo — not your own local registry)*

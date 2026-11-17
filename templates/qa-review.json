@@ -1,0 +1,38 @@
+{
+  "schema": "https://kton.dev/template/v0",
+  "name": "qa/review",
+  "target": "foton",
+  "predicate": "qaReviewed",
+  "context": "ctx:qa",
+  "fields": {
+    "outcome": {
+      "type": "enum",
+      "values": [
+        "pass",
+        "fail"
+      ],
+      "required": true,
+      "role": "object",
+      "widget": "enum"
+    },
+    "sop": {
+      "type": "string",
+      "required": true,
+      "role": "object",
+      "widget": "text"
+    },
+    "report": {
+      "type": "file",
+      "mediaType": "application/pdf",
+      "required": true,
+      "role": "evidence",
+      "widget": "file"
+    },
+    "notes": {
+      "type": "string",
+      "required": false,
+      "role": "object",
+      "widget": "textarea"
+    }
+  }
+}

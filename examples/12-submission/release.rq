@@ -6,7 +6,7 @@
 # root is DATA (?a a nk:TrustedAuthority), not a placeholder. So every condition is ABOUT this
 # submission - an unrelated pass/qualify/review elsewhere cannot satisfy the gate. Each UNION branch
 # yields one satisfied release-condition label; the harness passes only if every required one appears.
-PREFIX gxp:  <https://kton.dev/v/gxp/>
+PREFIX qa:   <https://kton.dev/v/qa/>
 PREFIX pmx:  <https://kton.dev/v/pmx/>
 PREFIX nk:   <https://kton.dev/v/>
 PREFIX lab:  <https://kton.dev/v/lab/>
@@ -19,7 +19,7 @@ SELECT DISTINCT ?condition WHERE {
     # emitted by `plankton export --rdf` from the foton's COVERED protocol descriptor). No out-of-band
     # base64 decode of the DSSE - a pure SPARQL consumer binds it here (rdf-interop F2).
     ?fit nk:environment ?env .
-    ?env gxp:validation-performed ?o . ?o nk:outcome "pass" .
+    ?env qa:validation-performed ?o . ?o nk:outcome "pass" .
     BIND("tool-validated" AS ?condition)
   } UNION {
     # not a NAKED binding: the qualification must (1) bind to THIS fit's env, and (2) cite a
@@ -45,7 +45,7 @@ SELECT DISTINCT ?condition WHERE {
     ?out prov:wasGeneratedBy ?fit . ?out nk:reproduces ?o . ?o nk:level-reached ?lvl . FILTER(?lvl IN ("L0", "L1"))
     BIND("reproduces" AS ?condition)
   } UNION {
-    ?fit gxp:risk-accepted ?o .
+    ?fit qa:risk-accepted ?o .
     BIND("risk-accepted" AS ?condition)
   } UNION {
     ?head nk:submitted ?who .

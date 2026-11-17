@@ -3,7 +3,7 @@
   "name": "risk/accept",
   "target": "either",
   "predicate": "riskAccepted",
-  "context": "ctx:gxp",
+  "context": "ctx:qa",
   "fields": {
     "severity": {
       "type": "enum",
