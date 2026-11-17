@@ -131,9 +131,9 @@ figcaption b{color:#374151}
 <script>
 (function(){
   var NOTES={
-    1:"<b>Stage 1.</b> The station's LLM, an agent session with its own key, ran the analysis. Its signature is on every step, and it said what the published step is and why it was done. Open the mark on figure 1.",
-    2:"<b>Stage 2.</b> Lena Moreau, a person at the station, reran the published step from the released data. Same inputs, same command, same bytes: the same foton, now with two signatures (↻2).",
-    3:"<b>Stage 3.</b> Two reviewers approved, in a review of its own. The rule was anchored first; who counts as a person was declared by the editor; the review was sealed back into the journal. The check is shown below the report. Reviewer 2 also asked for the analysis split by species, which the report does not contain."};
+    1:"<b>Stage 1.</b> One registry: the LLM's. The station's LLM, an agent session with its own key, ran the analysis. Its signature is on every step, and it said what the published step is and why it was done. Open the mark on figure 1.",
+    2:"<b>Stage 2.</b> + Lena Moreau's registry. She reran the published step from the released data, in her own R, and her record names that R: a record of its own. The bytes are the LLM's, byte for byte, and she signed that her run reproduces it (L0): ↻2 on figure 1, and an edge from her run to the LLM's in the graph.",
+    3:"<b>Stage 3.</b> + the review's registry. Two reviewers approved, in a review of its own. The rule was anchored first; who counts as a person was declared by the editor; the review was sealed back into the journal. The check is shown below the report. Reviewer 2 also asked for the analysis split by species, which the report does not contain."};
   var REG={1:["llm"],2:["llm","rerun"],3:["llm","rerun","review"]};
   var LAYER={"ethics":"Ethics Committee","ethics-internal":"as the Committee"};
   var SRC={"llm":"the station's LLM","rerun":"Lena Moreau","review":"the review"};
@@ -154,10 +154,11 @@ figcaption b{color:#374151}
   });
   document.getElementById("stagenote").innerHTML=NOTES[stage];
   if(stage===3) document.getElementById("review").style.display="block";
-  var reg="lens-cycle/reg/stage"+stage+(layers.indexOf("ethics")>=0?"-e":"")+(layers.indexOf("ethics-internal")>=0?"-i":"")+"/union.json";
+  // one registry per party, added one by one; the lens and the viewer splice them by hash
+  var regs=REG[stage].concat(layers).map(function(r){ return "lens-cycle/reg/"+r+"/union.json"; }).join(",");
   document.getElementById("srclist").textContent=REG[stage].map(function(r){return SRC[r];}).concat(layers.map(function(l){return LAYER[l];})).join(" · ");
   var sc=document.createElement("script"); sc.src="lens-cycle/lens.js";
-  sc.setAttribute("data-planktons",reg);
+  sc.setAttribute("data-planktons",regs);
   sc.setAttribute("data-viewer","lens-cycle/viewer.html"); sc.setAttribute("data-logo","logo.png");
   document.body.appendChild(sc);
 })();

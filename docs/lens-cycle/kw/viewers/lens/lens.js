@@ -167,6 +167,8 @@
     // them relative to itself. Resolve them to absolute against our base once (the one place it's needed).
     var abs = function (u) { try { return new URL(u, document.baseURI).href; } catch (e) { return u; } };
     var q = new URLSearchParams({ union: abs(hit.reg.union), keys: abs(hit.reg.keys), names: abs(hit.reg.names), focus: hash });
+    // every other plankton this page reads goes along, so the viewer splices the same sources the mark did
+    CFG.planktons.forEach(function (u) { if (abs(u) !== abs(hit.reg.union)) q.append("union", abs(u)); });
     var ov = document.createElement("div"); ov.className = "lens-ov";
     ov.innerHTML = '<header><span class="h">where this came from &middot; <code>' + hash.slice(0, 23) + '&hellip;</code></span><button class="x">Close&nbsp; Esc</button></header>' +
       '<iframe title="kton provenance" src="' + CFG.viewer + "?" + q.toString() + '"></iframe>';

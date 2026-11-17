@@ -14,10 +14,13 @@ cp "$HERE/kw/viewers/lens/lens.js" "$HERE/lens.js"
 cat > "$HERE/viewer.html" <<'HTML'
 <!doctype html><meta charset="utf-8"><title>kton · graph viewer</title>
 <script>
-var q = new URLSearchParams(location.search);
-["union", "keys", "names", "graph", "select"].forEach(function (k) {
-  var v = q.get(k); if (v) q.set(k, new URL(v, location.href).href); });
-location.replace("kw/viewers/graph/index.html?" + q.toString() + location.hash);
+// hand the lens's parameters on into kw/: every ?union= (one per registry), made absolute; the
+// talk view (descriptions as labels, statements folded into their steps) unless one is named
+var q = new URLSearchParams(location.search), out = new URLSearchParams();
+q.forEach(function (v, k) {
+  out.append(k, ["union", "keys", "names", "graph", "select"].indexOf(k) >= 0 ? new URL(v, location.href).href : v); });
+if (!out.has("view")) out.set("view", JSON.stringify({ preset: "pmx", graph: { hide: ["claim", "ref", "source:code", "source:single-use"] } }));
+location.replace("kw/viewers/graph/index.html?" + out.toString() + location.hash);
 </script>
 HTML
 { echo "kton-web $REV"; echo "kernel pin $(grep -o 'KTON_COMMIT:-[0-9a-f]*' "$KW/wasm/fetch-kernel.sh" | cut -d- -f2)"; } > "$HERE/KTON-WEB.txt"

@@ -85,8 +85,10 @@ export function relationEdges(G, records) {
         const c = nodeFor(rec.claimId);
         if (!c || !c.verified) continue;
         const p = payloadOf(rec), pr = (p && p.predicate) || {}, kind = lastSeg(pr.predicate && pr.predicate.uri);
-        if (!RELATION[kind]) continue;
-        const o = pr.object && pr.object[kind], ref = typeof o === "string" ? o : o && o.hash;
+        // a reproduction names its level as the object's key: {"L0": {"hash": <the run it reproduces>}}
+        const level = kind === "reproduces" && pr.object && ["L0", "L1", "L2"].find((l) => pr.object[l]);
+        if (!RELATION[kind] && !level) continue;
+        const o = pr.object && pr.object[level || kind], ref = typeof o === "string" ? o : o && o.hash;
         const to = ref && nodeFor(ref);
         if (!to || to.type !== "foton") continue;
         for (const s of p.subject || []) {
@@ -94,7 +96,7 @@ export function relationEdges(G, records) {
             if (!from || from.type !== "foton" || from.id === to.id) continue;
             const k = from.id + "\0" + to.id + "\0" + kind;
             if (seen.has(k)) continue; seen.add(k);
-            out.push({ from: from.id, to: to.id, kind, label: RELATION[kind], claim: c.id, by: String(pr.by || "").replace(/^CN=/, ""), why: String(pr.why || ""), step: true });
+            out.push({ from: from.id, to: to.id, kind, label: level ? "reproduces · " + level : RELATION[kind], claim: c.id, by: String(pr.by || "").replace(/^CN=/, ""), why: String(pr.why || ""), step: true });
         }
     }
     return out;

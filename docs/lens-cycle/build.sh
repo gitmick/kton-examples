@@ -75,14 +75,19 @@ run bill-by-species.R penguins-complete.csv figures/bill-by-species.svg  out/bil
 run audit.R           penguins-named.csv    ethics-audit.txt
 run anonymise.R       penguins-named.csv    ethics-recheck.csv
 
-R="$W/reg"; mkdir -p "$R"/{llm,rerun,review,ethics,ethics-internal}/{plankton,nekton} "$W/all/plankton" "$W/pub" "$W/rev"
+R="$W/reg"; mkdir -p "$R"/{llm,rerun,review,ethics,ethics-internal}/{plankton,nekton} "$W/pub" "$W/rev"
 claim(){ # claim NEKTON_DIR KEY JSON -> claim id
   printf '%s' "$3" > "$W/c.json"; NEKTON_DIR="$1" nekton claim "$W/c.json" "$2" --add 2>&1 | firstid; }
+desc(){ # desc PARTY FOTON TEXT [WHY]: a short dc:description (the node's label in the graph), and its rationale
+  local reg="$R/$1/nekton" key name; case "$1" in llm) key=llm; name="Station LLM";; rerun) key=lena; name="Lena Moreau";;
+    review) key="${5:-editor}"; name="${6:-Journal editor}";; ethics|ethics-internal) key=ethics; name="Animal Welfare and Ethics Committee";; esac
+  claim "$reg" "$(K $key)" "$(jq -nc --arg f "$2" --arg v "$3" --arg by "$name" '{subject:[{hash:$f}],predicate:"http://purl.org/dc/terms/description",object:{value:$v},by:$by,when:"2026-04-02T09:00:00Z"}')" >/dev/null
+  if [[ -n "${4:-}" ]]; then claim "$reg" "$(K $key)" "$(jq -nc --arg f "$2" --arg v "$4" --arg by "$name" '{subject:[{hash:$f}],predicate:"https://w3id.org/ep-plan#hasRationale",object:{value:$v},by:$by,when:"2026-04-02T09:00:00Z"}')" >/dev/null; fi; }
 
-# the published step, authored by whoever signs it; also into $W/all, where both signatures meet on one
-# record: that record is what the review check reads
-pooled(){ # pooled REGISTRY KEY
-  plankton author --registry "$1" --add --sign "$2" --print-id \
+# the published step, authored by whoever signs it
+pooled(){ # pooled REGISTRY KEY [more --in ...]
+  local reg="$1" key="$2"; shift 2
+  plankton author --registry "$reg" --add --sign "$key" --print-id "$@" \
     --cmd "Rscript bill-pooled.R penguins-complete.csv figures/fig1-bill-pooled.svg out/bill-pooled.txt" \
     --in penguins-complete.csv --located "$(loc penguins-complete.csv files/penguins-complete.csv)" \
     --in bill-pooled.R         --located "$(loc bill-pooled.R files/bill-pooled.R)" \
@@ -92,40 +97,46 @@ pooled(){ # pooled REGISTRY KEY
 # -- stage 1: the llm --------------------------------------------------------
 say "3 · stage 1: the llm runs it"
 P="$R/llm/plankton"
-plankton author --registry "$P" --add --sign "$(K llm)" \
+A1=$(plankton author --print-id --registry "$P" --add --sign "$(K llm)" \
   --cmd "Rscript anonymise.R penguins-named.csv penguins.csv" \
   --in penguins-named.csv \
   --in anonymise.R --located "$(loc anonymise.R files/anonymise.R)" \
-  --out penguins.csv --located "$(loc penguins.csv files/penguins.csv)" >/dev/null
-plankton author --registry "$P" --add --sign "$(K llm)" \
+  --out penguins.csv --located "$(loc penguins.csv files/penguins.csv)" 2>/dev/null)
+A2=$(plankton author --print-id --registry "$P" --add --sign "$(K llm)" \
   --cmd "Rscript drop-incomplete.R penguins.csv penguins-complete.csv" \
   --in penguins.csv           --located "$(loc penguins.csv files/penguins.csv)" \
   --in drop-incomplete.R      --located "$(loc drop-incomplete.R files/drop-incomplete.R)" \
-  --out penguins-complete.csv --located "$(loc penguins-complete.csv files/penguins-complete.csv)" >/dev/null
-F=$(pooled "$P" "$(K llm)"); pooled "$W/all/plankton" "$(K llm)" >/dev/null
-plankton author --registry "$P" --add --sign "$(K llm)" \
+  --out penguins-complete.csv --located "$(loc penguins-complete.csv files/penguins-complete.csv)" 2>/dev/null)
+F=$(pooled "$P" "$(K llm)")
+A4=$(plankton author --print-id --registry "$P" --add --sign "$(K llm)" \
   --cmd "Rscript flipper-mass.R penguins-complete.csv figures/fig2-flipper-mass.svg" \
   --in penguins-complete.csv --located "$(loc penguins-complete.csv files/penguins-complete.csv)" \
   --in flipper-mass.R        --located "$(loc flipper-mass.R files/flipper-mass.R)" \
-  --out figures/fig2-flipper-mass.svg --located "$(loc figures/fig2-flipper-mass.svg figures/fig2-flipper-mass.svg)" >/dev/null
+  --out figures/fig2-flipper-mass.svg --located "$(loc figures/fig2-flipper-mass.svg figures/fig2-flipper-mass.svg)" 2>/dev/null)
 # figure 3 is deliberately not authored (see docs/lens-paper): the lens has nothing to say about it.
 WHEN="2026-04-02T09:00:00Z"
-about(){ claim "$R/llm/nekton" "$(K llm)" "$(jq -nc --arg f "$F" --arg p "$1" --arg v "$2" --arg w "$WHEN" \
-  '{subject:[{hash:$f}],predicate:$p,object:{value:$v},by:"Station LLM",when:$w}')" >/dev/null; }
-about "http://purl.org/dc/terms/description" \
-  "Fits bill depth against bill length over all 342 complete records and draws the scatter with one fitted line (figure 1); writes r and p to bill-pooled.txt."
-about "https://w3id.org/ep-plan#hasRationale" \
-  "The field guide asks whether bill length can stand in for bill shape. One pooled fit answers that for the whole sample; the data are the released, pseudonymised file, so anyone can rerun it."
+desc llm "$A1" "Strip the animal names" "The released file must not identify animals: the named records stay with the ethics committee, known here by hash only."
+desc llm "$A2" "Drop incomplete records" "Two animals lack bill measurements; the fits need complete rows."
+desc llm "$F"  "Bill length vs depth, all species (fig. 1)" "The field guide asks whether bill length can stand in for bill shape. One pooled fit over all 342 complete records answers that for the whole sample; the data are the released file, so anyone can rerun it."
+desc llm "$A4" "Flipper length vs body mass (fig. 2)" "A sanity check: the expected strong positive relation."
 echo "  foton $F, signed by the llm, with its description and rationale"
 
 # -- stage 2: the rerun ------------------------------------------------------
 say "4 · stage 2: Lena reruns it"
-F2=$(pooled "$R/rerun/plankton" "$(K lena)"); pooled "$W/all/plankton" "$(K lena)" >/dev/null
-[[ "$F2" == "$F" ]] || { echo "the rerun gave another foton: $F2" >&2; exit 1; }
+# Lena reruns it in her own R and records which R that was (lena-env.txt): her record names her
+# environment, so it is a record of its own - and the bytes it made are the llm's, byte for byte (L0).
 cd "$W"; cp figures/fig1-bill-pooled.svg first.svg; rm figures/fig1-bill-pooled.svg out/bill-pooled.txt
+Rscript -e 'writeLines(R.version.string, "lena-env.txt")'
 run bill-pooled.R penguins-complete.csv figures/fig1-bill-pooled.svg out/bill-pooled.txt
-echo -n "  "; plankton reproduces "$(plankton hash first.svg)" "$(plankton hash figures/fig1-bill-pooled.svg)" | head -1
-PLANKTON_DIR="$W/all/plankton" plankton reproductions --trust-keys "$W/keys" "$(plankton hash figures/fig1-bill-pooled.svg)" 2>/dev/null | head -1 | sed 's/^/  /'
+F2=$(pooled "$R/rerun/plankton" "$(K lena)" --in lena-env.txt --located "$(loc lena-env.txt files/lena-env.txt)")
+[[ "$F2" != "$F" ]] || { echo "the rerun should be a record of its own" >&2; exit 1; }
+LEVEL=$(plankton reproduces "$(plankton hash first.svg)" "$(plankton hash figures/fig1-bill-pooled.svg)" | grep -o 'L[012]' | head -1)
+[[ "$LEVEL" == L0 ]] || { echo "the rerun did not give the same bytes" >&2; exit 1; }
+claim "$R/rerun/nekton" "$(K lena)" "$(jq -nc --arg s "$F2" --arg f "$F" '{subject:[{hash:$s}],predicate:"https://kton.dev/v/reproduces",
+  object:{L0:{hash:$f}},why:"reran bill-pooled.R in my own R from the released data: the same figure and numbers, byte for byte",
+  by:"Lena Moreau",when:"2026-04-20T14:00:00Z"}')" >/dev/null
+desc rerun "$F2" "Rerun of fig. 1, in Lena's own R" "Before the report goes out, a person reruns the published step from the released data; her record names the R it ran in."
+echo "  rerun $F2 by Lena reproduces $F at L0 (same bytes); signed as a reproduces claim"
 
 # -- stage 3: the review -----------------------------------------------------
 say "5 · stage 3: the review"
@@ -155,7 +166,7 @@ prev=$(scl "$W/pub" editor "{\"hash\":\"$REV\"}" "https://kton.dev/v/closed" "{\
 echo "  rule anchored -> reviewer1, reviewer2 approve -> sealed into the journal's scope"
 
 # the records the check reads, published under records/ (commit B)
-cp "$W/all/plankton/objects/sha256/${F#sha256:}.json" "$HERE/records/foton.json"
+cp "$R/llm/plankton/objects/sha256/${F#sha256:}.json" "$HERE/records/foton.json"
 cp "$W"/pub/objects/scope/*.nekton.jsonl "$HERE/records/journal.nekton.jsonl"
 cp "$W"/rev/objects/scope/*.nekton.jsonl "$HERE/records/review.nekton.jsonl"
 cd "$HERE"
@@ -175,11 +186,13 @@ for f in trust/*.pub; do ins+=(--in "$f" --located "$(loc "$f" "$f")"); done
 CHECKF=$(plankton author --registry "$P" --add --sign "$(K editor)" --print-id \
   --cmd "./check.sh trust ${CHECK_IN[*]}   (oxigraph 0.5.12, ${OXIGRAPH##*@})" "${ins[@]}" \
   --out review/verdict.csv --located "$(loc review/verdict.csv review/verdict.csv)" 2>/dev/null)
-plankton author --registry "$P" --add --sign "$(K editor)" \
+VF=$(plankton author --print-id --registry "$P" --add --sign "$(K editor)" \
   --cmd "Rscript verdict.R verdict.csv verdict.svg" \
   --in review/verdict.csv --located "$(loc review/verdict.csv review/verdict.csv)" \
   --in review/verdict.R   --located "$(loc review/verdict.R review/verdict.R)" \
-  --out review/verdict.svg --located "$(loc review/verdict.svg review/verdict.svg)" >/dev/null
+  --out review/verdict.svg --located "$(loc review/verdict.svg review/verdict.svg)" 2>/dev/null)
+desc review "$CHECKF" "Review check: four eyes, people only" "The rule anchored before anyone reviewed, run in Oxigraph over the signed records themselves: two approvals by declared people, nobody approving their own work."
+desc review "$VF" "Draw the review verdict"
 echo "  the check is foton $CHECKF; verdict.svg builds on it"
 mkdir -p "$R/review/nekton/objects/scope"; cp "$W"/pub/objects/scope/*.nekton.jsonl "$W"/rev/objects/scope/*.nekton.jsonl "$R/review/nekton/objects/scope/"
 cd "$W"
@@ -193,6 +206,7 @@ FS=$(plankton author --registry "$P" --add --sign "$(K reviewer2)" --print-id \
   --in bill-by-species.R     --located "$(loc bill-by-species.R reviewer/bill-by-species.R)" \
   --out figures/bill-by-species.svg --located "$(loc figures/bill-by-species.svg reviewer/bill-by-species.svg)" \
   --out out/bill-by-species.txt     --located "$(loc out/bill-by-species.txt reviewer/bill-by-species.txt)" 2>/dev/null)
+desc review "$FS" "Bill length vs depth, by species" "Asked for in review: the same question once species is taken into account." reviewer2 "Reviewer 2"
 claim "$R/review/nekton" "$(K reviewer2)" "$(jq -nc --arg f "$FS" '{subject:[{hash:$f}],
   predicate:"https://kton.dev/v/the-same-question-split-by-species",
   object:{value:"what the published analysis looks like once species is taken into account. Same data, same code path, one grouping added."},
@@ -214,16 +228,18 @@ claim "$R/ethics/nekton" "$(K ethics)" "$(jq -nc --arg f "$FR" '{subject:[{hash:
   object:{value:"re-ran on the held source records; output identical to the released file; 344 animals, no direct identifiers remain"},
   by:"Animal Welfare and Ethics Committee",why:"The source records remain with the committee and are not released.",
   when:"2026-03-02T11:00:00Z"}')" >/dev/null
-plankton author --registry "$R/ethics-internal/plankton" --add --sign "$(K ethics)" \
+FI=$(plankton author --print-id --registry "$R/ethics-internal/plankton" --add --sign "$(K ethics)" \
   --cmd "Rscript audit.R penguins-named.csv ethics-audit.txt" \
   --in penguins-named.csv --located "$(loc penguins-named.csv ethics/penguins-named.csv)" \
   --in audit.R            --located "$(loc audit.R ethics/audit.R)" \
-  --out ethics-audit.txt  --located "$(loc ethics-audit.txt ethics/ethics-audit.txt)" >/dev/null
+  --out ethics-audit.txt  --located "$(loc ethics-audit.txt ethics/ethics-audit.txt)" 2>/dev/null)
+desc ethics "$FR" "Re-run the anonymisation on the held records"
+desc ethics-internal "$FI" "Audit the named records"
 
 # ------------------------------------------------------------------- publish
 say "7 · files under docs/lens-cycle/"
 cp "$W"/{penguins.csv,penguins-complete.csv,anonymise.R,drop-incomplete.R,bill-pooled.R,flipper-mass.R,SOURCE.txt} "$HERE/files/"
-cp "$W/out/bill-pooled.txt" "$HERE/files/"
+cp "$W/out/bill-pooled.txt" "$W/lena-env.txt" "$HERE/files/"
 cp "$W"/figures/fig[123]-*.svg "$HERE/figures/"
 cp "$W"/{penguins-named.csv,audit.R,ethics-audit.txt,ethics-recheck.csv} "$HERE/ethics/"
 cp "$W/bill-by-species.R" "$W/figures/bill-by-species.svg" "$W/out/bill-by-species.txt" "$HERE/reviewer/"
@@ -241,36 +257,19 @@ for who, label in names.items():
     kj[kid] = subprocess.check_output(["plankton", "pubkey", k], text=True).strip()
     nj[kid] = label
 def records(r):
-    out = []
-    for f in sorted(glob.glob(os.path.join(src, r, "plankton", "objects", "sha256", "*.json"))):
-        out.append(json.load(open(f)))
+    out = [json.load(open(f)) for f in sorted(glob.glob(os.path.join(src, r, "plankton", "objects", "sha256", "*.json")))]
     for f in sorted(glob.glob(os.path.join(src, r, "nekton", "objects", "**", "*.jsonl"), recursive=True)):
         out += [json.loads(l) for l in open(f) if l.strip()]
     return out
-def union(parts):
-    # one record per id; a foton signed in two registries (the rerun) carries both signatures, as
-    # `plankton add` would merge them: same payload, the signature lists united
-    by, order = {}, []
-    for r in parts:
-        for rec in records(r):
-            i = rec.get("fotonId") or rec.get("claimId")
-            if i not in by: by[i] = json.loads(json.dumps(rec)); order.append(i); continue
-            have = by[i]["envelope"]
-            assert have["payload"] == rec["envelope"]["payload"], i
-            kids = {g["keyid"] for g in have["signatures"]}
-            have["signatures"] += [g for g in rec["envelope"]["signatures"] if g["keyid"] not in kids]
-    return [by[i] for i in order]
-STAGES = {"1": ["llm"], "2": ["llm", "rerun"], "3": ["llm", "rerun", "review"]}
-LAYERS = {"": [], "-e": ["ethics"], "-i": ["ethics-internal"], "-e-i": ["ethics", "ethics-internal"]}
-for st, parts in STAGES.items():
-    for lk, lay in LAYERS.items():
-        name = "stage" + st + lk; d = os.path.join(dst, name); os.makedirs(d, exist_ok=True)
-        out = union(parts + lay)
-        json.dump(dict(sorted(kj.items())), open(os.path.join(d, "keys.json"), "w"), indent=2)
-        json.dump(nj, open(os.path.join(d, "names.json"), "w"), indent=2)
-        with open(os.path.join(d, "union.json"), "w") as fh:
-            json.dump(out, fh, indent=2); fh.write("\n")
-        print("  %-12s %d record(s)" % (name, len(out)))
+# one registry per party: the lens adds them one by one, and they splice by hash in the reader's browser
+for r in ["llm", "rerun", "review", "ethics", "ethics-internal"]:
+    d = os.path.join(dst, r); os.makedirs(d, exist_ok=True)
+    json.dump(dict(sorted(kj.items())), open(os.path.join(d, "keys.json"), "w"), indent=2)
+    json.dump(nj, open(os.path.join(d, "names.json"), "w"), indent=2)
+    out = records(r)
+    with open(os.path.join(d, "union.json"), "w") as fh:
+        json.dump(out, fh, indent=2); fh.write("\n")
+    print("  %-16s %d record(s)" % (r, len(out)))
 PY
 rm -rf "$W"
 

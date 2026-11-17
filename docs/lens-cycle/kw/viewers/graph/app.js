@@ -122,12 +122,16 @@ function idlabel(name){ const n=esc(String(name==null?"":name).replace('pfed-','
     : `<span class="idun" title="unattested: this is a key label, not an authenticated identity - the signature verifies the KEY, not this name">${n}<span class="idmark">key&nbsp;label</span></span>`; }
 const safeUri=u=>/^(https?|ipfs):/i.test(String(u||""))?String(u):"";  // only http(s)/ipfs into an href; else inert text
 // hash(12) -> [uri], read from FileRef.uri carried on inputs/outputs (plankton --located); merged with claim-based G.locators
+// a relative locator names a place next to the registry that published it, so it resolves against that
+// registry's URL (?union=...), not against this viewer: then it is an ordinary address, linked and previewed
+const RECSRC={};
+function locAbs(u,id){ const s=String(u||""); if(/^[a-z][a-z0-9+.-]*:/i.test(s)||!RECSRC[id]) return s; try{ return new URL(s,RECSRC[id]).href; }catch{ return s; } }
 function buildLoc(unionStr){ LOC={};
   try{ for(const r of JSON.parse(unionStr)){ if(!r.envelope) continue;
     let p; try{ p=JSON.parse(new TextDecoder().decode(b64ToBytes(r.envelope.payload))); }catch{ continue; }
     const files=(p.subject||[]).concat((p.predicate&&p.predicate.inputs)||[]);
     for(const s of files){ const d=s.digest&&(s.digest.sha256||s.digest["sha-256"]);
-      if(d&&s.uri){ const k=String(d).toLowerCase().slice(0,32); LOC[k]=[...new Set([...(LOC[k]||[]),...[].concat(s.uri)])]; } }
+      if(d&&s.uri){ const k=String(d).toLowerCase().slice(0,32); LOC[k]=[...new Set([...(LOC[k]||[]),...[].concat(s.uri).map(u=>locAbs(u,r.fotonId||r.claimId))])]; } }
   } }catch{}
 }
 function renderPreview(uri,bytes,partial){ const ext=(uri.split(/[?#]/)[0].split(".").pop()||"").toLowerCase();
@@ -215,6 +219,7 @@ function renderGraph(union,keys,names,recorded){
 function buildG(union,keys,names,recorded){
   LAST_BUILD=[union,keys,names,recorded];
   G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
+  if(G.locators){ const base=Object.values(RECSRC)[0]; for(const k in G.locators) G.locators[k]=[...new Set([].concat(G.locators[k]).map(u=>/^[a-z][a-z0-9+.-]*:/i.test(u)||!base?u:(()=>{ try{ return new URL(u,base).href; }catch{ return u; } })()))]; }
   // a recorder's graph next to the union: join by output hash. Only labels move across; the
   // verdicts are the wasm's, and a step only the recorder saw stays unverified (core/join.js).
   if(recorded) G=JOIN.joinGraphs(G, recorded);
@@ -459,12 +464,15 @@ async function load(){
       return;
     }
     if(!qs.get("union")){ showDropUI(); return; }          // no registry named -> let anyone drop their own records
-    const prim=regUrls(qs.get("union"));                    // sibling keys.json/names.json, unless overridden
+    // ?union= may repeat (or hold a comma list): several registries, spliced by hash. keys/names
+    // override the first one's siblings only.
+    const unions=qs.getAll("union").flatMap(u=>u.split(",")).map(u=>u.trim()).filter(Boolean);
+    const prim=regUrls(unions[0]);                          // sibling keys.json/names.json, unless overridden
     if(qs.get("keys")) prim.keys=qs.get("keys"); if(qs.get("names")) prim.names=qs.get("names");
-    const regs=[prim, ...extraSources().map(regUrls)];      // delivered + the reader's own connected planktons
+    const regs=[prim, ...unions.slice(1).map(regUrls), ...extraSources().filter(u=>!unions.includes(u)).map(regUrls)];   // delivered + the reader's own connected planktons
     const seen=new Set(), recs=[], keys={}, names={}; const attKids=new Set(); let total=0;
     for(const reg of regs){ try{ const s=await fetchSrc(reg); SRCSTAT[reg.union]=s.recs.length+" records";   // union by content hash; dedup on foton/claim id
-      for(const r of s.recs){ const id=r&&(r.fotonId||r.claimId); if(id&&!seen.has(id)){ seen.add(id); total++; if(recs.length<RECORD_CAP) recs.push(r); } }
+      for(const r of s.recs){ const id=r&&(r.fotonId||r.claimId); if(id&&!seen.has(id)){ seen.add(id); total++; RECSRC[id]=reg.union; if(recs.length<RECORD_CAP) recs.push(r); } }
       Object.assign(keys,s.keys); Object.assign(names,s.names); for(const k of (s.attested||[])) attKids.add(k);
     }catch(e){ SRCSTAT[reg.union]="not reachable"; /* skipped, not fatal - but said in settings */ } }
     // an identity label is authenticated only if its keyid is in some source's attested.json (a
@@ -900,7 +908,11 @@ function layoutAndRun(){
   // draws the claim as a box between them; with claim boxes hidden (or contracted) the relation would
   // otherwise vanish. Added once per pair and kind.
   { const inV=new Set(nodes.map(n=>n.id)), have=new Set(edges.map(e=>e.from+"|"+e.to+"|"+shortRel(e.kind)));
-    for(const r of RELS) if(inV.has(r.from)&&inV.has(r.to)&&!have.has(r.from+"|"+r.to+"|"+r.kind)) edges=edges.concat([r]); }
+    for(const r of RELS) if(inV.has(r.from)&&inV.has(r.to)){
+      // a reproduction read from its claim says more than the generic line for the same pair (its level): it wins
+      if(r.kind==="reproduces") edges=edges.filter(e=>!(e.from===r.from&&e.to===r.to&&shortRel(e.kind)==="reproduces"&&!e.step));
+      else if(have.has(r.from+"|"+r.to+"|"+r.kind)) continue;
+      edges=edges.concat([r]); } }
   // "auto" (the default): on when a model tree is in view - the picture it is made for
   const treeInView=edges.some(e=>e.step&&e.kind==="parent-step");
   const on=(v,word)=>v===word||(v==="auto"&&treeInView);
@@ -1089,7 +1101,7 @@ function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
     // a derived edge is a READING, and must never look like an attestation: dotted, dimmer, named
     if(e.derived){ edgeArrow(ctx,L,R,css("--dim"),"dot",LOD?"":shortRel(e.kind)); continue; }
     // developed from (strong) / adapted from (light): a relation between two steps, from a verified claim
-    if(e.step){ edgeArrow(ctx,L,R,e.kind==="parent-step"?css("--b"):css("--dim"),e.kind==="based-on",LOD?"":e.label); continue; }
+    if(e.step){ edgeArrow(ctx,L,R,e.kind==="parent-step"?css("--b"):e.kind==="reproduces"?css("--ok"):css("--dim"),e.kind==="based-on",LOD?"":e.label); continue; }
     if(e.contracted){ edgeArrow(ctx,L,R,css("--about"),true,LOD?"":shortRel(e.kind)); continue; }
     edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
   for(const n of ex.nodes){ if(LOD&&!vis(n)) continue; nodeDraw(ctx,n); }
