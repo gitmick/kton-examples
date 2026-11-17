@@ -57,7 +57,7 @@ figcaption b{color:#374151}
     </span>
     <span class="sep"></span>
     <button data-layer="ethics" aria-pressed="false">+ Ethics Committee</button>
-    <button data-layer="ethics-internal" class="role" aria-pressed="false">view as the Committee</button>
+    <button data-layer="ethics-internal" class="role" aria-pressed="false" title="a change of role, not another source: the committee's own register, where penguins-named.csv has an address">view as the Committee 🔓 names</button>
   </div>
   <div class="stagenote" id="stagenote"></div>
 
@@ -152,7 +152,28 @@ figcaption b{color:#374151}
     b.onclick=function(){ var x=layers.slice(), i=x.indexOf(l); if(i>=0) x.splice(i,1); else x.push(l);
       put("layers",x.join(",")); location.href=location.pathname; };
   });
-  document.getElementById("stagenote").innerHTML=NOTES[stage];
+  var note=NOTES[stage];
+  if(layers.indexOf("ethics")>=0&&layers.indexOf("ethics-internal")<0)
+    note+="<br><b>+ Ethics Committee.</b> Its public register: it re-ran the anonymisation on the source records and got the released file back. The source, <code>penguins-named.csv</code>, is named by hash only: no address, no names. Only <b>view as the Committee 🔓</b> shows them.";
+  if(layers.indexOf("ethics-internal")>=0)
+    note+="<br><b>View as the Committee.</b> The committee's own register: here <code>penguins-named.csv</code> carries an address, and the animals have names. <a href=\"#\" id=\"seenames\">See the named records →</a>";
+  document.getElementById("stagenote").innerHTML=note;
+  var sn=document.getElementById("seenames");
+  if(sn) sn.onclick=function(ev){ ev.preventDefault();
+    // the named file, by its hash: the viewer opens on it, with its preview (re-hashed in the browser)
+    fetch("lens-cycle/ethics/penguins-named.csv").then(function(r){ return r.arrayBuffer(); })
+      .then(function(b){ return crypto.subtle.digest("SHA-256",b); }).then(function(h){
+        var hex=[].map.call(new Uint8Array(h),function(x){ return ("0"+x.toString(16)).slice(-2); }).join("");
+        var q=new URLSearchParams(); regs.split(",").forEach(function(u){ q.append("union",new URL(u,location.href).href); });
+        q.set("focus","sha256:"+hex); q.set("preview","1");
+        var ov=document.createElement("div"); ov.className="lens-ov";
+        ov.innerHTML='<header><span class="h">the named records &middot; committee view</span><button class="x">Close&nbsp; Esc</button></header><iframe title="kton provenance" src="lens-cycle/viewer.html?'+q.toString()+'"></iframe>';
+        document.body.appendChild(ov);
+        var close=function(){ ov.remove(); document.removeEventListener("keydown",esc); };
+        var esc=function(e){ if(e.key==="Escape") close(); };
+        ov.querySelector(".x").onclick=close; document.addEventListener("keydown",esc);
+      });
+  };
   if(stage===3) document.getElementById("review").style.display="block";
   // one registry per party, added one by one; the lens and the viewer splice them by hash
   var regs=REG[stage].concat(layers).map(function(r){ return "lens-cycle/reg/"+r+"/union.json"; }).join(",");

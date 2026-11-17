@@ -7,7 +7,7 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const PAL=["--a","--b","--c","--d","--e","--f"];
 const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
-let G=null, partColor={}, ex=null, filt=null, LOC={}, autoPreview=!!localStorage.getItem("kton-autopreview");
+let G=null, partColor={}, ex=null, filt=null, LOC={}, autoPreview=!!localStorage.getItem("kton-autopreview")||new URLSearchParams(location.search).get("preview")==="1";
 const PED_CAP=250; let LOD=false;   // explorer scale guards: cap a pedigree to PED_CAP nodes; drop labels/cull above ~220 rendered
 /**
  * Is this view running inside the verticle host, or on the open web?
@@ -45,7 +45,9 @@ let PROF=null, ANN=new Map(), FULLH=new Map();
 // the multi-selection (prof().select.multi): node ids of steps, and full foton ids for the host
 let SELSET=new Set(), FOTONID=new Map(), SELM=null;
 // step-to-step relations from verified claims (parent-step, based-on) - core/annotate.js
-let RELS=[], NAMES_ALL={};
+let RELS=[], NAMES_ALL={}, PANEL_AT_START=new URLSearchParams(location.search).get("panel")!=="closed";
+// closed only until the reader first touches the page: loading may enter the explorer more than once
+if(!PANEL_AT_START) document.addEventListener("pointerdown",()=>{ PANEL_AT_START=true; },{once:true,capture:true});
 function prof(){ return PROF || (PROF = PRF.resolveProfile(new URLSearchParams(location.search).get("view"))); }
 // what a step did and why; a step only the recorder saw has its code as text and no claims
 function stepInfo(n){ const a=ANN.get(n.id)||{};
@@ -670,7 +672,10 @@ function index(){
   filt={parts:new Set(G._parts), types:typesShown(), kinds:kindsHidden()};
 }
 function showStats(){ const t=G.summary.totals;
-  $("#stats").innerHTML=`<span><b>${(G._parts||[]).filter(Boolean).length||t.participants}</b> participants</span><span><b>${t.fotons}</b> fotons</span><span><b>${t.claims}</b> claims</span><span class="ok"><b>${t.verified}</b>/${t.fotons+t.claims} verified</span>`+(t.unverified?`<span class="bad"><b>${t.unverified}</b> unverified</span>`:``)
+  // the registries this picture is spliced from, each its own source (by hash, nothing merged beforehand)
+  const srcs=Object.entries(SRCSTAT).filter(([,v])=>/records/.test(v));
+  const regName=u=>{ const m=String(u).match(/([^/]+)\/[^/]*$/); return m?m[1]:u; };
+  $("#stats").innerHTML=(srcs.length>1?`<span title="${esc(srcs.map(([u,v])=>regName(u)+": "+v).join("\n"))}"><b>${srcs.length}</b> registries <span style="opacity:.75">(${esc(srcs.map(([u])=>regName(u)).join(" + "))})</span>, spliced by hash</span>`:``)+`<span><b>${(G._parts||[]).filter(Boolean).length||t.participants}</b> participants</span><span><b>${t.fotons}</b> fotons</span><span><b>${t.claims}</b> claims</span><span class="ok"><b>${t.verified}</b>/${t.fotons+t.claims} verified</span>`+(t.unverified?`<span class="bad"><b>${t.unverified}</b> unverified</span>`:``)
     +(G.summary.origins?`<span title="steps joined by file hash: seen by the recorder and signed / signed only / recorded only (not signed)"><b>${G.summary.origins.both}</b> recorded+signed · <b>${G.summary.origins.signed}</b> signed only · <b>${G.summary.origins.recorded+(G.summary.origins.hidden||0)}</b> recorded only</span>`+(G.summary.origins.hidden||recordedShown()&&prof().graph.recorded==="hide"?` <a href="#" id="togrec" title="steps the recorder saw that no signed record has">${recordedShown()?"hide them":"show them"}</a>`:``):``)
     +(STORE?`<span title="a portion of the store, chosen by the store and verified here - expand a node to grow it">portion: <b>${STORE.byId.size}</b> records${STORE.more?` · <span class="rc" data-storemore="1" title="some selections were cut at the page size">load more (${STORE.more} cut)</span>`:``}</span>`:``);
 }
@@ -801,7 +806,9 @@ function trustCard(id){
 }
 
 function enterExplorer(centerId, mode, push=true, note=""){ $("#overview").style.display="none"; $("#explorer").style.display="block";
-  ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, note, expand:new Set(), view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun(); inspect(centerId); fitView(); redraw();
+  ex={center:centerId, sel:centerId, mode, grouped:false, cap:PED_CAP, note, expand:new Set(), view:{scale:1,tx:0,ty:0}, started:false}; drawControls(); layoutAndRun();
+  // ?panel=closed: the first picture gets the whole width (a talk, a projector); a click opens the panel
+  if(PANEL_AT_START) inspect(centerId); fitView(); redraw();
   // the centre goes into the URL, not just into history state: that is what the compass reads when
   // the reader switches back, and what makes a pasted link land on the same node
   if(VS) VS.writeState({focus:centerId, mode}, {push});
@@ -924,7 +931,13 @@ function layoutAndRun(){
   ex.nodes=nodes; ex.edges=edges; ex._byId=new Map(nodes.map(n=>[n.id,n]));
   ex.held=held; ex.heldBy=heldBy;
   // `based-on` is a lighter relation ("adapted from"): drawn, but it does not decide the layering
-  layerLayout(ex.nodes, ex.edges.filter(e=>!(e.step&&e.kind==="based-on")), ex._byId);
+  layerLayout(ex.nodes, ex.edges.filter(e=>!(e.step&&(e.kind==="based-on"||e.kind==="reproduces"))), ex._byId);
+  // a reproduction is the same thing again: directly BELOW the run it reproduces, in its column; what
+  // stood there moves down to make room
+  for(const e of ex.edges) if(e.step&&e.kind==="reproduces"){ const r=ex._byId.get(e.from), t=ex._byId.get(e.to); if(!r||!t) continue;
+    const gap=Math.max(60,(+prof().node.font||11)*4.4), y=t.y+gap;
+    for(const n of ex.nodes) if(n!==r&&n!==t&&Math.abs(n.x-t.x)<1&&n.y>t.y-1&&n.y<y+gap) n.y+=gap;
+    r.x=t.x; r.y=y; r._d=t._d; }
   // notes stand in for the claim boxes: with claims drawn, the rationale is already on screen
   if(prof().graph.notes==="rationale"||(prof().graph.notes==="auto"&&treeInView&&!filt.types.has("claim"))){ const ns=rationaleNotes(ex.nodes); ex.nodes=ex.nodes.concat(ns); ns.forEach(n=>ex._byId.set(n.id,n)); }
   const derivedShown=edges.filter(e=>e.derived).length;
@@ -1056,7 +1069,9 @@ function fitView(){ const cv=$("#cv"),DPR=devicePixelRatio||1; cv.width=cv.clien
     return [Math.max(0,m-r),Math.min(span,m+r)]; };
   if(!ex.nodes.length){ex.view={scale:DPR,tx:cv.width/2,ty:cv.height/2};return;}
   // a node's label runs to its right: the picture is as wide as its longest label reaches, not its last dot
-  const lw=n=>{ if(n.type!=="foton") return RW*2; const t=String(stepLabel(n)||""), m=prof().node.label==="description"?40:22; return RW+5+6.2*Math.min(t.length,m+1); };
+  const lw=n=>{ if(n.type!=="foton") return RW*2; const t=String(stepLabel(n)||""), m=prof().node.label==="description"?40:22,
+    px=+prof().node.font||11, w=+prof().node.wrap||0;
+    return RW+5+px*0.58*(w?Math.min(t.length,w+2):Math.min(t.length,m+1)); };
   let a=1e9,b=1e9,c=-1e9,d=-1e9; for(const n of ex.nodes){a=Math.min(a,n.x-RW);c=Math.max(c,n.x+lw(n));b=Math.min(b,n.y-RW);d=Math.max(d,n.y+RW);}
   const gw=(c-a)||1, gh=(d-b)||1;
   // A sparse view may zoom IN: a flat cap of 1.7 is right for hundreds of nodes and turns eleven
@@ -1162,7 +1177,11 @@ function markStrip(ctx,n,r){
   ctx.beginPath(); ctx.arc(bx,by,7,0,7); ctx.fill();
   ctx.fillStyle="#0b0f18"; ctx.fillText(String(m.length),bx,by);
 }
-function label(ctx,n,txt,r,max=22){ ctx.fillStyle=css("--ink");ctx.font="11px ui-sans-serif,system-ui";ctx.textAlign="left";ctx.textBaseline="middle";ctx.fillText(clip(txt,max),n.x+r+5,n.y); }
+function label(ctx,n,txt,r,max=22){ ctx.fillStyle=css("--ink");ctx.textAlign="left";ctx.textBaseline="middle";
+  const step=n.type==="foton", px=step?(+prof().node.font||11):11, w=step?(+prof().node.wrap||0):0;
+  ctx.font=px+"px ui-sans-serif,system-ui";
+  if(!w){ ctx.fillText(clip(txt,max),n.x+r+5,n.y); return; }
+  const lines=wrapText(txt,w,3), lh=px*1.18; lines.forEach((l,i)=>ctx.fillText(l,n.x+r+5,n.y+(i-(lines.length-1)/2)*lh)); }
 // a step's name on the canvas, by node.label: "description" is what the modeler wrote about it (a
 // verified dc:description), falling back to the command when nobody described it
 function stepLabel(n){ const m=prof().node.label;

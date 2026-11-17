@@ -15,7 +15,9 @@
 const FULL = {
     chrome: { header: true, stats: true, controls: true, legend: true, hint: true, overview: true },
     node:   { label: "name",      // "name" (participant · step) | "command" (the step alone) | "description" (what its describes claim says, else the command)
-              tooltip: false },   // hover a step: its command, description and rationale
+              tooltip: false,     // hover a step: its command, description and rationale
+              font: 11,           // a step's label size on the canvas, in px at scale 1 (a talk wants ~14)
+              wrap: 0 },          // >0: wrap a step's label at this many characters, up to three lines
     panel:  { title: "full",      // "full" (participant + kind) | "command" (the step's command)
               annotations: true,  // description and rationale, from verified claims
               identity: true,     // id, signer, verdict badges
