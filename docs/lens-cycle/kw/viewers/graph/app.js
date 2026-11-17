@@ -45,7 +45,7 @@ let PROF=null, ANN=new Map(), FULLH=new Map();
 // the multi-selection (prof().select.multi): node ids of steps, and full foton ids for the host
 let SELSET=new Set(), FOTONID=new Map(), SELM=null;
 // step-to-step relations from verified claims (parent-step, based-on) - core/annotate.js
-let RELS=[];
+let RELS=[], NAMES_ALL={};
 function prof(){ return PROF || (PROF = PRF.resolveProfile(new URLSearchParams(location.search).get("view"))); }
 // what a step did and why; a step only the recorder saw has its code as text and no claims
 function stepInfo(n){ const a=ANN.get(n.id)||{};
@@ -212,7 +212,7 @@ function buildClaimFacets(unionStr){ CLAIMS=[]; try{ const recs=JSON.parse(union
     const s0=(p.subject||[])[0]||{}; const sh=(s0.digest&&s0.digest.sha256)||(typeof s0.hash==="string"?s0.hash.replace(/^sha256:/,""):"");
     CLAIMS.push({ id:nid, pred:n.role, value:(pick!=null&&typeof pick!=="object")?String(pick):"", part:n.participant||"", by:pd.by||"", subj:String(sh||"").toLowerCase().slice(0,32) });
   } }catch{} }
-function renderGraph(union,keys,names,recorded){
+function renderGraph(union,keys,names,recorded){ try{ NAMES_ALL=JSON.parse(names||"{}"); }catch{ NAMES_ALL={}; }
   buildG(union,keys,names,recorded);
   afterGraph();
 }
@@ -657,7 +657,11 @@ function index(){
   for(const n of G.nodes) if(n.type==="source") n.participant="";
   G.participants=[...new Set(G.nodes.map(n=>n.participant))].sort();
   G._parts=G.participants;
-  G._parts.forEach((p,i)=>partColor[p]=PAL[i%PAL.length]);
+  // one colour per participant for good: the order is the one the published names give (every stage of a
+  // page publishes the same names.json), so a party keeps its colour when other registries come and go;
+  // only parties nobody named fall back to the order they appear in
+  { const named=[...new Set(Object.values(NAMES_ALL||{}))].sort(), order=[...named, ...G._parts.filter(p=>!named.includes(p))];
+    G._parts.forEach(p=>partColor[p]=PAL[order.indexOf(p)%PAL.length]); }
   // The types this corpus actually has. It used to be the literal ["foton","claim","source","ref"],
   // which is the very sin core/config.js warns about: right for one corpus and wrong for every
   // other. In /qm two thirds of the named things are `entity` - SOPs, findings, CAPAs - and the
@@ -1051,7 +1055,9 @@ function fitView(){ const cv=$("#cv"),DPR=devicePixelRatio||1; cv.width=cv.clien
   const floor=(lo,hi,span)=>{ if(hi-lo>=span*0.34) return [lo,hi]; const m=(lo+hi)/2,r=span*0.17;
     return [Math.max(0,m-r),Math.min(span,m+r)]; };
   if(!ex.nodes.length){ex.view={scale:DPR,tx:cv.width/2,ty:cv.height/2};return;}
-  let a=1e9,b=1e9,c=-1e9,d=-1e9; for(const n of ex.nodes){a=Math.min(a,n.x);c=Math.max(c,n.x);b=Math.min(b,n.y);d=Math.max(d,n.y);}
+  // a node's label runs to its right: the picture is as wide as its longest label reaches, not its last dot
+  const lw=n=>{ if(n.type!=="foton") return RW*2; const t=String(stepLabel(n)||""), m=prof().node.label==="description"?40:22; return RW+5+6.2*Math.min(t.length,m+1); };
+  let a=1e9,b=1e9,c=-1e9,d=-1e9; for(const n of ex.nodes){a=Math.min(a,n.x-RW);c=Math.max(c,n.x+lw(n));b=Math.min(b,n.y-RW);d=Math.max(d,n.y+RW);}
   const gw=(c-a)||1, gh=(d-b)||1;
   // A sparse view may zoom IN: a flat cap of 1.7 is right for hundreds of nodes and turns eleven
   // into a thumbnail in the middle of an empty panel.
@@ -1101,7 +1107,7 @@ function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
     // a derived edge is a READING, and must never look like an attestation: dotted, dimmer, named
     if(e.derived){ edgeArrow(ctx,L,R,css("--dim"),"dot",LOD?"":shortRel(e.kind)); continue; }
     // developed from (strong) / adapted from (light): a relation between two steps, from a verified claim
-    if(e.step){ edgeArrow(ctx,L,R,e.kind==="parent-step"?css("--b"):e.kind==="reproduces"?css("--ok"):css("--dim"),e.kind==="based-on",LOD?"":e.label); continue; }
+    if(e.step){ edgeArrow(ctx,L,R,e.kind==="parent-step"?css("--b"):(e.kind==="reproduces"||e.kind==="review-valid")?css("--ok"):e.kind==="review-invalid"?css("--bad"):css("--dim"),e.kind==="based-on",LOD?"":e.label); continue; }
     if(e.contracted){ edgeArrow(ctx,L,R,css("--about"),true,LOD?"":shortRel(e.kind)); continue; }
     edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
   for(const n of ex.nodes){ if(LOD&&!vis(n)) continue; nodeDraw(ctx,n); }
@@ -1116,7 +1122,8 @@ function edgeArrow(ctx,a,b,color,dash,lbl){
   const x1=a.x+RW,y1=a.y,x2=b.x-RW-4,y2=b.y,mx=(x1+x2)/2;
   ctx.strokeStyle=color;ctx.lineWidth=dash==="dot"?1:1.3;ctx.setLineDash(dash==="dot"?[2,3]:dash?[5,4]:[]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2);ctx.stroke();ctx.setLineDash([]);
   const ang=Math.atan2(y2-y1,x2-mx),h=7;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-h*Math.cos(ang-.4),y2-h*Math.sin(ang-.4));ctx.lineTo(x2-h*Math.cos(ang+.4),y2-h*Math.sin(ang+.4));ctx.fill();
-  if(lbl){ ctx.fillStyle=color; ctx.font="italic 9px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(lbl,mx,(y1+y2)/2-6); } }
+  // the label sits below the line, two thirds along: the source node's own label runs along the line's start
+  if(lbl){ ctx.fillStyle=color; ctx.font="italic 9px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="top"; ctx.fillText(lbl,x1+(x2-x1)*0.68,y1+(y2-y1)*0.68+7); } }
 // A mark strip: one dot per claim standing about this node, drawn at a constant place so a column
 // of nodes stays scannable. The count, not the content - the content is one click away.
 // What to call a node. A foton's own label is its command - right for a machine, useless for a

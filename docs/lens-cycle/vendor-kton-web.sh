@@ -19,7 +19,7 @@ cat > "$HERE/viewer.html" <<'HTML'
 var q = new URLSearchParams(location.search), out = new URLSearchParams();
 q.forEach(function (v, k) {
   out.append(k, ["union", "keys", "names", "graph", "select"].indexOf(k) >= 0 ? new URL(v, location.href).href : v); });
-if (!out.has("view")) out.set("view", JSON.stringify({ preset: "pmx", graph: { hide: ["claim", "ref", "source:code", "source:single-use"] } }));
+if (!out.has("view")) out.set("view", JSON.stringify({ preset: "pmx", graph: { hide: ["claim", "ref", "entity", "source:code", "source:single-use"] } }));
 location.replace("kw/viewers/graph/index.html?" + out.toString() + location.hash);
 </script>
 HTML

@@ -193,6 +193,11 @@ VF=$(plankton author --print-id --registry "$P" --add --sign "$(K editor)" \
   --out review/verdict.svg --located "$(loc review/verdict.svg review/verdict.svg)" 2>/dev/null)
 desc review "$CHECKF" "Review check: four eyes, people only" "The rule anchored before anyone reviewed, run in Oxigraph over the signed records themselves: two approvals by declared people, nobody approving their own work."
 desc review "$VF" "Draw the review verdict"
+# what the check found, said about what was reviewed: the check's run -> the figure's step, "reviewed · valid"
+claim "$R/review/nekton" "$(K editor)" "$(jq -nc --arg c "$CHECKF" --arg f "$F" --arg v "sha256:$(sha256sum "$HERE/review/verdict.csv" | cut -d' ' -f1)" \
+  '{subject:[{hash:$c}],predicate:"https://kton.dev/v/review-valid",object:{"review-valid":{hash:$f}},
+  why:"four-eyes.rq over the signed records: two approvals by declared people, no rejects, nobody approving their own work",
+  evidence:[{hash:$v}],by:"Journal editor",when:"2026-05-11T09:30:00Z"}')" >/dev/null
 echo "  the check is foton $CHECKF; verdict.svg builds on it"
 mkdir -p "$R/review/nekton/objects/scope"; cp "$W"/pub/objects/scope/*.nekton.jsonl "$W"/rev/objects/scope/*.nekton.jsonl "$R/review/nekton/objects/scope/"
 cd "$W"
