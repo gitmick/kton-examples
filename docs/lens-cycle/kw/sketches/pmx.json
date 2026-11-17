@@ -1,0 +1,314 @@
+{
+  "name": "pmx",
+  "label": "Populationspharmakokinetik",
+  "note": "Der zweite Sketch. Er beschreibt eine andere Domäne als 'default' - eine Modellentwicklung mit Hunderten Läufen statt eines Dokumentenlenkungssystems - und der Unterschied zwischen beiden ist ausschliesslich diese Datei. Kein Element wurde dafür angefasst. Das ist der Prüfstein, an dem der alte Viewer gescheitert ist.",
+  "groups": [
+    {
+      "id": "herkunft",
+      "label": "Herkunft",
+      "axis": "l",
+      "note": "Dateifluss: Datensatz und Kontrollstrom hinein, Fit heraus"
+    },
+    {
+      "id": "modellbaum",
+      "label": "Modellbaum",
+      "axis": "c",
+      "note": "woraus ein Lauf entwickelt wurde - Wissen des Modellierers, nicht immer eine Dateiabhängigkeit"
+    },
+    {
+      "id": "notiz",
+      "label": "Notiz",
+      "axis": "c",
+      "note": "was der Modellierer zum Lauf festhielt - Beschreibung, Begründung, Schlagworte (bbr: description, notes, tags)"
+    },
+    {
+      "id": "ableitung",
+      "label": "Abgeleitet von",
+      "axis": "c",
+      "note": "eine Datei ist die bearbeitete Kopie einer anderen"
+    },
+    {
+      "id": "meilenstein",
+      "label": "Meilenstein",
+      "axis": "c"
+    },
+    {
+      "id": "pruefung",
+      "label": "Prüfung",
+      "axis": "c"
+    },
+    {
+      "id": "reproduktion",
+      "label": "Reproduktion",
+      "axis": "c"
+    },
+    {
+      "id": "verortung",
+      "label": "Verortung",
+      "axis": "c"
+    }
+  ],
+  "unassignedLabel": "noch nicht zugeordnet",
+  "terms": {
+    "kton:edge/builds-on": {
+      "group": "herkunft",
+      "label": "ging ein in"
+    },
+    "kton:edge/reproduces": {
+      "group": "reproduktion",
+      "label": "gleiche Bytes"
+    },
+    "https://kton.dev/v/pmx/parent-step": {
+      "group": "modellbaum",
+      "label": "entwickelt aus"
+    },
+    "https://kton.dev/v/pmx/addresses-review": {
+      "group": "modellbaum",
+      "label": "Nacharbeit zu"
+    },
+    "http://purl.org/dc/terms/description": {
+      "group": "notiz",
+      "label": "Beschreibung"
+    },
+    "https://w3id.org/ep-plan#hasRationale": {
+      "group": "notiz",
+      "label": "Begründung"
+    },
+    "http://purl.org/dc/terms/subject": {
+      "group": "notiz",
+      "label": "Schlagwort"
+    },
+    "http://www.w3.org/ns/prov#wasDerivedFrom": {
+      "group": "ableitung",
+      "label": "bearbeitet aus"
+    },
+    "https://kton.dev/v/pmx/based-on": {
+      "group": "ableitung",
+      "label": "bearbeitet aus"
+    },
+    "https://kton.dev/v/pmx/key-step": {
+      "group": "meilenstein",
+      "label": "Schlüsselschritt"
+    },
+    "https://kton.dev/v/pmx/base-model": {
+      "group": "meilenstein",
+      "label": "Basismodell"
+    },
+    "https://kton.dev/v/pmx/rests-on": {
+      "group": "meilenstein",
+      "label": "stützt sich auf"
+    },
+    "https://kton.dev/v/pmx/final-model": {
+      "group": "meilenstein",
+      "label": "Endmodell"
+    },
+    "https://kton.dev/v/pmx/not-followed": {
+      "group": "meilenstein",
+      "label": "nicht weiterverfolgt"
+    },
+    "https://kton.dev/v/pmx/model-role": {
+      "group": "meilenstein",
+      "label": "Modellrolle"
+    },
+    "https://kton.dev/v/pmx/qc-passed": {
+      "group": "pruefung",
+      "label": "QC bestanden"
+    },
+    "https://schema.org/RejectAction": {
+      "group": "pruefung",
+      "label": "abgelehnt"
+    },
+    "https://schema.org/AcceptAction": {
+      "group": "pruefung",
+      "label": "angenommen"
+    },
+    "https://kton.dev/v/supersedes": {
+      "group": "pruefung",
+      "label": "ersetzt"
+    },
+    "https://kton.dev/v/confirmed": {
+      "group": "pruefung",
+      "label": "bestätigt"
+    },
+    "https://kton.dev/v/review-initialised": {
+      "group": "pruefung",
+      "label": "Prüfung eröffnet"
+    },
+    "https://kton.dev/v/review-comment": {
+      "group": "pruefung",
+      "label": "Kommentar"
+    },
+    "https://kton.dev/v/review-response": {
+      "group": "pruefung",
+      "label": "Antwort"
+    },
+    "https://kton.dev/v/closed": {
+      "group": "pruefung",
+      "label": "abgeschlossen"
+    },
+    "pav:reviewedBy": {
+      "group": "pruefung",
+      "label": "entschieden von"
+    },
+    "http://purl.org/pav/reviewedBy": {
+      "group": "pruefung",
+      "label": "entschieden von"
+    },
+    "https://kton.dev/v/reproduces": {
+      "group": "reproduktion",
+      "label": "reproduziert"
+    },
+    "dcat:downloadURL": {
+      "group": "verortung",
+      "label": "liegt unter"
+    },
+    "http://www.w3.org/ns/dcat#downloadURL": {
+      "group": "verortung",
+      "label": "liegt unter"
+    }
+  },
+  "_groupings": "Gruppierungen, deklariert wie alles andere. core/grouping.js kennt keine davon eingebaut ausser Art, Beteiligter und Signierer - was eine Domaene sonst gruppieren will, steht hier.",
+  "groupings": [
+    {
+      "id": "analyse",
+      "label": "Analyse",
+      "by": "root",
+      "note": "aus welcher Analyse stammt das - der Wurzelknoten, von dem es abstammt. Genau das, was eine Richtung mit 250 Schritten lesbar macht.",
+      "path": "about*/builds-on*"
+    },
+    {
+      "id": "modellzweig",
+      "label": "Modellzweig",
+      "by": "root",
+      "note": "aus welchem Zweig des Modellbaums",
+      "path": "about*/parent-step*"
+    },
+    {
+      "id": "term",
+      "label": "Aussageart",
+      "by": "term"
+    }
+  ],
+  "facets": [
+    "participant",
+    "verified",
+    "signer"
+  ],
+  "questions": [
+    {
+      "id": "modellbaum",
+      "label": "entwickelt aus",
+      "at": "node",
+      "gloss": "die Kette von Läufen, aus denen dieser hervorgegangen ist - bis zu 95 tief",
+      "from": "node",
+      "walk": {
+        "dir": "down",
+        "edges": [
+          "parent-step"
+        ]
+      },
+      "as": "cone"
+    },
+    {
+      "id": "abgeleitet",
+      "label": "abgeleitet von",
+      "at": "node",
+      "gloss": "welche Datei aus welcher bearbeitet wurde",
+      "from": "node",
+      "walk": {
+        "dir": "down",
+        "edges": [
+          "based-on"
+        ]
+      },
+      "as": "cone"
+    },
+    {
+      "id": "offene-kommentare",
+      "label": "unbeantwortete Kommentare",
+      "at": "graph",
+      "gloss": "Prüfkommentare, auf die niemand geantwortet hat - wonach ein Auditor als Erstes sucht",
+      "from": "claims",
+      "where": [
+        {
+          "attr": {
+            "name": "role",
+            "in": [
+              "review-comment"
+            ]
+          }
+        },
+        {
+          "lacks": {
+            "pred": "review-response"
+          }
+        }
+      ],
+      "as": "list"
+    },
+    {
+      "id": "ohne-freigabe",
+      "label": "ohne Freigabe",
+      "at": "graph",
+      "gloss": "Läufe, zu denen keine Zustimmung vorliegt",
+      "from": "fotons",
+      "where": [
+        {
+          "lacks": {
+            "pred": "reviewedBy",
+            "value": "approve"
+          }
+        }
+      ],
+      "as": "list"
+    },
+    {
+      "id": "nicht-reproduziert",
+      "label": "nicht reproduziert",
+      "at": "graph",
+      "gloss": "Läufe, die niemand unabhängig nachgerechnet hat",
+      "from": "fotons",
+      "where": [
+        {
+          "lacks": {
+            "pred": "reproduces"
+          }
+        }
+      ],
+      "as": "list"
+    }
+  ],
+  "perspectives": {
+    "full": {
+      "label": "alles"
+    },
+    "modell": {
+      "label": "Modellentwicklung",
+      "only": [
+        "modellbaum",
+        "meilenstein",
+        "notiz"
+      ]
+    },
+    "dateien": {
+      "label": "Dateien",
+      "only": [
+        "herkunft",
+        "ableitung"
+      ]
+    },
+    "pruefung": {
+      "label": "Prüfung",
+      "only": [
+        "pruefung",
+        "reproduktion"
+      ]
+    },
+    "meilensteine": {
+      "label": "nur Meilensteine",
+      "only": [
+        "meilenstein"
+      ]
+    }
+  }
+}

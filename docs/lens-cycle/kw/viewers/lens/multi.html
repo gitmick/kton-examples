@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multi-foton output — a reproduced figure</title>
+<link rel="icon" type="image/png" href="../../core/logo.png">
+<link rel="stylesheet" href="../../core/kton.css">
+<style>
+  /* palette + type come from kton.css (this page locks data-theme=light); it keeps its own paper layout */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:17px/1.62 "Iowan Old Style","Palatino Linotype",Georgia,serif;-webkit-font-smoothing:antialiased}
+  .page{max-width:720px;margin:0 auto;background:#fff;padding:54px 58px 72px;min-height:100vh;
+    box-shadow:0 1px 3px rgba(0,0,0,.06),0 12px 40px rgba(20,30,50,.06)}
+  h1,.eyebrow,.byline,figcaption,.note{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  .eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:11.5px;font-weight:640;color:var(--accent)}
+  h1{font-size:25px;line-height:1.2;letter-spacing:-.01em;margin:.25em 0 .1em}
+  .byline{color:var(--muted);font-size:13.5px;margin:.2em 0 0}
+  .note{margin:22px 0 6px;background:#f0f5fb;border:1px solid #d5e3f2;border-radius:10px;padding:13px 16px;font-size:13.5px;color:var(--ink2)}
+  .note b{color:var(--accent)}
+  p{margin:.7em 0} .abstract{font-size:15.5px;color:var(--ink2);border-left:3px solid var(--line);padding-left:16px}
+  figure{margin:26px 0 6px;text-align:center}
+  figure img{max-width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+  figcaption{font-size:12.5px;color:var(--muted);margin-top:8px;text-align:left}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:#f0f2f5;padding:.05em .35em;border-radius:4px}
+  h2.econ{font-family:ui-sans-serif,system-ui,sans-serif;font-size:16px;margin:38px 0 6px;letter-spacing:.01em;color:var(--ink)}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0 6px}
+  @media (max-width:520px){.stats{grid-template-columns:1fr}}
+  .stat{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fafbfc}
+  .stat .num{font-family:ui-sans-serif,system-ui,sans-serif;font-size:23px;font-weight:700;color:var(--accent);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .stat .lbl{font-family:ui-sans-serif,system-ui,sans-serif;font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45}
+  .econ-note{font-size:14.5px;color:var(--ink2)} .econ-note .cav{color:var(--muted);font-size:13px}
+  .foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+</style>
+</head>
+<body>
+  <article class="page">
+    <span class="eyebrow">Lens demo · multi-foton output</span>
+    <h1>One figure, produced three times</h1>
+    <div class="byline">A. Analyst · QC (independent) · External lab — same data, same script, three independent runs</div>
+
+    <div class="note">
+      The plot below has a <b>plankton lens</b>. Because these exact bytes were produced by <b>three
+      independent fotons</b> — the analyst's run, QC's re-run, and an external lab's — its badge shows
+      <b>↻3</b>: the figure isn't just verifiable, it's <b>corroborated</b>. Hover the lens for
+      "reproduced · 3 fotons · 3 signers"; click it to open the kton world. The badge is resolved by
+      <b>hashing the plot and fetching one small index file</b> from a static mirror — <b>the whole
+      registry is never loaded</b>, so this scales to any number of records.
+    </div>
+
+    <p class="abstract">A concentration–time profile for a test compound. Nothing here asks for trust:
+    the bytes re-hash to a recorded output, and three separate parties independently produced the very
+    same bytes. The more independent producers a file has, the harder it is to doubt.</p>
+
+    <figure>
+      <img class="lens" src="../../data/lens-multi/figures/fig.svg" alt="Concentration-time profile" width="460">
+      <figcaption><b>Figure 1.</b> Concentration–time profile. Independently produced by the analyst, QC,
+        and an external lab — identical bytes, so the lens reads <code>↻3</code>. A figure only one team
+        made would read <code>✓</code> with no counter.</figcaption>
+    </figure>
+
+    <h2 class="econ">A rainbow table of every calculation — what it would cost</h2>
+    <p>Each execution is a file <b>named by its own hash</b>, so the mirror is just static, immutable,
+      auto-deduplicated blobs. Serving one is the same operation as serving five billion — a content-addressed
+      <code>GET</code>. There is nothing to "scale": it is a storage problem, and storage of cacheable blobs is
+      the cheapest thing on the internet. Numbers below are measured from this demo (~1.2 KB per signed record,
+      ~⅓ index overhead) and extrapolated:</p>
+    <div class="stats">
+      <div class="stat"><div class="num">1 billion</div><div class="lbl">recorded executions — a foton for a billion scientific calculations</div></div>
+      <div class="stat"><div class="num">≈ 1.6 TB</div><div class="lbl">total static files: 1.2 TB signed records + 0.4 TB rainbow-table index</div></div>
+      <div class="stat"><div class="num">≈ $10–24 / mo</div><div class="lbl">storage — Backblaze B2 ~$10, Cloudflare R2 ~$24 with $0 egress</div></div>
+      <div class="stat"><div class="num">≈ $0</div><div class="lbl">per additional viewer — immutable + content-addressed ⇒ cached at every CDN edge</div></div>
+    </div>
+    <p class="econ-note">Serving <b>unlimited people</b> is essentially free: every object is immutable and
+      addressed by its hash, so it caches perfectly at the network edge — the origin serves each object roughly
+      once <i>per edge</i>, not once per person. A figure seen by one scientist or by ten million costs the same,
+      and identical calculations run anywhere <b>deduplicate to a single stored object</b>. So at this scale
+      a public, verifiable record of a billion reproductions is affordable to a single hobbyist — for the
+      price of a coffee subscription.
+      <span class="cav">(The lookup <i>index</i> is ordinary infrastructure, not part of the protocol; the one
+      thing that isn't free is knowing the full <i>set</i> to index — completeness — which lives in the ordered
+      nekton layer, not in this rainbow table.)</span></p>
+
+    <div class="foot">
+      Rendered with the kton lens · a plot with no badge is simply unknown to the connected planktons.
+      The counter is the number of distinct fotons that output these exact bytes — reproduction made visible.
+    </div>
+  </article>
+
+  <!-- data-mirror: the badge is resolved by HASH from a static content-addressed mirror (never loads a
+       whole union); data-planktons is kept only for the clickable deep-dive (the viewer loads it on click). -->
+  <script src="lens.js"
+          data-mirror="../../data/lens-multi/mirror"
+          data-planktons="../../data/lens-multi/data/union.json"
+          data-viewer="../graph/index.html"
+          data-logo="../../core/logo.png"></script>
+</body>
+</html>

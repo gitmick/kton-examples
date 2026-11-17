@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pygoscelis: run, rerun, review</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f5f7;color:#16181d;
+     font:17px/1.62 "Iowan Old Style","Palatino Linotype",Georgia,serif;-webkit-font-smoothing:antialiased}
+.page{max-width:790px;margin:0 auto;background:#fff;padding:54px 60px 70px;
+      box-shadow:0 1px 3px rgba(0,0,0,.06),0 12px 40px rgba(20,30,50,.06);min-height:100vh}
+h1,h2,.eyebrow,.byline,figcaption,.srcbar,.foot{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:650;color:#1f6f5c}
+h1{font-size:25px;line-height:1.22;letter-spacing:-.01em;margin:.3em 0 .15em}
+.byline{color:#6b7280;font-size:13.5px;margin:.25em 0 0}
+.srcbar{margin:20px 0 24px;padding:9px 13px;border:1px solid #e3e5ea;border-radius:8px;
+        font-size:12.5px;color:#4b5563;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.srcbar b{color:#16181d;font-weight:600}
+.srcbar button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid #cdd2da;border-radius:99px;
+        background:#fff;color:#374151;cursor:pointer}
+.srcbar button:hover{border-color:#9aa2af}
+.srcbar button[aria-pressed=true]{background:#1f6f5c;border-color:#1f6f5c;color:#fff}
+.srcbar button.role{border-style:dashed;color:#7a5c1e}
+.srcbar button.role[aria-pressed=true]{background:#7a5c1e;border-color:#7a5c1e;border-style:solid;color:#fff}
+.abstract{font-size:15.5px;color:#374151;border-left:3px solid #e3e5ea;padding-left:16px;margin:22px 0}
+h2{font-size:15.5px;margin:32px 0 6px}
+p{margin:.7em 0}
+figure{margin:22px 0 6px;text-align:center}
+figure img{max-width:100%;border:1px solid #e3e5ea;border-radius:7px;background:#fff}
+figcaption{font-size:12.5px;color:#6b7280;margin-top:7px;text-align:left}
+figcaption b{color:#374151}
+.foot{margin-top:44px;padding-top:16px;border-top:1px solid #e3e5ea;color:#6b7280;font-size:12.5px;line-height:1.55}
+.foot h3{font-family:inherit;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#9aa2af;margin:18px 0 5px}
+.foot a{color:#1f6f5c}
+.stages{display:inline-flex;gap:0}
+.stages button{border-radius:0;margin-left:-1px}
+.stages button:first-child{border-radius:99px 0 0 99px;margin-left:0}
+.stages button:last-child{border-radius:0 99px 99px 0}
+.srcbar .sep{width:1px;height:18px;background:#e3e5ea}
+.stagenote{font:13px/1.5 ui-sans-serif,system-ui,sans-serif;color:#4b5563;background:#f6f8fa;border:1px solid #e3e5ea;
+           border-radius:8px;padding:9px 13px;margin:-12px 0 20px}
+.stagenote b{color:#16181d}
+#review{display:none}
+.notice{margin-top:14px;padding:10px 13px;background:#fbf7ec;border:1px solid #ecdfc2;border-radius:7px;color:#6b5a38}
+</style></head><body>
+<article class="page">
+  <span class="eyebrow">Palmer Field Station · field report FS-2026-04</span>
+  <h1>An inverse relationship between bill length and bill depth in <i>Pygoscelis</i> penguins</h1>
+  <div class="byline">Field Station staff, with the station's LLM · Reviewers 1 and 2 (peer review) · 2026</div>
+
+  <div class="srcbar" id="srcbar">
+    <span>Sources: <b id="srclist">…</b></span>
+    <span style="flex:1"></span>
+    <span class="stages" id="stages">
+      <button data-stage="1" aria-pressed="false" title="an agent session with its own key runs the analysis and says what it is and why">1 · the llm runs it</button>
+      <button data-stage="2" aria-pressed="false" title="a person at the station reruns it: same foton, a second signature">2 · + a person reruns it</button>
+      <button data-stage="3" aria-pressed="false" title="two reviewers approve in a review scope; the rule, four eyes and people only, is checked in Oxigraph">3 · + the review</button>
+    </span>
+    <span class="sep"></span>
+    <button data-layer="ethics" aria-pressed="false">+ Ethics Committee</button>
+    <button data-layer="ethics-internal" class="role" aria-pressed="false">view as the Committee</button>
+  </div>
+  <div class="stagenote" id="stagenote"></div>
+
+  <div class="abstract">
+    <p>Bill morphology was recorded for 344 adult penguins of three <i>Pygoscelis</i> species across three
+    islands of the Palmer Archipelago. In 342 animals with complete measurements, bill length and bill
+    depth were inversely related (r = −0.235, p = 1.1 × 10⁻⁵): animals with longer bills tended to have
+    shallower ones. Individual records were pseudonymised before analysis.</p>
+  </div>
+
+  <h2>1 · Bill length and bill depth</h2>
+  <p>Across the sample, longer bills were consistently shallower. The relationship is modest in size but
+  clearly established, and holds over the full observed range of bill lengths from 32 to 60 mm.</p>
+  <figure>
+    <img class="lens" src="lens-cycle/figures/fig1-bill-pooled.svg" alt="Bill depth against bill length">
+    <figcaption><b>Figure 1.</b> Bill depth against bill length, all animals (n = 342), with the fitted line.</figcaption>
+  </figure>
+
+  <h2>2 · Flipper length and body mass</h2>
+  <p>As expected, flipper length and body mass were strongly and positively related.</p>
+  <figure>
+    <img class="lens" src="lens-cycle/figures/fig2-flipper-mass.svg" alt="Body mass against flipper length">
+    <figcaption><b>Figure 2.</b> Body mass against flipper length.</figcaption>
+  </figure>
+
+  <h2>3 · Composition of the sample</h2>
+  <p>Sampling was not balanced across islands; Biscoe and Dream each carried a single dominant species. The
+  chart below was put together for the field log while the analysis was still running.</p>
+  <figure>
+    <img src="lens-cycle/figures/fig3-composition.svg" alt="Animals per island and species">
+    <figcaption><b>Figure 3.</b> Animals recorded per island and species.</figcaption>
+  </figure>
+
+  <h2>4 · Conclusion</h2>
+  <p>In this population, bill length and bill depth vary inversely. The finding is consistent across the
+  sampled range and we recommend that bill length be treated as an indicator of bill shape in field
+  identification.</p>
+
+  <section id="review">
+  <h2>Peer review</h2>
+  <p>Two reviewers approved the report. The editor fixed the rule before anyone reviewed: four eyes,
+  people only, nobody approving their own work. Whether the review met it is not the editor's word:
+  the check below ran over the signed records themselves, and it is a recorded step anyone can rerun.</p>
+  <figure>
+    <img class="lens" src="lens-cycle/review/verdict.svg" alt="Review verdict">
+    <figcaption><b>Review.</b> The result of the review check, drawn from its output.</figcaption>
+  </figure>
+  </section>
+
+  <div class="foot">
+    Every figure on this page was checked in your browser against the sources listed above. A figure
+    without a mark is simply unknown to them. Which sources you consult is your choice.
+
+    <h3>Data source</h3>
+    Horst AM, Hill AP, Gorman KB (2020). <i>palmerpenguins: Palmer Archipelago (Antarctica) penguin data.</i>
+    R package version 0.1.0. <a href="https://doi.org/10.5281/zenodo.3960218">doi:10.5281/zenodo.3960218</a><br>
+    Gorman KB, Williams TD, Fraser WR (2014). Ecological sexual dimorphism and environmental variability
+    within a community of Antarctic penguins (genus <i>Pygoscelis</i>). <i>PLoS ONE</i> 9(3):e90081.
+    <a href="https://doi.org/10.1371/journal.pone.0090081">doi:10.1371/journal.pone.0090081</a><br>
+    Collected by Dr. Kristen Gorman and the Palmer Station Antarctica LTER, a member of the Long Term
+    Ecological Research Network. Released under CC0 and used unchanged.
+
+    <div class="notice"><b>This report is a fabrication.</b> The measurements above are the real Palmer
+    Archipelago data, cited in full. Everything built around them — the field station, this report, the
+    ethics committee, the reviewer, and the station's LLM, the reviewers, the editor, the individual animal names in the source records — is invented
+    for a demonstration of provenance records. No such study exists, and the conclusion drawn here should
+    not be believed. Finding out why is the point of the marks on the figures.</div>
+  </div>
+</article>
+
+<script>
+(function(){
+  var NOTES={
+    1:"<b>Stage 1.</b> The station's LLM, an agent session with its own key, ran the analysis. Its signature is on every step, and it said what the published step is and why it was done. Open the mark on figure 1.",
+    2:"<b>Stage 2.</b> Lena Moreau, a person at the station, reran the published step from the released data. Same inputs, same command, same bytes: the same foton, now with two signatures (↻2).",
+    3:"<b>Stage 3.</b> Two reviewers approved, in a review of its own. The rule was anchored first; who counts as a person was declared by the editor; the review was sealed back into the journal. The check is shown below the report. Reviewer 2 also asked for the analysis split by species, which the report does not contain."};
+  var REG={1:["llm"],2:["llm","rerun"],3:["llm","rerun","review"]};
+  var LAYER={"ethics":"Ethics Committee","ethics-internal":"as the Committee"};
+  var SRC={"llm":"the station's LLM","rerun":"Lena Moreau","review":"the review"};
+  function get(k,d){ try{ var v=localStorage.getItem("kton-lens-cycle-"+k); return v===null?d:v; }catch(e){ return d; } }
+  function put(k,v){ try{ localStorage.setItem("kton-lens-cycle-"+k,v); }catch(e){} }
+  var q=new URLSearchParams(location.search);
+  var stage=+(q.get("stage")||get("stage","1")); if(!REG[stage]) stage=1;
+  var layers=(q.get("layers")!==null?q.get("layers"):get("layers","")).split(",").filter(function(x){return LAYER[x];});
+  document.querySelectorAll("[data-stage]").forEach(function(b){
+    if(+b.dataset.stage===stage) b.setAttribute("aria-pressed","true");
+    b.onclick=function(){ put("stage",b.dataset.stage); location.href=location.pathname; };
+  });
+  document.querySelectorAll("[data-layer]").forEach(function(b){
+    var l=b.dataset.layer, on=layers.indexOf(l)>=0;
+    if(on){ b.setAttribute("aria-pressed","true"); b.textContent="− "+LAYER[l]; }
+    b.onclick=function(){ var x=layers.slice(), i=x.indexOf(l); if(i>=0) x.splice(i,1); else x.push(l);
+      put("layers",x.join(",")); location.href=location.pathname; };
+  });
+  document.getElementById("stagenote").innerHTML=NOTES[stage];
+  if(stage===3) document.getElementById("review").style.display="block";
+  var reg="lens-cycle/reg/stage"+stage+(layers.indexOf("ethics")>=0?"-e":"")+(layers.indexOf("ethics-internal")>=0?"-i":"")+"/union.json";
+  document.getElementById("srclist").textContent=REG[stage].map(function(r){return SRC[r];}).concat(layers.map(function(l){return LAYER[l];})).join(" · ");
+  var sc=document.createElement("script"); sc.src="lens-cycle/lens.js";
+  sc.setAttribute("data-planktons",reg);
+  sc.setAttribute("data-viewer","lens-cycle/viewer.html"); sc.setAttribute("data-logo","logo.png");
+  document.body.appendChild(sc);
+})();
+</script>
+</body></html>

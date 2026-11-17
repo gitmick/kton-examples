@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><title>kton · graph viewer</title>
+<script>
+var q = new URLSearchParams(location.search);
+["union", "keys", "names", "graph", "select"].forEach(function (k) {
+  var v = q.get(k); if (v) q.set(k, new URL(v, location.href).href); });
+location.replace("kw/viewers/graph/index.html?" + q.toString() + location.hash);
+</script>

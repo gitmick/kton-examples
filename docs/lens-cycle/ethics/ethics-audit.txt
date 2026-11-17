@@ -1,0 +1,7 @@
+source records held by the committee
+animals: 344
+named individuals: 344
+ring ids: 344
+islands: Biscoe, Dream, Torgersen
+species: Adelie, Chinstrap, Gentoo
+direct identifiers in released file: none

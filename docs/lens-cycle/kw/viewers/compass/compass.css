@@ -1,0 +1,143 @@
+/* The compass, styled through tokens only.
+ *
+ * Every colour here is a var. A host that has its own palette overrides the tokens and nothing
+ * else; a host that has none gets these. The axis colours are not decoration - they carry which
+ * half of the graph you are standing in, which is information the reader would otherwise have to
+ * read for.
+ */
+.cp {
+  --cp-paper:#f6f7f9; --cp-card:#fff; --cp-sunk:#eef0f4;
+  --cp-ink:#101720; --cp-ink-2:#44505f; --cp-ink-3:#78838f;
+  --cp-line:#dde1e8; --cp-line-2:#c8cfd9;
+  --cp-lineage:#0e7c7b; --cp-lineage-soft:#e2f1f0; --cp-lineage-line:#9dcecb;
+  --cp-claim:#a8661a; --cp-claim-soft:#f8eede; --cp-claim-line:#e0bf90;
+  --cp-gap:#a63d40;
+  color:var(--cp-ink); background:var(--cp-paper);
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif; font-size:15px; line-height:1.5;
+}
+@media (prefers-color-scheme: dark) {
+  .cp:not([data-theme="light"]) {
+    --cp-paper:#0c1116; --cp-card:#141b23; --cp-sunk:#101820;
+    --cp-ink:#e8edf3; --cp-ink-2:#9daab8; --cp-ink-3:#6d7b8a;
+    --cp-line:#232d38; --cp-line-2:#33404e;
+    --cp-lineage:#4fd1c5; --cp-lineage-soft:#0f2a2b; --cp-lineage-line:#1f5250;
+    --cp-claim:#e3a765; --cp-claim-soft:#2a1f12; --cp-claim-line:#5c4224;
+    --cp-gap:#e2777a;
+  }
+}
+.cp[data-theme="dark"] {
+  --cp-paper:#0c1116; --cp-card:#141b23; --cp-sunk:#101820;
+  --cp-ink:#e8edf3; --cp-ink-2:#9daab8; --cp-ink-3:#6d7b8a;
+  --cp-line:#232d38; --cp-line-2:#33404e;
+  --cp-lineage:#4fd1c5; --cp-lineage-soft:#0f2a2b; --cp-lineage-line:#1f5250;
+  --cp-claim:#e3a765; --cp-claim-soft:#2a1f12; --cp-claim-line:#5c4224;
+  --cp-gap:#e2777a;
+}
+.cp *{box-sizing:border-box}
+.cp button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;text-align:left}
+.cp :focus-visible{outline:2px solid var(--cp-lineage);outline-offset:2px;border-radius:3px}
+
+.cp-warn{margin:0 0 14px;font-size:12.5px;color:var(--cp-ink-3)}
+.cp-warn b{color:var(--cp-gap);font-weight:500}
+
+.cp-station{background:var(--cp-card);border:1px solid var(--cp-line);border-radius:10px;
+  padding:18px 20px;display:grid;gap:14px;margin-bottom:18px}
+.cp-kindrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cp-chip{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;
+  border-radius:4px;border:1px solid var(--cp-line-2);color:var(--cp-ink-2)}
+.cp-chip.cp-step{color:var(--cp-lineage);border-color:var(--cp-lineage-line);background:var(--cp-lineage-soft)}
+.cp-chip.cp-entity,.cp-chip.cp-statement{color:var(--cp-claim);border-color:var(--cp-claim-line);background:var(--cp-claim-soft)}
+.cp-act{border:1px solid var(--cp-line-2);border-radius:6px;padding:4px 10px;font-size:12.5px;color:var(--cp-ink-2)}
+.cp-act:hover{border-color:var(--cp-lineage);color:var(--cp-ink)}
+.cp-label{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(22px,3vw,32px);
+  margin:0;letter-spacing:-.015em;line-height:1.15;overflow-wrap:anywhere}
+.cp-addr{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--cp-ink-3);overflow-wrap:anywhere}
+.cp-attrs{border-top:1px solid var(--cp-line);padding-top:12px}
+.cp-attrs h2{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cp-ink-3);margin:0 0 8px;font-weight:600}
+.cp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px}
+.cp-attr{background:var(--cp-sunk);border-radius:6px;padding:7px 10px;margin:0}
+.cp-attr dt{font-size:11px;color:var(--cp-ink-3)}
+.cp-attr dd{margin:2px 0 0;font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.cp-who{font-size:11px;color:var(--cp-ink-3);font-weight:400}
+
+.cp-compass{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:900px){.cp-compass{grid-template-columns:1fr 1fr}}
+.cp-dir{background:var(--cp-card);border:1px solid var(--cp-line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.cp-axis-l{border-top:3px solid var(--cp-lineage-line)}
+.cp-axis-c{border-top:3px solid var(--cp-claim-line)}
+.cp-dir header{padding:12px 14px 8px}
+.cp-dirtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.cp-dirname{font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.cp-axis-l .cp-dirname{color:var(--cp-lineage)}
+.cp-axis-c .cp-dirname{color:var(--cp-claim)}
+.cp-count{font-size:12px;color:var(--cp-ink-3);font-variant-numeric:tabular-nums}
+.cp-gloss{font-size:12.5px;color:var(--cp-ink-2);margin-top:2px}
+.cp-rels{display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 10px}
+.cp-rel{display:inline-flex;align-items:baseline;gap:5px;padding:3px 8px;border-radius:999px;
+  border:1px solid var(--cp-line-2);font-size:12px}
+.cp-rel b{font-family:"IBM Plex Mono",monospace;font-weight:500}
+.cp-n{font-variant-numeric:tabular-nums;color:var(--cp-ink-3)}
+.cp-axis-l .cp-rel[aria-pressed="true"]{background:var(--cp-lineage-soft);border-color:var(--cp-lineage-line);color:var(--cp-lineage)}
+.cp-axis-c .cp-rel[aria-pressed="true"]{background:var(--cp-claim-soft);border-color:var(--cp-claim-line);color:var(--cp-claim)}
+.cp-rows{border-top:1px solid var(--cp-line);max-height:320px;overflow-y:auto}
+.cp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;width:100%;
+  padding:8px 14px;border-bottom:1px solid var(--cp-line);align-items:baseline}
+.cp-row:last-child{border-bottom:none}
+.cp-row:hover{background:var(--cp-sunk)}
+.cp-rowlab{font-size:14px;overflow-wrap:anywhere}
+.cp-meta{font-size:11.5px;color:var(--cp-ink-3);white-space:nowrap;font-variant-numeric:tabular-nums}
+.cp-sub{grid-column:1/-1;font-size:11.5px;color:var(--cp-ink-3);display:flex;gap:9px;flex-wrap:wrap}
+.cp-sub em{font-style:normal;color:var(--cp-ink-2)}
+.cp-empty{padding:14px;font-size:13.5px;color:var(--cp-ink-3);margin:0}
+.cp-scoped{display:block;width:100%;padding:8px 14px;border-top:1px dashed var(--cp-line-2);
+  font-size:12.5px;color:var(--cp-ink-2);background:var(--cp-sunk)}
+.cp-scoped b{font-weight:500;color:var(--cp-gap)}
+.cp-scoped.cp-on{color:var(--cp-ink-3)}
+
+.cp-trail{display:flex;gap:5px;align-items:center;overflow-x:auto;padding:12px 0 0;margin-top:14px;
+  border-top:1px solid var(--cp-line)}
+.cp-lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cp-ink-3);white-space:nowrap}
+.cp-step{padding:3px 8px;border-radius:5px;font-size:12.5px;white-space:nowrap;color:var(--cp-ink-2);border:1px solid transparent}
+.cp-step:hover{background:var(--cp-sunk)}
+.cp-step[aria-current="true"]{border-color:var(--cp-line-2);color:var(--cp-ink);font-weight:500}
+.cp-sep{color:var(--cp-ink-3);font-size:11px}
+@media (prefers-reduced-motion:reduce){.cp *{animation:none!important;transition:none!important}}
+
+/* --- the cone: a direction followed further -------------------------------------------------- */
+/* Indentation is the only structure here on purpose. A cone is a DAG and drawing it as a tree
+   already costs one honesty - a shared input appears more than once - so the rows say so in words
+   ("schon gesehen", "N verschieden") rather than leaning on a picture to imply it. */
+.cp-depth{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--cp-ink-3)}
+.cp-dstep{width:19px;height:19px;line-height:1;border:1px solid var(--cp-line-2);border-radius:5px;
+  color:var(--cp-ink-2);text-align:center;padding:0}
+.cp-dstep:hover:not(:disabled){background:var(--cp-sunk);color:var(--cp-ink)}
+.cp-dstep:disabled{opacity:.35;cursor:default}
+.cp-dnum{min-width:56px;text-align:center;font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+.cp-conehead{padding:7px 10px 5px;font-size:12px;color:var(--cp-ink-3);border-bottom:1px solid var(--cp-line)}
+.cp-conehead b{color:var(--cp-ink-2);font-weight:600}
+.cp-cyc{color:var(--cp-gap)}
+
+.cp-cone .cp-tick{color:var(--cp-line-2);margin-right:5px}
+.cp-rep{margin-left:7px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--cp-ink-3);border:1px solid var(--cp-line-2);border-radius:3px;padding:0 4px}
+/* out of scope inside a cone is MARKED, never removed: dropping a node in the middle would sever
+   everything under it without saying so. */
+.cp-cone[data-scoped]{opacity:.5}
+.cp-cone[data-scoped]:hover{opacity:1}
+.cp-off{color:var(--cp-gap)}
+
+/* --- grouped rows ----------------------------------------------------------------------------- */
+/* A header carries its count even when collapsed. Collapsing must never become a way to lose track
+   of how much is behind a fold - that is the difference between tidying and hiding. */
+.cp-groups{display:grid}
+.cp-group{border-bottom:1px solid var(--cp-line)}
+.cp-group:last-child{border-bottom:none}
+.cp-ghead{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;font-size:12.5px;
+  color:var(--cp-ink-2);background:var(--cp-sunk)}
+.cp-ghead:hover{color:var(--cp-ink)}
+.cp-gtick{color:var(--cp-ink-3);font-size:10px;width:9px}
+.cp-glabel{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-ghead .cp-n{margin-left:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;
+  color:var(--cp-ink-3)}
+.cp-group .cp-rows .cp-row{padding-left:26px}
