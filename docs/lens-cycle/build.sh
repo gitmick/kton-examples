@@ -216,6 +216,12 @@ claim "$R/review/nekton" "$(K reviewer2)" "$(jq -nc --arg f "$FS" '{subject:[{ha
   predicate:"https://kton.dev/v/the-same-question-split-by-species",
   object:{value:"what the published analysis looks like once species is taken into account. Same data, same code path, one grouping added."},
   by:"Reviewer 2",when:"2026-05-11T08:15:00Z"}')" >/dev/null
+# the by-species step is BASED ON the published one: a parent-step claim, as the cockpit runtime
+# writes it (template parent-step, kton-theo-pmx-jf1-git2/templates) - the graph draws it below its parent
+claim "$R/review/nekton" "$(K reviewer2)" "$(jq -nc --arg s "$FS" --arg f "$F" '{subject:[{hash:$s}],
+  predicate:"https://kton.dev/v/pmx/parent-step",object:{"parent-step":{hash:$f}},
+  why:"the published step, with one grouping added: species",
+  by:"Reviewer 2",when:"2026-05-11T08:20:00Z"}')" >/dev/null
 claim "$R/review/nekton" "$(K reviewer2)" "$(jq -nc --arg h "sha256:$(sha256sum figures/fig1-bill-pooled.svg | cut -d' ' -f1)" --arg f "$FS" \
   '{subject:[{hash:$h}],predicate:"https://kton.dev/v/does-not-hold-within-species",
   object:{value:"approved: it reproduces and the numbers are right. But the downward line is a difference between species. Within every species the relationship runs the other way: Adelie +0.391, Chinstrap +0.654, Gentoo +0.643. Asked for in review; not in the report."},
@@ -267,11 +273,19 @@ def records(r):
         out += [json.loads(l) for l in open(f) if l.strip()]
     return out
 # one registry per party: the lens adds them one by one, and they splice by hash in the reader's browser
-for r in ["llm", "rerun", "review", "ethics", "ethics-internal"]:
+# original-work = the llm's run and Lena's rerun in one registry (the lens's first stage, as one source)
+def merged(*rs):
+    out, seen = [], set()
+    for r in rs:
+        for x in records(r):
+            i = x.get("fotonId") or x.get("claimId") or json.dumps(x, sort_keys=True)
+            if i not in seen: seen.add(i); out.append(x)
+    return out
+for r in ["llm", "rerun", "review", "ethics", "ethics-internal", "original-work"]:
     d = os.path.join(dst, r); os.makedirs(d, exist_ok=True)
     json.dump(dict(sorted(kj.items())), open(os.path.join(d, "keys.json"), "w"), indent=2)
     json.dump(nj, open(os.path.join(d, "names.json"), "w"), indent=2)
-    out = records(r)
+    out = merged("llm", "rerun") if r == "original-work" else records(r)
     with open(os.path.join(d, "union.json"), "w") as fh:
         json.dump(out, fh, indent=2); fh.write("\n")
     print("  %-16s %d record(s)" % (r, len(out)))
