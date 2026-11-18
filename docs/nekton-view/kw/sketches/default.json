@@ -1,0 +1,276 @@
+{
+  "name": "default",
+  "label": "Standardsicht",
+  "note": "Ein Sketch, keine Norm. Die Terme hier sind die, die in data/ tatsächlich vorkommen (gemessen über 19 Fixtures). Ein Korpus mit anderem Vokabular bringt seinen eigenen Sketch mit - das Element ändert sich dafür nicht.",
+  "groups": [
+    {
+      "id": "herkunft",
+      "label": "Herkunft",
+      "axis": "l",
+      "note": "Ableitung: was ging worein ein"
+    },
+    {
+      "id": "reproduktion",
+      "label": "Reproduktion",
+      "axis": "c"
+    },
+    {
+      "id": "freigabe",
+      "label": "Freigabe",
+      "axis": "c"
+    },
+    {
+      "id": "rolle",
+      "label": "Rolle & Zuschreibung",
+      "axis": "c"
+    },
+    {
+      "id": "verortung",
+      "label": "Verortung",
+      "axis": "c",
+      "note": "wo die Bytes liegen - signierte located-at-Aussagen"
+    },
+    {
+      "id": "verfeinerung",
+      "label": "Verfeinerung",
+      "axis": "c"
+    },
+    {
+      "id": "qualifizierung",
+      "label": "Qualifizierung",
+      "axis": "c"
+    },
+    {
+      "id": "geltungsbereich",
+      "label": "Geltungsbereich",
+      "axis": "c",
+      "note": "SPEC §7.4 - die einzige Grammatik, die der Kernel vorschreibt: Identität, Reihenfolge, Grenze, Verschachtelung. Ohne Bedeutung, und deshalb ohne Prädikat."
+    }
+  ],
+  "unassignedLabel": "noch nicht zugeordnet",
+  "terms": {
+    "kton:edge/builds-on": {
+      "group": "herkunft",
+      "label": "ging ein in"
+    },
+    "kton:edge/reproduces": {
+      "group": "reproduktion",
+      "label": "gleiche Bytes",
+      "note": "vom Kernel abgeleitet, nicht behauptet"
+    },
+    "https://kton.dev/v/reproduces": {
+      "group": "reproduktion",
+      "label": "reproduziert"
+    },
+    "https://kton.dev/v/refines": {
+      "group": "verfeinerung",
+      "label": "verfeinert"
+    },
+    "https://kton.dev/v/qualifies-as": {
+      "group": "qualifizierung",
+      "label": "qualifiziert als"
+    },
+    "https://kton.dev/v/reviewed": {
+      "group": "freigabe",
+      "label": "geprüft"
+    },
+    "https://kton.dev/v/review-initialised": {
+      "group": "freigabe",
+      "label": "Prüfung begonnen"
+    },
+    "https://kton.dev/v/closed": {
+      "group": "freigabe",
+      "label": "abgeschlossen"
+    },
+    "https://kton.dev/v/submitted": {
+      "group": "freigabe",
+      "label": "eingereicht"
+    },
+    "https://kton.dev/v/pmx/model-role": {
+      "group": "rolle",
+      "label": "Modellrolle"
+    },
+    "pav:reviewedBy": {
+      "group": "freigabe",
+      "label": "geprüft von"
+    },
+    "http://purl.org/pav/reviewedBy": {
+      "group": "freigabe",
+      "label": "geprüft von"
+    },
+    "dcat:downloadURL": {
+      "group": "verortung",
+      "label": "liegt unter"
+    },
+    "http://www.w3.org/ns/dcat#downloadURL": {
+      "group": "verortung",
+      "label": "liegt unter"
+    },
+    "http://www.w3.org/ns/prov#wasAttributedTo": {
+      "group": "rolle",
+      "label": "zugeschrieben an"
+    },
+    "http://www.w3.org/ns/prov#wasRevisionOf": {
+      "group": "verfeinerung",
+      "label": "Revision von"
+    },
+    "http://www.w3.org/ns/prov#used": {
+      "group": "herkunft",
+      "label": "benutzte",
+      "axis": "c"
+    },
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "group": "rolle",
+      "label": "ist ein"
+    },
+    "https://w3id.org/security#controller": {
+      "group": "rolle",
+      "label": "kontrolliert von"
+    },
+    "nk:actsAs": {
+      "group": "rolle",
+      "label": "handelt als"
+    },
+    "nk:assessed": {
+      "group": "qualifizierung",
+      "label": "bewertet"
+    },
+    "https://kton.dev/scope/v0#seed": {
+      "group": "geltungsbereich",
+      "label": "Geltungsbereich eröffnet"
+    },
+    "https://kton.dev/scope/v0": {
+      "group": "geltungsbereich",
+      "label": "im Geltungsbereich"
+    },
+    "kton:edge/parent": {
+      "group": "geltungsbereich",
+      "label": "untergeordnet"
+    },
+    "kton:edge/from": {
+      "group": "geltungsbereich",
+      "label": "geht zurück auf"
+    }
+  },
+  "match": [
+    {
+      "prefix": "https://kton.dev/v/gxp/",
+      "group": "freigabe",
+      "note": "der gxp-Namensraum ist ein Datenfehler; hier aufgefangen, damit er nicht als unbekannt erscheint, statt ihn zu zementieren"
+    }
+  ],
+  "_groupings": "Gruppierungen, deklariert wie alles andere. core/grouping.js kennt keine davon eingebaut ausser Art, Beteiligter und Signierer - was eine Domaene sonst gruppieren will, steht hier.",
+  "groupings": [
+    {
+      "id": "herkunftswurzel",
+      "label": "Herkunftswurzel",
+      "by": "root",
+      "path": "about*/builds-on*"
+    },
+    {
+      "id": "term",
+      "label": "Aussageart",
+      "by": "term"
+    }
+  ],
+  "facets": [
+    "participant",
+    "context",
+    "verified",
+    "signer"
+  ],
+  "_questions": "Benannte Fragen, geschrieben in derselben Algebra wie die fünf eingebauten (core/query.js): from / walk / where / as. Nichts ist nach id bevorzugt - 'Verfeinerungen' unten ist wörtlich dieselbe Form wie 'Auswirkung', nur eine andere Kante, und 'verortet, ungeprüft' zeigt, dass mehrere Bedingungen eine Frage ergeben.",
+  "questions": [
+    {
+      "id": "unlocated",
+      "label": "nicht verortet",
+      "at": "graph",
+      "gloss": "Läufe, zu denen niemand signiert hat, wo die Bytes liegen",
+      "from": "fotons",
+      "where": [
+        {
+          "lacks": {
+            "pred": "downloadURL"
+          }
+        }
+      ],
+      "as": "list"
+    },
+    {
+      "id": "qualified",
+      "label": "qualifiziert",
+      "at": "graph",
+      "gloss": "Läufe mit einer Qualifizierungsaussage",
+      "from": "fotons",
+      "where": [
+        {
+          "has": {
+            "pred": "qualifies-as"
+          }
+        }
+      ],
+      "as": "list"
+    },
+    {
+      "id": "verfeinert",
+      "label": "Verfeinerungen",
+      "at": "node",
+      "gloss": "worauf diese Aussage aufbaut - dieselbe Form wie Auswirkung, nur eine andere Kante",
+      "from": "node",
+      "walk": {
+        "dir": "down",
+        "edges": [
+          "refines"
+        ]
+      },
+      "as": "cone"
+    },
+    {
+      "id": "ungeprueft-verortet",
+      "label": "verortet, ungeprüft",
+      "at": "graph",
+      "gloss": "wo die Bytes liegen ist bekannt, freigegeben ist es nicht - zwei Bedingungen, eine Frage",
+      "from": "fotons",
+      "where": [
+        {
+          "has": {
+            "pred": "downloadURL"
+          }
+        },
+        {
+          "lacks": {
+            "pred": "reviewedBy",
+            "value": "approve"
+          }
+        }
+      ],
+      "as": "list"
+    }
+  ],
+  "_": "Was hier fehlt, ist Absicht: kton:edge/about steht für Claim-Kanten, deren voller Term nicht zurückgeholt werden konnte, weil der deklarierte claimId nicht zum Inhalt passt (plankton-flow: 15 von 15). Das ist ein Korpusfehler und wird sichtbar gelassen, nicht per Heuristik zusammengeführt.",
+  "perspectives": {
+    "full": {
+      "label": "alles"
+    },
+    "herkunft": {
+      "label": "nur Herkunft",
+      "only": [
+        "herkunft"
+      ]
+    },
+    "aussagen": {
+      "label": "nur Aussagen",
+      "hide": [
+        "herkunft"
+      ]
+    },
+    "auditor": {
+      "label": "Auditor",
+      "only": [
+        "herkunft",
+        "freigabe",
+        "reproduktion"
+      ]
+    }
+  }
+}

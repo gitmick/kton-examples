@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><title>Example 18 · the nekton</title>
+<script>
+// Example 18's scopes, each its own source: the parent "examples" (who is who, the review's anchor
+// and seal), the review scope, the llm's unscoped claims, and the foton under review (it names the
+// run). The rule file is hashed in the browser so its hash reads as four-eyes.rq.
+var E = "../../examples/18-run-rerun-review/", W = E + ".work/";
+var src = [
+  W + "public/objects/scope/07318faa4c170e82cb0827570361d7241e8d0cdef45ed54a163268df4ce2d692.nekton.jsonl",
+  W + "review-whales/objects/scope/eec5cd218f6cd04b919a1ea8150f9d9ee1efa420115dcebcf2371dba17c66f9f.nekton.jsonl",
+  W + "nekton/objects/unscoped.nekton.jsonl",
+  W + "plankton/objects/sha256/16adc85a2d8c6fe89412c046d35a030075e1ff1ef3334236bf43bd5ae83f4f16.json"];
+var A = function (u) { return new URL(u, location.href).href; }, q = new URLSearchParams(location.search), out = new URLSearchParams();
+out.set("src", src.map(A).join(","));
+out.set("keys", A("../data/18-run-rerun-review/keys.json")); out.set("names", A("../data/18-run-rerun-review/names.json"));
+out.set("file", A(E + "four-eyes.rq"));
+q.forEach(function (v, k) { out.set(k, v); });   // ?scope= / &hl= pass through
+location.replace("kw/viewers/nekton/index.html?" + out.toString() + location.hash);
+</script>

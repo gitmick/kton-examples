@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kton · Kompass</title>
+<link rel="icon" type="image/png" href="../../core/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="compass.css">
+<style>
+  /* The chrome borrows the element's OWN tokens - they are defined on .cp in compass.css, so this
+     page carries the class too. Inventing local colours here is how a host ends up disagreeing with
+     the element it is framing. */
+  body{margin:0;background:var(--cp-paper);color:var(--cp-ink);
+       font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;font-size:15px;line-height:1.5}
+  .bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 20px;
+       border-bottom:1px solid var(--cp-line);background:var(--cp-card)}
+  .bar strong{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:17px}
+  .bar img{height:24px}
+  .bar .sub{color:var(--cp-ink-3);font-size:12.5px}
+  .bar input,.bar select{padding:7px 11px;border:1px solid var(--cp-line-2);border-radius:6px;
+       background:var(--cp-paper);color:inherit;font:inherit}
+  .bar input{min-width:240px}
+  .persp{display:flex;border:1px solid var(--cp-line-2);border-radius:6px;overflow:hidden}
+  .persp button{padding:6px 10px;font-size:12.5px;border:none;border-right:1px solid var(--cp-line-2);
+       background:none;cursor:pointer;color:var(--cp-ink-2);font-family:inherit}
+  .persp button:last-child{border-right:none}
+  .persp button[aria-pressed="true"]{background:var(--cp-ink);color:var(--cp-paper)}
+  .wrap{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start;
+        max-width:1400px;margin:0 auto}
+  @media (max-width:860px){.wrap{grid-template-columns:1fr}}
+  aside{border-right:1px solid var(--cp-line);height:calc(100vh - 53px);overflow:auto;
+        background:var(--cp-card)}
+  aside .hit{display:block;width:100%;text-align:left;border:none;background:none;font:inherit;
+       cursor:pointer;padding:8px 15px;border-bottom:1px solid var(--cp-line)}
+  aside .hit:hover{background:var(--cp-sunk)}
+  aside .hit b{display:block;font-weight:500;font-size:13.5px}
+  #facetbar .fname{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--cp-ink-3)}
+  #facetbar .fchip{padding:3px 9px;border:1px solid var(--cp-line-2);border-radius:999px;font-size:12.5px;
+       cursor:pointer;background:none;color:var(--cp-ink-2);font-family:inherit}
+  #facetbar .fchip[aria-pressed="true"]{background:var(--cp-lineage-soft);border-color:var(--cp-lineage-line);color:var(--cp-lineage)}
+  #facetbar .fgroup{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  #qbar .q{padding:4px 11px;border:1px solid var(--cp-line-2);border-radius:7px;font-size:13px;cursor:pointer;
+       background:var(--cp-card);color:var(--cp-ink-2);font-family:inherit}
+  #qbar .q:hover{border-color:var(--cp-lineage-line);color:var(--cp-ink)}
+  #qbar .q[aria-pressed="true"]{background:var(--cp-lineage-soft);border-color:var(--cp-lineage-line);color:var(--cp-lineage)}
+  #qbar .q b{font-weight:600} #qbar .q .n{opacity:.6;margin-left:5px}
+  #qbar .qgloss{color:var(--cp-ink-3);font-size:11.5px}
+  #card{padding:10px 22px;background:var(--cp-card);border-bottom:1px solid var(--cp-line);font-size:13px}
+  #card .b{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;margin-right:7px;
+       border:1px solid var(--cp-line-2)}
+  #card .ok{color:var(--cp-lineage);border-color:var(--cp-lineage-line);background:var(--cp-lineage-soft)}
+  #card .no{color:var(--cp-gap)}
+  #card .r{color:var(--cp-ink-2);font-size:12.5px;margin-top:4px}
+  aside .hit span{color:var(--cp-ink-3);font-size:11.5px;
+       font-family:"IBM Plex Mono",ui-monospace,monospace}
+  main{padding:20px 22px 60px;min-width:0}
+  .msg{padding:6px 2px;color:var(--cp-ink-3);font-size:13px}
+  .msg.err{color:var(--cp-gap)}
+</style>
+</head>
+<body class="cp" data-theme="light">
+<header class="bar">
+  <img src="../../core/logo.png" alt="">
+  <strong>Kompass</strong>
+  <span class="sub">vier Richtungen an jedem Knoten</span>
+  <select id="fixture" title="Fixture">
+    <option value="../../data/lens-paper/data">lens-paper</option>
+    <option value="../../data/lens-multi/data">lens-multi</option>
+    <option value="../../data/pmx/data">pmx (10 Analysen)</option>
+    <option value="../../data/stress/data">stress</option>
+  </select>
+  <div class="persp" id="perspective"></div>
+  <label class="sub">gruppiert <select id="grouping"></select></label>
+  <input type="search" id="q" placeholder="suchen — Name, Art, Beteiligter" autocomplete="off">
+  <span class="sub" id="count"></span>
+</header>
+<div class="bar" id="qbar" style="display:none;padding-top:8px;padding-bottom:8px"></div>
+<div class="bar" id="facetbar" style="display:none;padding-top:8px;padding-bottom:8px"></div>
+
+<div id="card" style="display:none"></div>
+<div class="wrap">
+  <aside id="list"></aside>
+  <main><div class="msg" id="msg">lade…</div><div id="compass"></div></main>
+</div>
+
+<script type="module">
+import { loadKton } from "../../runtime/kton.js";
+import { loadConfig } from "../../core/config.js";
+import { termsFromUnion } from "../../core/terms.js";
+import { mountCompass } from "./compass.js";
+import { binding } from "./binding-kton.js";
+import { readState, writeState, linkTo, regUrls, modeFromDepth, depthFromMode } from "../../core/viewstate.js";
+import { recordsFromText } from "../../core/registry.js";
+import { hostBridge } from "../../core/host.js";
+import { indexGraph } from "../../core/nav.js";
+import { catalogue, ask, countFor } from "../../core/questions.js";
+import { catalogue as groupings, makeKey } from "../../core/grouping.js";
+
+// Everything the compass knows about this domain arrives from a sketch: which relations exist,
+// what they are called, how they group, which perspectives there are. SPEC §7.1 says a kernel
+// must not require a known vocabulary - "meaning resolves downstream" - so this is downstream.
+// The whole view lives in the URL, so switching to the graph is a move and not a reset.
+let VS = readState();
+const SKETCH = VS.sketch || "default";
+
+const $ = (s) => document.querySelector(s);
+// how far each direction is followed, in the URL like the facets: "origin:3,effect:2"
+const encodeDepth = (d) => Object.entries(d || {}).filter(([, n]) => n > 1).map(([k, n]) => `${k}:${n}`).join(",");
+const decodeDepth = (s) => Object.fromEntries((s || "").split(",").filter(Boolean)
+  .map((p) => { const [k, n] = p.split(":"); return [k, Math.max(1, +n || 1)]; }));
+const msg = (t, err) => { $("#msg").textContent = t || ""; $("#msg").className = "msg" + (err ? " err" : ""); };
+let compass = null, nodes = [], CFG = null, GX = null, QCAT = [], GCAT = [], TERMS = null;
+
+/** Build the key the element asked for, from what the sketch declared. */
+function applyGrouping(id) {
+  const g = GCAT.find((x) => x.id === id) || GCAT[0];
+  compass.setGrouping(g.by && g.by !== "none" ? makeKey(g, { G: GX, terms: TERMS }) : null, g.id === "none" ? "" : g.label);
+  VS = writeState({ g: g.id === "none" ? "" : g.id });
+  return g;
+}
+
+/**
+ * The embedding host - a verticle, an editor - can steer this view and hears what the reader did.
+ * It gets the SAME state object the URL carries, so a host-driven view is still copyable out of
+ * the address bar. What it asks for and cannot have comes back as a refusal, by name: a host that
+ * believes it steered while the reader sees something else is worse off than one that was told no.
+ */
+const bridge = hostBridge({
+  capabilities: { viewer: "compass", state: ["union", "keys", "names", "focus", "sketch", "p", "f"],
+                  intents: ["navigate", "act", "reveal", "mask", "depth", "group"],
+                  groupings: "siehe kton:ready capabilities.groupingIds",
+                  depth: "je Richtung: origin, effect, about, mentions" },
+  current: () => readState(),
+  apply: (st) => {
+    const refused = [];
+    if (!compass) return { refused: ["*"], why: "der Betrachter lädt noch" };
+    if (st.p) { if (CFG && CFG.perspectives().some((x) => x.id === st.p)) { compass.setPerspective(st.p); VS = writeState({ p: st.p }); }
+                else refused.push(`p=${st.p}`); }
+    if (st.facets) { const known = new Set(CFG ? CFG.facets() : []);
+      const bad = Object.keys(st.facets).filter((k) => !known.has(k));
+      bad.forEach((k) => refused.push(`facet=${k}`));
+      const use = Object.fromEntries(Object.entries(st.facets).filter(([k]) => known.has(k)));
+      compass.setFacets(use); VS = writeState({ facets: use }); drawFacets(CFG); }
+    if (st.g !== undefined) { const g = GCAT.find((x) => x.id === st.g);
+      if (g || st.g === "") { $("#grouping").value = g ? g.id : "none"; applyGrouping(g ? g.id : "none"); }
+      else refused.push(`g=${st.g}`); }
+    if (st.d || st.depth) { const d = st.depth || decodeDepth(st.d);
+      compass.setDepth(d); VS = writeState({ d: encodeDepth(d) }); }
+    if (st.focus) { if (!compass.goTo(st.focus)) refused.push(`focus=${st.focus}`); }
+    return { refused, why: "dieser Korpus oder dieser Sketch führt das nicht" };
+  },
+});
+
+async function load(src) {
+  msg("lade Register und Kernel…");
+  try {
+    const reg = typeof src === "string" ? regUrls(`${src}/union.json`) : src;
+    const grab = async (u, fallback) => {
+      if (!u) return fallback;
+      try { const r = await fetch(u); return r.ok ? await r.text() : fallback; } catch { return fallback; }
+    };
+    // several sources (a comma list), each a union.json or a scope's .nekton.jsonl: read each in its own
+    // shape and splice them by record id, as the graph does
+    const unionOf = async (spec) => {
+      const urls = String(spec || "").split(",").map((u) => u.trim()).filter(Boolean);
+      if (urls.length === 1 && !/\.jsonl$/.test(urls[0])) return grab(urls[0], null);
+      const seen = new Set(), recs = [];
+      for (const u of urls) for (const r of recordsFromText(await grab(u, "")).records) {
+        const id = r.fotonId || r.claimId; if (id && !seen.has(id)) { seen.add(id); recs.push(r); } }
+      return recs.length ? JSON.stringify(recs) : null;
+    };
+    const [union, keys, names] = await Promise.all([unionOf(reg.union), grab(reg.keys, "{}"), grab(reg.names, "{}")]);
+    if (!union) throw new Error(`kein union.json unter ${reg.union}`);
+    VS = writeState({ ...reg, sketch: SKETCH });   // the source is now addressable, at this depth or any other
+
+    const [kton, config] = await Promise.all([loadKton(), loadConfig(`../../sketches/${SKETCH}.json`)]);
+    const graph = kton.buildGraph(union, keys, names);
+
+    // the full predicate terms, recovered from the same union the graph came from
+    const terms = termsFromUnion(union);
+    binding.configure({ config, terms, graph });
+    drawPerspectives(config);
+
+    const survey = config.survey({ byId: new Map(graph.nodes.map((n) => [n.id, n])), edges: graph.edges }, terms);
+    const unknown = [...survey.unknown.entries()];
+
+    compass = mountCompass($("#compass"), {
+      graph, binding,
+      perspectives: Object.fromEntries(config.perspectives().map((p) => [p.id, p])),
+      perspective: VS.p || persp.querySelector('[aria-pressed="true"]')?.dataset.p || "full",
+      // The compass reports what the reader asked for; resolving it is the host's job. Here the
+      // only action we can honestly offer is handing the node to the graph viewer.
+      // Every node, not just fotons and claims: the graph draws sources too, and gating the switch
+      // by type meant a reader standing on a file - 8 of 20 nodes in lens-paper - simply had no way
+      // across. An action the host can honestly perform should be offered wherever it works.
+      actions: () => [{ id: "graph", label: "im Graphen zeigen", hint: "dieselbe Stelle, andere Frage: wie viel hängt daran" }],
+      onIntent: (i) => {
+        // the element reports what the reader wanted; resolving it is the host's business, and here
+        // that means handing the SAME question to the other viewer rather than starting it over
+        if (i.type === "act" && i.action === "graph") {
+          // carry the QUESTION, not only the address: an open origin cone becomes the graph's `anc`
+          const st = { ...readState(), focus: i.node };
+          const m = modeFromDepth(compass.depth());
+          if (m) st.mode = m;
+          location.href = linkTo("../graph/index.html", st);
+        }
+        if (i.type === "depth") { VS = writeState({ d: encodeDepth(compass.depth()) }); drawQuestions(); }
+        if (i.type === "group") bridge.state(readState());
+        if (i.type === "navigate") { VS = writeState({ focus: i.node });
+          const c = $("#card"); if (c.dataset.q) c.innerHTML = renderCard(ask(GX, QCAT.find((q) => q.id === c.dataset.q), { node: i.node }));
+          drawQuestions(); }
+        if (i.type === "mask") VS = writeState({ p: i.perspective });
+        // the host hears everything; what it does about it is its own business
+        bridge.intent(i);
+        if (i.type !== "act") bridge.state(readState());
+      },
+    });
+
+    CFG = config;
+    GX = indexGraph(graph);
+    TERMS = terms;
+    QCAT = catalogue(config.spec);
+    GCAT = groupings(config.spec);
+    $("#grouping").innerHTML = GCAT.map((g) => `<option value="${escape_(g.id)}">${escape_(g.label)}</option>`).join("");
+    if (VS.facets && Object.keys(VS.facets).length) compass.setFacets(VS.facets);
+    // a depth handed over wins; otherwise a mode the graph set becomes one
+    if (VS.d) compass.setDepth(decodeDepth(VS.d));
+    else if (VS.mode) { const d = depthFromMode(VS.mode); if (Object.keys(d).length) { compass.setDepth(d); VS = writeState({ d: encodeDepth(d) }); } }
+    drawFacets(config);
+    if (VS.g) { $("#grouping").value = VS.g; applyGrouping(VS.g); }
+    drawQuestions();
+    bridge.ready();
+    nodes = compass.nodes();
+    $("#count").textContent = `${nodes.length} Knoten · ${(graph.edges || []).length} Kanten` +
+      (unknown.length ? ` · ${unknown.reduce((a, [, c]) => a + c, 0)} Kanten mit ${unknown.length} unbekannten Termen` : "");
+    $("#count").title = unknown.length
+      ? "Der Sketch kennt diese Terme noch nicht - sie werden trotzdem gezeigt:\n" + unknown.map(([t, c]) => `${c}x ${t}`).join("\n")
+      : `Sketch "${SKETCH}" kennt jeden vorkommenden Term.`;
+    renderList("");
+    // an address that came in from elsewhere wins; a hash may be short, so accept a prefix too
+    const want = VS.focus || "";
+    const hit = want && (compass.goTo(want) || (() => {
+      const bare = want.replace(/^sha256:/, "").toLowerCase();
+      const n = nodes.find((x) => x.id === bare || bare.startsWith(x.id) || x.id.startsWith(bare));
+      return n && compass.goTo(n.id);
+    })());
+    if (!hit) compass.goTo(pickStart(nodes));
+    msg("");
+  } catch (e) {
+    $("#compass").innerHTML = "";
+    msg("Konnte den Graphen nicht bauen: " + (e && e.message || e), true);
+  }
+}
+
+/** Start where the reader most likely wants to be: the thing nothing else was built on top of. */
+function pickStart(ns) {
+  const fotons = ns.filter((n) => n.type === "foton");
+  return (fotons[0] || ns[0] || {}).id;
+}
+
+/**
+ * The facets a sketch declares, with the values this graph actually holds. A host can steer these
+ * too - which is the point - but a reader who is standing here should not have to ask a host for
+ * a filter that is one click away.
+ */
+function drawFacets(config) {
+  const bar = $("#facetbar");
+  const chosen = compass.facets();
+  const parts = [];
+  for (const name of config.facets()) {
+    const vals = compass.facetValues(name).slice(0, 12);
+    if (vals.length < 2) continue;                    // a facet with one value filters nothing
+    parts.push(`<div class="fgroup"><span class="fname">${escape_(name)}</span>` +
+      vals.map((v) => `<button class="fchip" data-facet="${escape_(name)}" data-value="${escape_(v.value)}"
+        aria-pressed="${(chosen[name] || []).includes(v.value)}">${escape_(v.value)} <span style="opacity:.55">${v.count}</span></button>`).join("") +
+      `</div>`);
+  }
+  bar.innerHTML = parts.join("");
+  bar.style.display = parts.length ? "flex" : "none";
+}
+
+$("#facetbar").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-facet]"); if (!b || !compass) return;
+  const f = { ...compass.facets() };
+  const cur = new Set(f[b.dataset.facet] || []);
+  cur.has(b.dataset.value) ? cur.delete(b.dataset.value) : cur.add(b.dataset.value);
+  f[b.dataset.facet] = [...cur];
+  compass.setFacets(f);
+  VS = writeState({ facets: f });
+  drawFacets(CFG);
+});
+
+/**
+ * The named questions, from core/questions.js - the same five the graph viewer has had all along.
+ * A depth number is not a question anyone asks; "woraus wurde das gebaut" is. So the buttons are
+ * the primary way in and the depth stepper stays for finer control underneath.
+ *
+ * In the compass a cone question IS a direction followed all the way, so asking it just means
+ * setting that direction's depth. No second mechanism, and the answer is the tree already there.
+ */
+/**
+ * Which compass direction, if any, IS this question.
+ *
+ * Derived from the query, never from its id - a sketch's cone question has to work exactly as well
+ * as a built-in one, and hard-coding {inputs: 'origin'} was the last place where an id still got
+ * special treatment. A question whose walk matches a direction sets that direction's depth (the
+ * tree is already there); one that walks a narrower set of edges gets its own panel, because
+ * widening a direction to fit it would answer a different question than the one asked.
+ */
+function dirForQuestion(q) {
+  if (!q.walk || !compass) return null;
+  const me = q.walk.dir === "up" ? "from" : "to";
+  const want = [...(q.walk.edges || [])].sort().join(",");
+  for (const d of binding.directions) {
+    if (d.me !== me) continue;
+    if ((d.edges || []).slice().sort().join(",") === want) return d.key;
+  }
+  return null;
+}
+
+function drawQuestions() {
+  const bar = $("#qbar");
+  if (!GX || !compass) { bar.style.display = "none"; return; }
+  const at = compass.at();
+  const d = compass.depth();
+  const qs = QCAT.filter((q) => q.at === "node" || q.at === "graph");
+  bar.innerHTML = qs.map((q) => {
+    const n = q.as === "cone" ? countFor(GX, q, at) : null;
+    const dir = dirForQuestion(q);
+    const on = dir ? (d[dir] || 1) > 1 : $("#card").dataset.q === q.id;
+    return `<button class="q" data-q="${escape_(q.id)}" aria-pressed="${on}" title="${escape_(q.gloss)}">
+      <b>${escape_(q.label)}</b>${n !== null ? `<span class="n">${n}</span>` : ""}</button>`;
+  }).join("") + `<span class="qgloss">${escape_(qs.find((q) => q.id === (VS.q || ""))?.gloss || "benannte Fragen — dieselben, die der Graph stellt")}</span>`;
+  bar.style.display = "flex";
+}
+
+$("#qbar").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-q]"); if (!b || !compass || !GX) return;
+  const q = QCAT.find((x) => x.id === b.dataset.q);
+  const dir = dirForQuestion(q);
+  const c = $("#card");
+  if (dir) {
+    const d = { ...compass.depth() };
+    d[dir] = (d[dir] || 1) > 1 ? 1 : 99;          // asking is following that direction all the way
+    compass.setDepth(d);
+    VS = writeState({ d: encodeDepth(d), q: (d[dir] > 1 ? q.id : "") });
+  } else if (c.dataset.q === q.id) {
+    c.style.display = "none"; c.dataset.q = ""; VS = writeState({ q: "" });
+  } else {
+    c.innerHTML = q.as === "card" ? renderCard(ask(GX, q, { node: compass.at() })) : renderAnswer(q);
+    c.style.display = "block"; c.dataset.q = q.id; VS = writeState({ q: q.id });
+  }
+  drawQuestions();
+});
+
+/** A question the compass has no direction for - a narrower walk, or a worklist - as a plain list. */
+function renderAnswer(q) {
+  const r = ask(GX, q, { node: compass.at() });
+  const rows = (r.kind === "cone" ? r.rows.map((x) => ({ id: x.id, d: x.depth, rep: x.repeat }))
+                                  : (r.list || []).map((n) => ({ id: n.id, d: 1 })));
+  if (!rows.length) return `<span class="r">${escape_(q.label)}: nichts gefunden.</span>`;
+  const head = r.kind === "cone"
+    ? `${r.rows.length} Zeilen · <b>${r.distinct}</b> verschieden`
+    : `<b>${r.list.length}</b> von ${r.total}`;
+  return `<div class="r">${escape_(q.label)} — ${head}${r.truncated ? " · gekappt" : ""}</div>` +
+    rows.slice(0, 60).map((x) => { const n = GX.byId.get(x.id) || {};
+      return `<div class="r" style="padding-left:${(x.d - 1) * 14}px"><a href="#" data-goto="${escape_(x.id)}">${escape_(binding.label(n))}</a>` +
+             `<span style="opacity:.55"> · ${escape_(binding.typeName(n))}</span>${x.rep ? ' <span style="opacity:.5">schon gesehen</span>' : ""}</div>`; }).join("") +
+    (rows.length > 60 ? `<div class="r" style="opacity:.6">…und ${rows.length - 60} weitere</div>` : "");
+}
+$("#card").addEventListener("click", (e) => {
+  const a = e.target.closest("[data-goto]"); if (!a) return;
+  e.preventDefault(); compass.goTo(a.dataset.goto);
+});
+
+/** The card's numbers come from core; only the look is decided here. */
+function renderCard(c) {
+  if (!c.claims) return `<span class="r">Über diesen Knoten wurde noch nichts ausgesagt.</span>`;
+  const rows = Object.entries(c.byPredicate).map(([pred, vals]) =>
+    `<div class="r"><b>${escape_(pred)}</b> · ${escape_(Object.entries(vals).map(([v, n]) => `${v || "—"}${n > 1 ? " ×" + n : ""}`).join(", "))}</div>`).join("");
+  const rep = c.reproducedBy > 0;
+  return `<span class="b ${c.reject ? "no" : c.approve ? "ok" : ""}">${c.approve} zugestimmt · ${c.reject} abgelehnt</span>` +
+    `<span class="b ${rep ? "ok" : ""}" title="verschiedene Signierer von reproduces-Aussagen, nicht Erzeuger-Vielfachheit">` +
+    `${rep ? (c.reproducedBy > 1 ? "↻" + c.reproducedBy + " reproduziert" : "✓ reproduziert") : "nicht reproduziert"}</span>${rows}`;
+}
+
+function renderList(q) {
+  const needle = q.trim().toLowerCase();
+  const hit = (n) => !needle || [binding.label(n), binding.typeName(n), n.participant, n.signer, n.headline]
+      .filter(Boolean).some((v) => String(v).toLowerCase().includes(needle));
+  const shown = nodes.filter(hit).slice(0, 300);
+  $("#list").innerHTML = shown.map((n) =>
+    `<button class="hit" data-go="${n.id}"><b>${escape_(binding.label(n))}</b>
+     <span>${escape_(binding.typeName(n))}${n.participant ? " · " + escape_(n.participant) : ""}</span></button>`).join("")
+    || `<div class="msg">nichts gefunden</div>`;
+}
+const escape_ = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+$("#list").addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b && compass) compass.goTo(b.dataset.go); });
+$("#q").addEventListener("input", (e) => renderList(e.target.value));
+$("#grouping").addEventListener("change", (e) => compass && applyGrouping(e.target.value));
+$("#fixture").addEventListener("change", (e) => { VS = writeState({ focus: "" }); load(e.target.value); });
+const persp = $("#perspective");
+function drawPerspectives(config) {
+  const cur = VS.p || persp.querySelector('[aria-pressed="true"]')?.dataset.p;
+  persp.innerHTML = config.perspectives().map((p, i) =>
+    `<button data-p="${p.id}" aria-pressed="${cur ? String(p.id === cur) : String(i === 0)}">${escape_(p.label)}</button>`).join("");
+}
+persp.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-p]"); if (!b || !compass) return;
+  [...persp.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+  compass.setPerspective(b.dataset.p);
+  VS = writeState({ p: b.dataset.p });
+});
+addEventListener("popstate", () => { VS = readState(); if (compass && VS.focus) compass.goTo(VS.focus, false); });
+
+// a source handed in by URL wins over the picker - that is how the graph hands work back
+if (VS.union) { const o = [...$("#fixture").options].find((x) => VS.union.endsWith(x.value.replace("../../", "") + "/union.json"));
+  if (o) $("#fixture").value = o.value;
+  // keys/names beside the union unless the URL names others - without them every signature reads unverified
+  load({ ...regUrls(VS.union), ...(VS.keys && { keys: VS.keys }), ...(VS.names && { names: VS.names }) }); }
+else load($("#fixture").value);
+</script>
+</body>
+</html>

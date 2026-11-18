@@ -1,0 +1,58 @@
+{
+  "foton": {
+    "file": "kton-foton.wasm",
+    "bytes": 3452198,
+    "gzip": 977574,
+    "exports": [
+      "plktBuildFoton",
+      "plktSealFoton",
+      "plktFotonID"
+    ]
+  },
+  "full": {
+    "file": "kton-full.wasm",
+    "bytes": 3647190,
+    "gzip": 1025754,
+    "exports": [
+      "plktBuildGraph",
+      "plktSha256Init",
+      "plktSha256Update",
+      "plktSha256Final",
+      "plktBuildClaim",
+      "plktSealClaim",
+      "plktKeyIRI",
+      "plktBuildFoton",
+      "plktSealFoton",
+      "plktFotonID"
+    ]
+  },
+  "graph": {
+    "file": "kton-graph.wasm",
+    "bytes": 3515008,
+    "gzip": 993816,
+    "exports": [
+      "plktBuildGraph"
+    ]
+  },
+  "reader": {
+    "file": "kton-reader.wasm",
+    "bytes": 3521016,
+    "gzip": 996335,
+    "exports": [
+      "plktBuildGraph",
+      "plktSha256Init",
+      "plktSha256Update",
+      "plktSha256Final"
+    ]
+  },
+  "verify": {
+    "file": "kton-verify.wasm",
+    "bytes": 1688020,
+    "gzip": 498701,
+    "exports": [
+      "plktSha256Init",
+      "plktSha256Update",
+      "plktSha256Final"
+    ]
+  }
+}

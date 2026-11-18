@@ -1,0 +1,64 @@
+{
+  "name": "qm",
+  "label": "Qualitätsmanagement",
+  "note": "Der QMS-Korpus (explorer/korpus): Aufzeichnungen, Freigaben, Schulung, Geltungsbereiche. Die qmso:*-Terme sind die echten Prädikate dieses Korpus. Ein dritter Sketch neben pmx und default - der Unterschied ist ausschliesslich diese Datei, kein Element wurde angefasst.",
+
+  "groups": [
+    { "id": "herkunft",       "label": "Herkunft",       "axis": "l", "note": "Ableitung: was ging worein ein" },
+    { "id": "aufzeichnung",   "label": "Aufzeichnung",   "axis": "c", "note": "was festgehalten, registriert, verfasst wurde" },
+    { "id": "freigabe",       "label": "Freigabe",       "axis": "c" },
+    { "id": "schulung",       "label": "Schulung & Qualifikation", "axis": "c" },
+    { "id": "geltungsbereich","label": "Geltungsbereich", "axis": "c", "note": "SPEC §7.4 - Seed und Mitgliedschaft" },
+    { "id": "wirksamkeit",    "label": "Wirksamkeit & Lebenszyklus", "axis": "c" }
+  ],
+  "unassignedLabel": "noch nicht zugeordnet",
+
+  "terms": {
+    "kton:edge/builds-on":  { "group": "herkunft", "label": "ging ein in" },
+
+    "qmso:attestedRecord":     { "group": "aufzeichnung", "label": "bezeugte Aufzeichnung" },
+    "qmso:record":             { "group": "aufzeichnung", "label": "Aufzeichnung" },
+    "qmso:registered":         { "group": "aufzeichnung", "label": "registriert" },
+    "qmso:authored":           { "group": "aufzeichnung", "label": "verfasst von" },
+
+    "qmso:approved":           { "group": "freigabe", "label": "freigegeben von" },
+    "qmso:reviewed":           { "group": "freigabe", "label": "geprüft von" },
+    "qmso:acknowledged":       { "group": "freigabe", "label": "zur Kenntnis genommen" },
+
+    "qmso:attended":           { "group": "schulung", "label": "teilgenommen" },
+    "qmso:trainingDelivered":  { "group": "schulung", "label": "Schulung gehalten" },
+    "qmso:qualified":          { "group": "schulung", "label": "qualifiziert" },
+
+    "https://kton.dev/scope/v0#seed": { "group": "geltungsbereich", "label": "Geltungsbereich eröffnet" },
+    "https://kton.dev/scope/v0":      { "group": "geltungsbereich", "label": "im Geltungsbereich" },
+    "qmso:scopeMember":        { "group": "geltungsbereich", "label": "Mitglied von" },
+
+    "qmso:effectivityChecked": { "group": "wirksamkeit", "label": "Wirksamkeit geprüft" },
+    "qmso:retired":            { "group": "wirksamkeit", "label": "ausser Kraft" },
+    "qmso:audited":            { "group": "wirksamkeit", "label": "auditiert" }
+  },
+
+  "facets": ["participant", "verified", "signer"],
+
+  "groupings": [
+    { "id": "term", "label": "Aussageart", "by": "term" }
+  ],
+
+  "questions": [
+    { "id": "nicht-freigegeben", "label": "ohne Freigabe", "at": "graph",
+      "gloss": "Aufzeichnungen, zu denen keine Freigabe vorliegt",
+      "from": "fotons", "where": [{ "lacks": { "pred": "approved" } }], "as": "list" },
+
+    { "id": "geprueft", "label": "geprüft", "at": "graph",
+      "gloss": "was eine Prüfaussage trägt",
+      "from": "fotons", "where": [{ "has": { "pred": "reviewed" } }], "as": "list" }
+  ],
+
+  "perspectives": {
+    "full":         { "label": "alles" },
+    "aufzeichnungen": { "label": "Aufzeichnungen", "only": ["aufzeichnung", "herkunft"] },
+    "freigaben":    { "label": "Freigaben",     "only": ["freigabe"] },
+    "schulung":     { "label": "Schulung",      "only": ["schulung"] },
+    "geltungsbereiche": { "label": "Geltungsbereiche", "only": ["geltungsbereich"] }
+  }
+}
