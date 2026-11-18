@@ -5,6 +5,16 @@ EXROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="$EXROOT/bin:$PATH"
 EXNAME="$(basename "$PWD")"     # captured HERE: 09 cds into .work/ after sourcing this file
 
+# ---- private keys live outside the repository ----------------------------------------------------
+# Never inside a checkout, not even ignored ones: that is the rule a cockpit enforces (ADR-016, cockpit
+# SPEC §5.6 - an identity naming a key inside the repository is refused), and the examples follow it
+# rather than teach the opposite. Each example gets its own folder, emptied at the start of the run;
+# the keys come from fixed seeds (below), so emptying it changes nothing. The public halves sit next to
+# the private ones, which is also the --trust-keys folder and what `snapshot` reads.
+KEYS="${KTON_EXAMPLE_KEYS:-${XDG_CACHE_HOME:-$HOME/.cache}/kton-examples/keys}/$EXNAME"
+case "$KEYS" in "$EXROOT"/*) echo "KTON_EXAMPLE_KEYS points inside the repository ($KEYS)" >&2; exit 1 ;; esac
+rm -rf "$KEYS"; mkdir -p "$KEYS"
+
 # ---- reproducible demo identities and a fixed clock -------------------------------------------
 # The graph snapshots under docs/data/ are COMMITTED, so every run diffs against the last one. Two
 # things used to make that diff meaningless: a fresh random keypair per run - the public key lands

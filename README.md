@@ -87,7 +87,7 @@ also add to PATH):
 
 ## What is NOT here
 
-Private keys (`*.key`) and the kton binaries are git-ignored - this is a public repo.
+Private keys never enter the repository: each example writes its (demo) keys to `~/.cache/kton-examples/keys/<example>/` (`KTON_EXAMPLE_KEYS` to move it; `lib/common.sh`), the rule a kton cockpit enforces. The kton binaries are git-ignored - this is a public repo.
 
 `examples/*/.work/` is a split: the **data** an example reads and writes stays tracked, because every
 foton's recorded input/output carries a raw permalink to it, so you can fetch the exact bytes behind
