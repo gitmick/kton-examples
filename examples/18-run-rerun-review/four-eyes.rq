@@ -1,16 +1,22 @@
 # The review rule, complete: four eyes, people only. Anchored by its hash before anyone reviews.
 #
 # For each reviewed foton: an approval counts if its signature verifies, its signer did not sign the
-# foton, and the review's owner (the signer of the rule) declared the signer a prov:Person and not a
-# prov:SoftwareAgent. Four eyes = at least two counted approvals and no reject.
-# Runs over the review's nanopublications + the foton's lineage, with the union of all graphs as default.
+# foton, the review's owner (the signer of the rule) declared the signer a prov:Person and not a
+# prov:SoftwareAgent, and it covers every description and rationale said about the foton, by claim id
+# (a hash of the exact text; a changed text is a new claim that this approval does not cover).
+# Four eyes = at least two counted approvals and no reject.
+# Runs over the nanopublications of the claims + the foton's lineage, union of all graphs as default.
 PREFIX nk:   <https://kton.dev/v/>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX np:   <http://www.nanopub.org/nschema#>
+PREFIX dct:  <http://purl.org/dc/terms/>
+PREFIX ep:   <https://w3id.org/ep-plan#>
 SELECT ?foton
        (COUNT(DISTINCT ?counted) AS ?approvalsByPeople)
        (COUNT(DISTINCT ?rejecter) AS ?rejects)
+       (COUNT(DISTINCT ?text) AS ?textsReviewed)
        (GROUP_CONCAT(DISTINCT ?note; separator=", ") AS ?reviewers)
        (IF(COUNT(DISTINCT ?counted) >= 2 && COUNT(DISTINCT ?rejecter) = 0, "yes", "no") AS ?fourEyesPeopleOnly)
 WHERE {
@@ -18,11 +24,16 @@ WHERE {
   GRAPH ?rule { ?scope nk:review-initialised ?r }
   ?a prov:wasAttributedTo ?who ; nk:signerVerified true .
   GRAPH ?a { ?foton nk:reviewed ?o . ?o ?p ?verdict . }
+  FILTER EXISTS { ?foton nk:claimedSigner ?s }      # the subject that is the foton, not the texts
+  # the texts said about the foton: description and rationale claims, by their claim id
+  OPTIONAL { ?tn np:hasAssertion ?tg ; prov:wasDerivedFrom ?text . GRAPH ?tg { ?foton ?tp0 ?tx } FILTER(?tp0 IN (dct:description, ep:hasRationale)) }
+  BIND(EXISTS { ?n np:hasAssertion ?g ; prov:wasDerivedFrom ?c . GRAPH ?g { ?foton ?dp ?x } FILTER(?dp IN (dct:description, ep:hasRationale))
+                FILTER NOT EXISTS { ?a2 prov:wasAttributedTo ?who ; nk:signerVerified true . GRAPH ?a2 { ?c nk:reviewed ?o2 . ?o2 ?p2 ?v2 } FILTER(STR(?v2) = STR(?verdict)) } } AS ?uncovered)
   OPTIONAL { ?who rdfs:label ?label }
   BIND(EXISTS { ?foton nk:claimedSigner ?who } AS ?author)
   BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:Person } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?person)
   BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:SoftwareAgent } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?agent)
-  BIND(IF(?agent, "software agent", IF(?author, "signed the foton", IF(!?person, "not declared a person", ""))) AS ?why)
+  BIND(IF(?agent, "software agent", IF(?author, "signed the foton", IF(!?person, "not declared a person", IF(?uncovered, "did not cover the description and rationale", "")))) AS ?why)
   BIND(IF(STR(?verdict) = "approve" && ?why = "", ?who, ?unbound) AS ?counted)
   BIND(IF(STR(?verdict) = "reject", ?who, ?unbound) AS ?rejecter)
   BIND(CONCAT(COALESCE(?label, STR(?who)), " ", STR(?verdict), IF(?why = "", "", CONCAT(" (not counted: ", ?why, ")"))) AS ?note)

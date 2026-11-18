@@ -39,12 +39,12 @@ F=$(plankton author --cmd "Rscript whales.R" \
       --in "whales.R=$W/run/whales.R" --out "whales.svg=$W/run/whales.svg" --sign "$(K llm)" --add --print-id 2>/dev/null)
 echo "   foton $F, signed by llm"
 # description and rationale: claims ABOUT the foton (dc:description, ep-plan:hasRationale), signed by llm
-say(){ claim "$NEKTON_DIR" "$1" "$(printf '{"subject":[{"hash":"%s"}],"predicate":"%s","object":{"value":"%s"},"by":"%s","when":"%s"}' "$F" "$2" "$3" "$1" "$WHEN")" >/dev/null; }
-say llm "http://purl.org/dc/terms/description" \
-  "Simulates 24 months of plankton density and whale sightings and draws both in one figure: plankton as a line, whale sightings as bars."
-say llm "https://w3id.org/ep-plan#hasRationale" \
-  "To see whether whale sightings rise a month after the plankton does. The data are simulated with a fixed seed, so anyone who reruns the script should get the same bytes."
-echo "   description and rationale, signed by llm"
+say(){ claim "$NEKTON_DIR" "$1" "$(printf '{"subject":[{"hash":"%s"}],"predicate":"%s","object":{"value":"%s"},"by":"%s","when":"%s"}' "$F" "$2" "$3" "$1" "$WHEN")"; }
+DESC=$(say llm "http://purl.org/dc/terms/description" \
+  "Simulates 24 months of plankton density and whale sightings and draws both in one figure: plankton as a line, whale sightings as bars.")
+RAT=$(say llm "https://w3id.org/ep-plan#hasRationale" \
+  "To see whether whale sightings rise a month after the plankton does. The data are simulated with a fixed seed, so anyone who reruns the script should get the same bytes.")
+echo "   description ${DESC:7:8} and rationale ${RAT:7:8}, signed by llm"
 
 echo "== 2. michael reruns it: delete the figure, run the script again"
 FIRST=$(plankton hash "$W/run/whales.svg"); rm "$W/run/whales.svg"
@@ -76,9 +76,14 @@ review(){
   local anchor; anchor=$(claim "$PUBD" michael "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"by":"michael","when":"%s","scope":"%s","prev":"%s"}}' \
     "$REV" "$rule" "$WHEN" "$PUB" "$prev")")
   local p="$rule" d who v; : > "$W/$NAME.deliveries"
+  local items="$F $DESC $RAT"; [ "${RUN_ONLY:-}" ] && items="$F"
   for d in "$@"; do who="${d%%:*}"; v="${d##*:}"
-    p=$(claim "$RD" "$who" "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"%s"},"by":"%s","when":"%s","scope":"%s","prev":"%s"}}' \
-      "$F" "$v" "$who" "$WHEN" "$REV" "$p")")
+    # what is reviewed: the run AND the llm's description and rationale, each by its id (a hash of its
+    # exact text), one signed approval per item. A changed description is a new claim, not covered.
+    local x; for x in $items; do
+      p=$(claim "$RD" "$who" "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/reviewed"},"object":{"value":"%s"},"by":"%s","when":"%s","scope":"%s","prev":"%s"}}' \
+        "$x" "$v" "$who" "$WHEN" "$REV" "$p")")
+    done
     echo "$p" >> "$W/$NAME.deliveries"
   done
   local HEAD; HEAD=$(NEKTON_DIR="$RD" nekton head "$REV" | awk '/^head:/{print $2}')
@@ -93,16 +98,17 @@ check(){
   local NAME="$1" C="$W/check/$1"; mkdir -p "$C"
   local fr="$PLANKTON_DIR/objects/sha256/${F#sha256:}.json"
   local ps; ps=$(ls "$PUBD"/objects/scope/*.nekton.jsonl); local rs; rs=$(ls "$D/$NAME"/objects/scope/*.nekton.jsonl)
-  fr="${fr#"$PWD"/}"; ps="${ps#"$PWD"/}"; rs="${rs#"$PWD"/}"
-  ./check.sh trust "$fr" "$ps" "$rs" > "$C/verdict.csv"
+  local ts="$NEKTON_DIR/objects/unscoped.nekton.jsonl"     # the llm's description and rationale
+  fr="${fr#"$PWD"/}"; ps="${ps#"$PWD"/}"; rs="${rs#"$PWD"/}"; ts="${ts#"$PWD"/}"
+  ./check.sh trust "$fr" "$ts" "$ps" "$rs" > "$C/verdict.csv"
   sed 's/^/     /' "$C/verdict.csv"
-  local ins=(--in check.sh --in four-eyes.rq --in "$fr" --in "$ps" --in "$rs") k
+  local ins=(--in check.sh --in four-eyes.rq --in "$fr" --in "$ts" --in "$ps" --in "$rs") k
   for k in trust/*.pub; do ins+=(--in "$k"); done
   # its inputs include record files, which carry the run's permalinks; so its own permalinks point at the
   # commit that holds those records (KTON_RECORDS_COMMIT), not at the one that holds the run's bytes
-  KTON_RAW_COMMIT="${KTON_RECORDS_COMMIT:-${KTON_RAW_COMMIT:-}}" plankton author --cmd "./check.sh trust $fr $ps $rs   (oxigraph 0.5.12, ${OXIGRAPH##*@})" \
+  KTON_RAW_COMMIT="${KTON_RECORDS_COMMIT:-${KTON_RAW_COMMIT:-}}" plankton author --cmd "./check.sh trust $fr $ts $ps $rs   (oxigraph 0.5.12, ${OXIGRAPH##*@})" \
     "${ins[@]}" --out "$C/verdict.csv" --sign "$(K michael)" --add --print-id 2>/dev/null > "$C/foton.txt"
-  echo "$fr $ps $rs" > "$C/inputs"
+  echo "$fr $ts $ps $rs" > "$C/inputs"
 }
 review review-whales ana:approve ben:approve
 
@@ -110,8 +116,8 @@ echo "== 4. is the review valid? plankton checks"
 check review-whales
 echo "   verdict recorded as foton $(cat "$W/check/review-whales/foton.txt")"
 # re-derive: anyone with the same records, keys and rule runs the check again; same verdict bytes?
-read -r fr ps rs < "$W/check/review-whales/inputs"
-./check.sh trust "$fr" "$ps" "$rs" > "$W/check/rederived.csv"
+read -r fr ts ps rs < "$W/check/review-whales/inputs"
+./check.sh trust "$fr" "$ts" "$ps" "$rs" > "$W/check/rederived.csv"
 echo -n "   re-derived: "; plankton reproduces "$(plankton hash "$W/check/review-whales/verdict.csv")" "$(plankton hash "$W/check/rederived.csv")" | head -1
 
 echo
@@ -122,3 +128,6 @@ echo "-- rehearsal: ana and the llm approve; the llm's approval does not count"
 cp -r "$PUBD" "$D/rehearsal-public"; PUBD="$D/rehearsal-public"
 review review-llm ana:approve llm:approve
 check review-llm
+echo "-- rehearsal: ana and ben approve the run only, not the texts; neither approval counts"
+RUN_ONLY=1 review review-runonly ana:approve ben:approve
+check review-runonly
