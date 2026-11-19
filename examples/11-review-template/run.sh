@@ -12,7 +12,7 @@ cd "$EXDIR"; source ../../lib/common.sh
 export PLANKTON_DIR=".work/plankton"
 export NEKTON_DIR=".work/nekton"                 # the reviews registry
 export NEKTON_TEMPLATES="$EXROOT/templates"             # the shared, curated template set
-export NEKTON_ALIASES="$EXROOT/aliases.json"
+export NEKTON_ALIASES="$EXROOT/.kton/aliases.json"
 rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR"
 W=".work"
 APPROVE="https://schema.org/AcceptAction"               # reused schema.org verdicts (no minted terms)

@@ -14,7 +14,7 @@ set -euo pipefail
 EXDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$EXDIR"; source ../../lib/common.sh
 command -v Rscript >/dev/null || { echo "this capstone runs real R; install Rscript"; exit 1; }
-export NEKTON_TEMPLATES="$EXROOT/templates" NEKTON_ALIASES="$EXROOT/aliases.json"
+export NEKTON_TEMPLATES="$EXROOT/templates" NEKTON_ALIASES="$EXROOT/.kton/aliases.json"
 # Best practice: author with paths RELATIVE to the example dir (cwd stays $EXDIR), so a foton's
 # recorded input/output NAMES never bake in an absolute machine path (/home, /mnt, ...) that would
 # then live forever in the committed, public snapshot. `.work/` is gitignored; only the names leak.

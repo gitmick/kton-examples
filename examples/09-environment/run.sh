@@ -19,7 +19,7 @@ source ../../lib/common.sh
 # Two registries (both just directories): plankton = results, nekton = signed statements.
 export PLANKTON_DIR="$PWD/.work/plankton"
 export NEKTON_DIR="$PWD/.work/nekton"
-export NEKTON_ALIASES="$PWD/../../aliases.json"
+export NEKTON_ALIASES="$PWD/../../.kton/aliases.json"
 rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR"
 cd "$PWD/.work"
 plankton keygen "$KEYS/author" --seed "$(demoseed author)" >/dev/null    # produces the results

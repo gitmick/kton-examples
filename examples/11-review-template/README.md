@@ -20,7 +20,7 @@ where they are or `--template review/decision` fails with `no template "review/d
 ```
 git clone https://github.com/gitmick/kton-examples && cd kton-examples
 export NEKTON_TEMPLATES="$PWD/templates"      # the curated template set (data, not code)
-export NEKTON_ALIASES="$PWD/aliases.json"     # short names -> canonical IRIs
+export NEKTON_ALIASES="$PWD/.kton/aliases.json"     # short names -> canonical IRIs
 
 mkdir -p /tmp/ex11 && cd /tmp/ex11
 export PLANKTON_DIR="$PWD/plankton"           # the results registry
@@ -47,7 +47,7 @@ printf "# alice\nReproduced locally; AUC within range. Approve.\n" > alice.md
 ## Reused vocabulary, no minted terms
 
 The template commits to published vocabularies, following the vocabulary policy written down in
-[`aliases.json`](../../aliases.json)'s own `note` field. In plain terms: **`pav:`, `schema:` and the
+[`.kton/aliases.json`](../../.kton/aliases.json)'s own `note` field. In plain terms: **`pav:`, `schema:` and the
 rest are borrowed** from vocabularies other people already publish and maintain; **`nk:`
 (`https://kton.dev/v/`) is kton's own**, minted only where nothing existing names the concept. Two
 prefixes, because reusing a term someone else defined is worth more than a term we defined.
