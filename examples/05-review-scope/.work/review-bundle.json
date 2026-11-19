@@ -43,7 +43,7 @@
       }
     },
     {
-      "claimId": "sha256:cd4c7cc5ccd6cfebaa69a55ecb5f123932f82991c1ca617565480048e8204bc8",
+      "claimId": "sha256:d07fabd26a5878b370580f9bf65b80290df61d8edb926096b3e2d1f4f250b8bf",
       "predicateType": "https://kton.dev/claim/v0",
       "keyids": [
         "e68885c64df830ed"
@@ -59,7 +59,7 @@
         },
         "prev": "sha256:7fefc14a996707a9b3fe6f70cb1bec131dca5a50c5d74246e7c4fda3066eb094",
         "scope": "sha256:7fefc14a996707a9b3fe6f70cb1bec131dca5a50c5d74246e7c4fda3066eb094",
-        "when": "2026-11-19T01:52:17Z"
+        "when": "2026-07-16T00:00:00Z"
       }
     },
     {
