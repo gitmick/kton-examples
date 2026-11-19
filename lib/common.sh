@@ -77,6 +77,35 @@ plankton() {
   command plankton author "$@" ${extra[@]+"${extra[@]}"}
 }
 
+# ---- a pinned root for every nekton store (kton 0.4, #259) ------------------------------------------
+# Since 0.4 the first signed --add write into a store opens the store's ROOT scope: a root seed named
+# root/<random> at the wall clock, and every new seed and unscoped claim hangs off it. Left alone,
+# that puts a fresh random id into every snapshot on every run. `nekton init --name --when` pins it,
+# and that has to happen before the store's first write, with the key that would have opened it.
+# So `nekton` is shadowed the way `plankton` is above: before a signed --add write into a store that
+# has no root yet, it runs `nekton init` with a name of its own per store (two stores must not share
+# one) and the fixed clock, signed by that write's key. Everything else passes straight through.
+nekton() {
+  local -a a=("$@")
+  local i reg="${NEKTON_DIR:-}" key="" add="" rel
+  for ((i = 0; i < ${#a[@]}; i++)); do
+    case "${a[i]}" in
+      --add) add=1 ;;
+      --registry) reg="${a[i + 1]:-}" ;;
+      --sign) key="${a[i + 1]:-}" ;;
+      *.key) [ -n "$key" ] || key="${a[i]}" ;;   # `nekton claim <spec> <key.key> …` names it positionally
+    esac
+  done
+  if [ -n "$add" ] && [ -n "$key" ] && [ -n "$reg" ] && [ "${1:-}" != "init" ] \
+     && ! command nekton verify --root --registry "$reg" >/dev/null 2>&1; then
+    mkdir -p "$reg"
+    rel="$(cd "$reg" && pwd)"; rel="${rel#"$EXROOT"/examples/}"
+    command nekton init --sign "$key" --when "$KTON_WHEN" --name "root/kton-examples/$rel" \
+      --registry "$reg" >/dev/null
+  fi
+  command nekton "$@"
+}
+
 # snapshot <example-name> <keydir> --reg <registry-dir> [--reg ...]
 # Writes docs/data/<name>/{union,keys,names}.json (committed) so the viewer shows this example.
 snapshot() {

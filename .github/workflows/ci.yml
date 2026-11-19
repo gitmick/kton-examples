@@ -33,9 +33,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: kton-protocol/kton
-          # migration-v040 branch: kton main 18.11. (the v0.4.0 core round is in review). Re-pin to
+          # migration-v040 branch: kton main 19.11. with the root nekton (#259); the v0.4.0 core round is in review. Re-pin to
           # the v0.4.0 tag before this merges; a commit, not a branch name, so the run stays meaningful.
-          ref: 6e694714273ca1e7fb818e374f1730db152656ab
+          ref: bf85cdbb2251473f2b8cebe21b41a1e4d0eec314
           path: _kton
 
       - uses: actions/setup-go@v5
