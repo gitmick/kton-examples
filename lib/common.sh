@@ -33,7 +33,7 @@ KTON_WHEN="${KTON_WHEN:-2026-07-16T00:00:00Z}"   # the same fixed instant the cl
 demoseed() { printf 'kton-examples/demo/%s/%s' "$EXNAME" "$1" | sha256sum | cut -d" " -f1; }
 
 # TWO EXAMPLES STAY VOLATILE ON PURPOSE, and must not be "fixed": 10-tool-spectrum and
-# 12-submission print a session banner carrying a pid and a wall clock (tests/test-predict.R,
+# 12-submission print a session banner carrying a pid, a wall clock and a random nonce (tests/test-predict.R,
 # tools/fit.R, tools/pmxtest.R). That volatility IS their subject - it is what makes two runs differ
 # byte-for-byte (no L0) while still agreeing once the normalizer strips the banner (L1), and in 12
 # the release gate turns on exactly that L1 reproduction. Their snapshots therefore change on every
