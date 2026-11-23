@@ -72,7 +72,7 @@ function checkQuery(q) {
     return null;
 }
 
-export function ktonOps({ load, openCorpus, buildGraph, openVerticle, store, prefix = "kton" }) {
+export function ktonOps({ load, openCorpus, buildGraph, openVerticle, prefix = "kton" }) {
     // A mcp-tool verticle gets no launch context, so it cannot be told at mount time which corpus to
     // read - the corpus is an ARGUMENT. `openCorpus(ref)` resolves one; ref null means the default.
     // `load` stays for the single-corpus callers (the viewers, a standalone server) as a shorthand
@@ -362,60 +362,11 @@ export function ktonOps({ load, openCorpus, buildGraph, openVerticle, store, pre
               graph: { type: "string", description: "repository path of a pre-built graph.json; omit for the default corpus" } } } });
     }
 
-    // Ingest, gated on a host that can write. A page can SEAL a record — plktSealClaim and
-    // plktSealFoton do the whole of it, and the private key stays in WebCrypto — but it cannot
-    // STORE one: a browser has no filesystem and no repository. That is the only half missing, and
-    // it is missing by nature rather than by omission, so it lives here where the broker checks the
-    // write against profile.paths and stamps it to the audit trail.
-    //
-    // WHERE a record goes is decided by WHAT it is, per core/registry.js: the unit of the file is
-    // the unit of validity. A foton is valid alone, so it becomes its own file and adding one is a
-    // pure create — two harvesters ingesting the same run write identical bytes to the same path.
-    // A claim is only valid with its chain, so the nekton is ONE file and adding means appending a
-    // line to it.
-    //
-    // That append is a read-modify-write and therefore racy: two agents ingesting at the same
-    // moment can lose one line. It is not guarded here because the guard belongs to whatever owns
-    // the store, and pretending otherwise would hide the race rather than fix it. Ingest one
-    // harvest at a time until the store offers an append.
-    if (store) {
-        handlers[`${prefix}:add`] = async (args = {}) => {
-            // plktSealClaim hands back {record: "<json>"}, plktSealFoton hands back the object.
-            // Accept either rather than making the caller remember which.
-            let rec = args.record;
-            if (typeof rec === "string") rec = JSON.parse(rec);
-            if (!rec || !rec.envelope) throw new Error("kton:add needs a sealed record with an envelope");
-            const id = rec.fotonId || rec.claimId;
-            if (!id) throw new Error("kton:add needs a record carrying a fotonId or a claimId");
-
-            const root = (args.registry || "").replace(/\/+$/, "");
-            if (!root) throw new Error("kton:add needs `registry`, the repository path of the store");
-
-            if (rec.fotonId) {
-                const path = `${root}/plankton/objects/sha256/${id.replace(/^sha256:/, "")}.json`;
-                await store.writeText(path, JSON.stringify(rec, null, 2) + "\n");
-                return { added: id, kind: "foton", path, shape: "object" };
-            }
-            const path = `${root}/nekton/objects/unscoped.nekton.jsonl`;
-            const prior = await store.readText(path).catch(() => "");
-            // Idempotent by id: re-ingesting a record already in the file is a no-op rather than a
-            // duplicate line. A record IS its id, so a second copy states nothing new.
-            const lines = String(prior).split("\n").filter((l) => l.trim());
-            if (lines.some((l) => l.includes(id))) return { added: id, kind: "claim", path, already: true };
-            await store.writeText(path, [...lines, JSON.stringify(rec)].join("\n") + "\n");
-            return { added: id, kind: "claim", path, shape: "jsonl", lines: lines.length + 1 };
-        };
-        catalog.push({ op: `${prefix}:add`, description:
-            "Store a sealed record — a foton or a claim — in a repository registry. The page seals it "
-            + "(plktSealFoton / plktSealClaim, key never leaving WebCrypto); this is the half a browser "
-            + "cannot do. A foton becomes its own file, a claim is appended to the nekton, because the "
-            + "unit of the file is the unit of validity. Signatures are NOT verified here: the host holds "
-            + "no key to check them against.",
-          inputSchema: { type: "object", properties: {
-              record: { description: "the sealed record {fotonId|claimId, envelope}, or the JSON string plktSealClaim returns" },
-              registry: { type: "string", description: "repository path of the store, e.g. /demos/demo1-kton" } },
-            required: ["record", "registry"] } });
-    }
+    // No ingest here, on purpose (MH 18.11., core round). A page can SEAL a record - plktSealClaim and
+    // plktSealFoton, the key never leaving WebCrypto - but storing it is the store's business: its lock,
+    // its format marker, which scope file a claim belongs to. A `kton:add` that wrote files itself
+    // stood here; it put every claim, scoped or not, into the unscoped nekton and bypassed all three.
+    // A sealed record is handed to whatever owns the store: the kernel or the cockpit.
 
     return { handlers, catalog, reset: () => cache.clear() };
 }

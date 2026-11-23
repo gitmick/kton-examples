@@ -220,7 +220,8 @@ function renderGraph(union,keys,names,recorded){ try{ NAMES_ALL=JSON.parse(names
 }
 function buildG(union,keys,names,recorded){
   LAST_BUILD=[union,keys,names,recorded];
-  G=JSON.parse(plktBuildGraph(union,keys,names)); if(G.error) throw new Error(G.error);
+  G=JSON.parse(plktBuildGraph(union,ringWithPackages(keys),names)); if(G.error) throw new Error(G.error);
+  markUntrusted(G, keys);
   if(G.locators){ const base=Object.values(RECSRC)[0]; for(const k in G.locators) G.locators[k]=[...new Set([].concat(G.locators[k]).map(u=>/^[a-z][a-z0-9+.-]*:/i.test(u)||!base?u:(()=>{ try{ return new URL(u,base).href; }catch{ return u; } })()))]; }
   // a recorder's graph next to the union: join by output hash. Only labels move across; the
   // verdicts are the wasm's, and a step only the recorder saw stays unverified (core/join.js).
@@ -327,13 +328,23 @@ function afterGraph(){
   if(st0.facets && Object.keys(st0.facets).length) applyFacets(st0.facets);   // a view handed over by the compass
   // The embedding bridge (postMessage) is for the BROWSER embed case; a verticle steers via
   // improveHost.onLaunch instead and never loads HOST. So this only runs when HOST is present.
-  if(HOST){
+  if(V3){ const st=V3.pendingState; V3.pendingState=null; if(st) V3.answerSet(applyHostState(st)); else BRIDGE.state(viewState()); }
+  else if(HOST){
   BRIDGE = HOST.hostBridge({
     capabilities:{ viewer:"graph", state:["union","keys","names","focus","f","mode","layout","view"],
                    facets:["participant","type"], modes:["nbr","anc","desc","both","lin","imp"],
                    views:Object.keys(PRF.PRESETS) },
     current: ()=>viewState(),
-    apply: (st)=>{
+    apply: (st)=>applyHostState(st),
+  });
+  BRIDGE.ready();
+  }
+  window.onpopstate=e=>{ const s=e.state||{view:'overview'}; if(s.view==='explorer'&&G.byId.has(s.center)) enterExplorer(s.center,s.mode,false); else showOverview(false); };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$("#explorer").style.display!=='none') showOverview(); });
+  document.addEventListener('click',e=>{ if(e.target&&e.target.id==="togrec"){ e.preventDefault(); toggleRecorded(); } });
+}
+// A host's view state (v2 kton:set {state}, v3 kton:set {state}): applied, and what could not be is named.
+function applyHostState(st){
       const refused=[];
       // a view: a preset name, or a change to the current one ({panel:{hashes:true}}, actions, …)
       if(st.view){ PROF=PRF.adjustProfile(prof(), st.view); refused.push(...PROF.problems.map(p=>"view: "+p)); applyChrome();
@@ -354,13 +365,6 @@ function afterGraph(){
         else refused.push(`focus=${st.focus}`); }
       else if(ex){ ex.mode=mode; drawControls(); layoutAndRun(); }
       return { refused, why:"this corpus does not carry it" };
-    },
-  });
-  BRIDGE.ready();
-  }
-  window.onpopstate=e=>{ const s=e.state||{view:'overview'}; if(s.view==='explorer'&&G.byId.has(s.center)) enterExplorer(s.center,s.mode,false); else showOverview(false); };
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$("#explorer").style.display!=='none') showOverview(); });
-  document.addEventListener('click',e=>{ if(e.target&&e.target.id==="togrec"){ e.preventDefault(); toggleRecorded(); } });
 }
 // the reader's own connected planktons - the SAME list the lens consults (localStorage "kton-planktons",
 // a JSON array or comma list of union.json URLs); unioned onto the delivered registry.
@@ -371,12 +375,19 @@ function extraSources(){ let a=[]; try{ const v=localStorage.getItem("kton-plank
   const base=document.referrer||location.href;
   return (Array.isArray(a)?a:[a]).map(x=>typeof x==="string"?x:(x&&(x.union||x.url))||"").map(s=>String(s).trim()).filter(Boolean)
     .map(s=>{ try{ return new URL(s, base).href; }catch{ return s; } }); }
-const SRCSTAT={};   // url -> "n records" | "not reachable", shown in settings
+const SRCSTAT={};   // url -> "n records" | "not reachable" | "switched off", shown in settings
+// every source of the last load, in order: {url, delivered} - delivered = named by the page (?union=),
+// otherwise added by the reader (extraSources). Settings lists them all with a switch each.
+let SOURCES=[];
+// sources the reader switched off in settings: left out of the next splice. Kept for this page only
+// (not stored), so a reload - or the next slide - shows everything that was delivered again.
+const SRC_OFF=new Set();
 function regUrls(u){ const b=u.replace(/[^/]*$/,""); return {union:u, keys:b+"keys.json", names:b+"names.json", attested:b+"attested.json"}; }
 async function fetchSrc(reg){ const recs=JSON.parse(await (await fetch(reg.union)).text());
   let keys={},names={},attested=[]; try{ keys=JSON.parse(await (await fetch(reg.keys)).text()); }catch{}
   try{ names=JSON.parse(await (await fetch(reg.names)).text()); }catch{}
   try{ attested=JSON.parse(await (await fetch(reg.attested)).text()); }catch{}  // absent -> nothing attested (safe)
+  // ?packages=<url>: cockpit v0.5.3's admitted packages' build keys {keyid: {package, dir}}; named, never guessed
   return {recs,keys,names,attested}; }
 // Read a graph.json the host built and draw it. One function for both the first load and a
 // re-aim at another corpus - two paths that read the same file differently is how a viewer ends up
@@ -428,6 +439,9 @@ async function load(){
       return;
     }
     const qs=new URLSearchParams(location.search);
+    // In a frame with no data address: a block (C1.5 v3). It says ready before anything else and loads
+    // the wasm only for a graph@1 answer that needs it (records), so a host's CSP problem is reported.
+    if(window.parent!==window && !qs.get("union") && !qs.get("graph") && !qs.get("select")){ await bootV3(); return; }
     // ?graph=<url>: a graph.json some host already built (the same document a verticle reads), drawn
     // in the browser. No wasm and no union: whoever built it vouches for it, as in the verticle path.
     // Used by recorders that show observations in kton's own graph form before anything is signed.
@@ -469,11 +483,16 @@ async function load(){
     // ?union= may repeat (or hold a comma list): several registries, spliced by hash. keys/names
     // override the first one's siblings only.
     const unions=qs.getAll("union").flatMap(u=>u.split(",")).map(u=>u.trim()).filter(Boolean);
+    // the admitted packages' build keys: named by ?packages=, or beside cockpit show's own /data/union.json
+    { const pu=qs.get("packages") || (/\/data\/union\.json$/.test(new URL(unions[0]||"",location.href).pathname) ? unions[0].replace(/union\.json$/,"packages.json") : null);
+      if(pu){ try{ const r=await fetch(pu); if(r.ok) await usePackages(await r.json()); }catch{} } }
     const prim=regUrls(unions[0]);                          // sibling keys.json/names.json, unless overridden
     if(qs.get("keys")) prim.keys=qs.get("keys"); if(qs.get("names")) prim.names=qs.get("names");
     const regs=[prim, ...unions.slice(1).map(regUrls), ...extraSources().filter(u=>!unions.includes(u)).map(regUrls)];   // delivered + the reader's own connected planktons
     const seen=new Set(), recs=[], keys={}, names={}; const attKids=new Set(); let total=0;
-    for(const reg of regs){ try{ const s=await fetchSrc(reg); SRCSTAT[reg.union]=s.recs.length+" records";   // union by content hash; dedup on foton/claim id
+    for(const k in SRCSTAT) delete SRCSTAT[k]; for(const k in RECSRC) delete RECSRC[k];   // a re-splice starts clean
+    SOURCES=regs.map((r,i)=>({url:r.union, delivered:i<unions.length}));
+    for(const reg of regs){ if(SRC_OFF.has(reg.union)){ SRCSTAT[reg.union]="switched off"; continue; } try{ const s=await fetchSrc(reg); SRCSTAT[reg.union]=s.recs.length+" records";   // union by content hash; dedup on foton/claim id
       for(const r of s.recs){ const id=r&&(r.fotonId||r.claimId); if(id&&!seen.has(id)){ seen.add(id); total++; RECSRC[id]=reg.union; if(recs.length<RECORD_CAP) recs.push(r); } }
       Object.assign(keys,s.keys); Object.assign(names,s.names); for(const k of (s.attested||[])) attKids.add(k);
     }catch(e){ SRCSTAT[reg.union]="not reachable"; /* skipped, not fatal - but said in settings */ } }
@@ -498,17 +517,28 @@ async function load(){
       else showErr("that output hash is not in the connected registries"+(truncated?" (or beyond the "+RECORD_CAP.toLocaleString()+"-record cap - narrow the source)":"")+": "+focus); }
   }catch(e){ showErr(e); }
 }
-// settings: auto-preview toggle + the reader's additional kton sources
+// settings: auto-preview toggle + every kton source of this picture: the registries the page
+// delivered (?union=) and the reader's own, each with a switch (off = left out of the splice)
+function srcName(u){ const m=String(u).match(/([^/]+)\/[^/]*$/); return m?m[1]:String(u); }
 function openSettings(){ const el=$("#settings"); const srcs=extraSources();
+  const all=SOURCES.length?SOURCES:srcs.map(u=>({url:u,delivered:false}));
+  const dlv=all.filter(s=>s.delivered).length, on=all.filter(s=>!SRC_OFF.has(s.url)).length;
+  const row=s=>{ const off=SRC_OFF.has(s.url), i=srcs.indexOf(s.url);
+    return `<div class="srcrow${off?" srcoff":""}"><label class="srcsw" title="${off?"switch on: splice it back in":"switch off: leave it out of the graph"}"><input type="checkbox" data-src="${esc(s.url)}" ${off?"":"checked"} ${!off&&on<=1?"disabled":""}></label>`
+      +`<span class="srcmain"><b>${esc(srcName(s.url))}</b> <span class="srctag ${s.delivered?"dlv":"own"}">${s.delivered?"delivered":"added by you"}</span><br><code title="${esc(s.url)}">${esc(s.url.length>46?"…"+s.url.slice(-45):s.url)}</code></span>`
+      +`<span class="stmuted srcst">${esc(SRCSTAT[s.url]||"")}</span>`+(i>=0&&!s.delivered?`<span class="srcx" data-i="${i}">remove</span>`:``)+`</div>`; };
   el.innerHTML=`<div class="sthead">settings <span class="stx" title="close">×</span></div>
     <label class="strow"><input type="checkbox" id="autoprev" ${autoPreview?"checked":""}> auto-preview a file's bytes when you open its node</label>
-    <div class="stlbl">additional kton sources</div>
-    <div id="srclist">${srcs.length?srcs.map((s,i)=>`<div class="srcrow"><code title="${esc(s)}">${clipe(s,40)}</code><span class="stmuted">${esc(SRCSTAT[s]||"")}</span><span class="srcx" data-i="${i}">remove</span></div>`).join(""):'<div class="stmuted">none - showing only the delivered registry</div>'}</div>
+    <div class="stlbl">kton sources${all.length>1?` <span class="stmuted">· ${on} of ${all.length} on</span>`:``}</div>
+    <div id="srclist">${all.length?all.map(row).join(""):'<div class="stmuted">none</div>'}</div>
+    <div class="stmuted">${dlv>1?`${dlv} registries delivered with this page`:dlv?`one registry delivered with this page`:``}${srcs.length?` + ${srcs.length} added by you`:``}. Switch one off to see the graph without it; a reload switches everything back on.</div>
+    <div class="stlbl">add a source</div>
     <div class="srcadd"><input id="srcurl" placeholder="https://…/union.json"><button id="srcaddbtn">add</button></div>
-    <div class="stmuted">Sources union in by content hash, so you may see more (or less) than the delivered graph. Stored in this browser only.</div>`;
+    <div class="stmuted">Sources union in by content hash, so you may see more (or less) than the delivered registries. Added sources are stored in this browser only.</div>`;
   el.style.display="block";
   $("#autoprev").onchange=e=>{ autoPreview=e.target.checked; localStorage.setItem("kton-autopreview", autoPreview?"1":""); };
   el.querySelector(".stx").onclick=()=>el.style.display="none";
+  el.querySelectorAll("input[data-src]").forEach(x=>x.onchange=()=>{ const u=x.dataset.src; if(x.checked) SRC_OFF.delete(u); else SRC_OFF.add(u); load().then(openSettings); });
   el.querySelectorAll(".srcx").forEach(x=>x.onclick=()=>{ const a=extraSources(); a.splice(+x.dataset.i,1); localStorage.setItem("kton-planktons",JSON.stringify(a)); load().then(openSettings); });
   $("#srcaddbtn").onclick=()=>{ let u=($("#srcurl").value||"").trim(); if(!u) return; try{ u=new URL(u, document.referrer||location.href).href; }catch{} const a=extraSources(); if(!a.includes(u)) a.push(u); localStorage.setItem("kton-planktons",JSON.stringify(a)); load().then(openSettings); };
 }
@@ -671,11 +701,47 @@ function index(){
   G._types=[...new Set(G.nodes.map(n=>n.type))].sort();
   filt={parts:new Set(G._parts), types:typesShown(), kinds:kindsHidden()};
 }
+// "unverified" said two different things. keys.json is the ring a host trusts (cockpit show serves only
+// the CONFIGURED trust tiers), so a record whose signer is not in it cannot be checked here at all - that
+// is "not in the trusted keys", not a signature that failed. Only a signer the ring holds and whose
+// signature does not check is a failure. The wasm's verdict stays as it is; this only names the reason.
+// A third state (kton-cockpit v0.5.3, /data/packages.json): {keyid: {key, packages: [{package, id, dir}]}}
+// - one author's key may sign several admitted packages. A signer that is such a key is named by its
+// packages - admitted by the cockpit, not a trust tier. With `key` (hex) the signature is re-checked here:
+// the wasm verifies against the ring plus these keys, and such a node then reads "signed by admitted
+// package X" (checked) or counts as unverified (the signature fails). It never counts as verified:
+// verified means signed by a trusted key. A key whose sha256 does not derive its keyid is dropped.
+let PACKAGES={}, PKG_KEYS={};
+async function usePackages(map){ PACKAGES={}; PKG_KEYS={};
+  if(!map||typeof map!=="object") return;
+  for(const [kid,e] of Object.entries(map)){
+    const names=(e&&Array.isArray(e.packages)?e.packages:[]).map(p=>p&&p.package).filter(x=>typeof x==="string"&&x);
+    if(!names.length) continue;
+    PACKAGES[kid]={ package:[...new Set(names)].sort().join(", ") };
+    if(typeof e.key==="string" && /^[0-9a-f]{64}$/i.test(e.key)){
+      const raw=new Uint8Array(e.key.match(/../g).map(h=>parseInt(h,16)));
+      const d=[...new Uint8Array(await crypto.subtle.digest("SHA-256", raw))].map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,16);
+      if(d===kid) PKG_KEYS[kid]=e.key.toLowerCase(); } } }
+/** the ring the wasm checks against: keys.json plus the admitted packages' build keys */
+function ringWithPackages(keysText){ if(!Object.keys(PKG_KEYS).length) return keysText;
+  try{ return JSON.stringify({ ...PKG_KEYS, ...JSON.parse(keysText||"{}") }); }catch{ return keysText; } }
+function markUntrusted(g, keysText){ let ring; try{ ring=new Set(Object.keys(JSON.parse(keysText||"{}"))); }catch{ return; }
+  let n=0, p=0, moved=0;
+  for(const x of g.nodes){ if(!(x.type==="foton"||x.type==="claim") || !x.signer || ring.has(x.signer)) continue;
+    const pk=PACKAGES[x.signer];
+    if(pk&&pk.package){
+      if(x.verified){ x.verified=false; moved++; x.pkgChecked=true; }          // checked against the package key, not trusted
+      if(x.pkgChecked || !PKG_KEYS[x.signer]){ x.pkgSigned=String(pk.package); p++; } // no key: named, not checked
+      // with a key and a failing signature it stays plain unverified
+    } else if(!x.verified){ x.untrusted=true; n++; } }
+  if(moved && g.summary&&g.summary.totals){ g.summary.totals.verified-=moved; g.summary.totals.unverified=(g.summary.totals.unverified||0)+moved; }
+  g._untrusted=n; g._pkgSigned=p; g._pkgChecked=moved; }
 function showStats(){ const t=G.summary.totals;
+  const untrusted=G._untrusted||0, pkg=G._pkgSigned||0, failed=Math.max(0,(t.unverified||0)-untrusted-pkg);
   // the registries this picture is spliced from, each its own source (by hash, nothing merged beforehand)
   const srcs=Object.entries(SRCSTAT).filter(([,v])=>/records/.test(v));
   const regName=u=>{ const m=String(u).match(/([^/]+)\/[^/]*$/); return m?m[1]:u; };
-  $("#stats").innerHTML=(srcs.length>1?`<span title="${esc(srcs.map(([u,v])=>regName(u)+": "+v).join("\n"))}"><b>${srcs.length}</b> registries <span style="opacity:.75">(${esc(srcs.map(([u])=>regName(u)).join(" + "))})</span>, spliced by hash</span>`:``)+`<span><b>${(G._parts||[]).filter(Boolean).length||t.participants}</b> participants</span><span><b>${t.fotons}</b> fotons</span><span><b>${t.claims}</b> claims</span><span class="ok"><b>${t.verified}</b>/${t.fotons+t.claims} verified</span>`+(t.unverified?`<span class="bad"><b>${t.unverified}</b> unverified</span>`:``)
+  $("#stats").innerHTML=(srcs.length>1?`<span title="${esc(srcs.map(([u,v])=>regName(u)+": "+v).join("\n"))}"><b>${srcs.length}</b> registries <span style="opacity:.75">(${esc(srcs.map(([u])=>regName(u)).join(" + "))})</span>, spliced by hash</span>`:``)+`<span><b>${(G._parts||[]).filter(Boolean).length||t.participants}</b> participants</span><span><b>${t.fotons}</b> fotons</span><span><b>${t.claims}</b> claims</span><span class="ok"><b>${t.verified}</b>/${t.fotons+t.claims} verified</span>`+(pkg?`<span class="warn" title="signed by the build key of a package this cockpit admitted: not a trust tier. ${G._pkgChecked||0} of them checked here against the package's key (packages.json); the rest named only"><b>${pkg}</b> signed by an admitted package${G._pkgChecked?` (${G._pkgChecked===pkg?"all":G._pkgChecked} checked)`:``}</span>`:``)+(untrusted?`<span class="warn" title="signed by a key outside the trust tiers this host gave the viewer (keys.json): not checked here, not a failed signature"><b>${untrusted}</b> signer not in the trusted keys</span>`:``)+(failed?`<span class="bad" title="the signer's key is in keys.json and the signature does not check"><b>${failed}</b> unverified</span>`:``)
     +(G.summary.origins?`<span title="steps joined by file hash: seen by the recorder and signed / signed only / recorded only (not signed)"><b>${G.summary.origins.both}</b> recorded+signed · <b>${G.summary.origins.signed}</b> signed only · <b>${G.summary.origins.recorded+(G.summary.origins.hidden||0)}</b> recorded only</span>`+(G.summary.origins.hidden||recordedShown()&&prof().graph.recorded==="hide"?` <a href="#" id="togrec" title="steps the recorder saw that no signed record has">${recordedShown()?"hide them":"show them"}</a>`:``):``)
     +(STORE?`<span title="a portion of the store, chosen by the store and verified here - expand a node to grow it">portion: <b>${STORE.byId.size}</b> records${STORE.more?` · <span class="rc" data-storemore="1" title="some selections were cut at the page size">load more (${STORE.more} cut)</span>`:``}</span>`:``);
 }
@@ -938,8 +1004,9 @@ function layoutAndRun(){
     const gap=Math.max(60,(+prof().node.font||11)*4.4), y=t.y+gap;
     for(const n of ex.nodes) if(n!==r&&n!==t&&Math.abs(n.x-t.x)<1&&n.y>t.y-1&&n.y<y+gap) n.y+=gap;
     r.x=t.x; r.y=y; r._d=t._d; }
+  basedOnBelow();
   // notes stand in for the claim boxes: with claims drawn, the rationale is already on screen
-  if(prof().graph.notes==="rationale"||(prof().graph.notes==="auto"&&treeInView&&!filt.types.has("claim"))){ const ns=rationaleNotes(ex.nodes); ex.nodes=ex.nodes.concat(ns); ns.forEach(n=>ex._byId.set(n.id,n)); }
+  if(prof().graph.notes==="rationale"||(prof().graph.notes==="auto"&&treeInView&&!filt.types.has("claim"))){ const ns=rationaleNotes(ex.nodes); ex.nodes=ex.nodes.concat(ns); ns.forEach(n=>ex._byId.set(n.id,n)); roomForNotes(ns); }
   const derivedShown=edges.filter(e=>e.derived).length;
   const AS_DE={facet:"facets",region:"regions",group:"groups"};
   $("#cnt").innerHTML=`${ex.nodes.length} nodes · ${ex.edges.length} links`
@@ -954,6 +1021,55 @@ function layoutAndRun(){
     $("#expandall").onclick=()=>{ ex.cap=Infinity; layoutAndRun(); }; }
   fitView(); if(!ex.started) startRender(); redraw();
 }
+// A step based on another (a verified parent-step claim) sits directly BELOW its parent, whatever the
+// layout made of the data flow; siblings side by side, centred under the parent, grandchildren under
+// them. Whatever the subtree now covers moves down out of its way. The data-flow edges are untouched.
+function basedOnBelow(){
+  const kids=new Map();
+  for(const e of ex.edges) if(e.step&&e.kind==="parent-step"){ const c=ex._byId.get(e.from), p=ex._byId.get(e.to);
+    if(!c||!p||c===p) continue; if(!kids.has(p.id)) kids.set(p.id,[]); if(!kids.get(p.id).includes(c)) kids.get(p.id).push(c); }
+  if(!kids.size) return;
+  const f=+prof().node.font||11, wrap=+prof().node.wrap||22;
+  const sp=Math.max(240, wrap*f*0.6+70), gap=labelsBelow()?Math.max(170, 3*1.18*f+120):Math.max(130, 96+2.3*f);   // a wrapped label and its note fit beside each
+  const isKid=new Set([...kids.values()].flat().map(n=>n.id)), placed=new Set();
+  const width=(n,seen)=>{ if(seen.has(n.id)) return sp; seen.add(n.id); const k=kids.get(n.id)||[];
+    return k.length?Math.max(sp, k.reduce((a,c)=>a+width(c,seen),0)):sp; };
+  const place=(p)=>{ placed.add(p.id);
+    const k=(kids.get(p.id)||[]).filter(c=>!placed.has(c.id)).sort((a,b)=>(a.x-b.x)||(a.y-b.y)); if(!k.length) return;
+    // labels under the nodes (an orthogonal left-to-right picture): the children stack in the parent's
+    // own column, an indented tree, so the flow lines leaving them sideways never meet a sibling
+    if(labelsBelow()){ let y=p.y; for(const c of k){ y+=gap; c.x=p.x; c.y=y; placed.add(c.id); const before=y; place(c);
+        y=Math.max(before, ...[...placed].map(id=>ex._byId.get(id)).filter(n=>n.x===p.x).map(n=>n.y)); } return; }
+    const ws=k.map(c=>width(c,new Set([p.id]))); let x=p.x-ws.reduce((a,b)=>a+b,0)/2;
+    k.forEach((c,i)=>{ c.x=x+ws[i]/2; c.y=p.y+gap; placed.add(c.id); x+=ws[i]; });
+    k.forEach(place); };
+  const roots=[...kids.keys()].filter(id=>!isKid.has(id)).map(id=>ex._byId.get(id));
+  for(const r of roots){ const before=new Set(placed); place(r);
+    const T=[...placed].filter(id=>!before.has(id)).map(id=>ex._byId.get(id)), sub=T.filter(n=>n!==r);
+    if(!sub.length) continue;
+    const x0=Math.min(...sub.map(n=>n.x))-sp/2, x1=Math.max(...sub.map(n=>n.x))+sp/2, y1=Math.max(...sub.map(n=>n.y));
+    const inT=new Set(T.map(n=>n.id));
+    for(const n of ex.nodes) if(!inT.has(n.id)&&n.type!=="note"&&n.x>x0&&n.x<x1&&n.y>r.y+RW&&n.y<y1+gap*0.8) n.y+=y1+gap-r.y; }
+}
+// based on: orthogonal - up from the child, across, up into the parent - with the arrow into the child as
+// the data flow draws it; the label beside the child's own drop, so two siblings never stack theirs
+function manhattan(ctx,p,c,color,lbl,off=0){
+  const f=+prof().node.font||11, top=c.y-RW-4, below=labelsBelow();
+  const bar=(below?c.y-Math.max(30,f*2.4):p.y+Math.min(80,(c.y-p.y)*0.6))+off;
+  const px=p.x+off, cx=c.x+(c.x<p.x?-off:off);
+  ctx.strokeStyle=color; ctx.lineWidth=off?1.2:1.6; ctx.setLineDash([]); ctx.beginPath();
+  // with the label under the parent, the trunk leaves sideways and drops outside the label's width
+  if(below&&Math.abs(c.x-p.x)<1){   // the indented tree: out of the parent's left, down the side, into the child from the left
+    const side=p.x-Math.max(RW+14,(+prof().node.wrap||22)*f*0.3+12)+off, ey=c.y+off, ex2=c.x-RW-4;
+    ctx.moveTo(p.x-RW,p.y+off); ctx.lineTo(side,p.y+off); ctx.lineTo(side,ey); ctx.lineTo(ex2,ey); ctx.stroke();
+    const h=7; ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(ex2,ey); ctx.lineTo(ex2-h,ey-h*0.55); ctx.lineTo(ex2-h,ey+h*0.55); ctx.fill();
+    if(lbl){ ctx.font=`italic ${Math.max(10,Math.round(f*0.86))}px ui-sans-serif`; ctx.textAlign="center"; ctx.textBaseline="bottom"; ctx.fillText(lbl,(side+ex2)/2,ey-4); }
+    return; }
+  if(below){ const side=p.x-Math.max(RW+14,(+prof().node.wrap||22)*f*0.3+12)+off; ctx.moveTo(p.x-RW,p.y+off); ctx.lineTo(side,p.y+off); ctx.lineTo(side,bar); }
+  else { ctx.moveTo(px,p.y+RW); ctx.lineTo(px,bar); }
+  ctx.lineTo(cx,bar); ctx.lineTo(cx,top); ctx.stroke();
+  const h=7; ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(cx,top); ctx.lineTo(cx-h*0.55,top-h); ctx.lineTo(cx+h*0.55,top-h); ctx.fill();
+  if(lbl){ ctx.font=`italic ${Math.max(10,Math.round(f*0.86))}px ui-sans-serif`; ctx.textAlign="right"; ctx.textBaseline="middle"; ctx.fillText(lbl,c.x-(c.x<p.x?14:7),(bar+top)/2+4); } }
 // The deliverables: what the flow hands out at its end. The kernel draws a file only where no step
 // made it, so an output is never a node; here the outputs of the LAST steps become nodes - steps no
 // step in view reads from, and outside the model tree (a fit is the modeling, not the hand-over).
@@ -974,6 +1090,24 @@ function rationaleNotes(nodes){ const out=[];
   for(const n of nodes){ if(n.type!=="foton") continue; const r=stepInfo(n).rationale; if(!r) continue;
     out.push({id:"why:"+n.id, type:"note", step:n.id, text:r, participant:n.participant, x:n.x+RW*1.4, y:n.y+RW*3.2}); }
   return out; }
+// Where a step's note sits and how tall it is: under the step's label, in both label modes. One
+// function for the layout (roomForNotes) and the drawing (noteDraw), so the room made is the room used.
+function noteBox(s,text){ const lines=wrapText(text,34,3).length, h=lines*12+6, f=+prof().node.font||11, lh=f*1.18, r=focusR(s)||RW;
+  const top=labelsBelow()? labelTop(s,r)+labelLines(s)*lh+4 : s.y+Math.max(r+4, labelLines(s)*lh/2+5);
+  return {top, h, x:labelsBelow()?null:s.x+r+5}; }
+// The notes are placed after the layout, which spaced a column for nodes and labels only: a step
+// stacked under another (a rerun under its run, two figures from one input) sat closer than the note
+// between them is tall. Walk each column top to bottom and push what follows below the note above it -
+// steps only move down, within their column, so the left-to-right flow and its edges stay as laid out.
+function roomForNotes(notes){ if(!notes.length) return;
+  const f=+prof().node.font||11, lh=f*1.18, noteOf=new Map(notes.map(n=>[n.step,n]));
+  const cols=new Map(); for(const n of ex.nodes){ if(n.type==="note") continue; const k=Math.round(n.x); if(!cols.has(k)) cols.set(k,[]); cols.get(k).push(n); }
+  for(const col of cols.values()){ if(col.length<2) continue; col.sort((a,b)=>a.y-b.y);
+    for(let i=1;i<col.length;i++){ const a=col[i-1], b=col[i], nt=noteOf.get(a.id);
+      const bottomA = nt ? (()=>{ const g=noteBox(a,nt.text); return g.top+g.h; })() : labelsBelow()? labelTop(a,focusR(a)||RW)+labelLines(a)*lh : a.y+Math.max(RW,labelLines(a)*lh/2);
+      const topB = labelsBelow()? b.y-(focusR(b)||RW) : b.y-Math.max(focusR(b)||RW, labelLines(b)*lh/2);
+      const need=bottomA+12-topB; if(need>0) for(let j=i;j<col.length;j++) col[j].y+=need; } }
+  for(const n of notes){ const st=ex._byId.get(n.step); if(!st) continue; const g=noteBox(st,n.text); n.y=g.top; n.x=g.x==null?st.x-90:g.x; } }
 // collapseRuns: contract maximal chains of PASS-THROUGH fotons (exactly one parent + one child within the
 // view) into a single "×N steps" edge, so a long lineage shows its SKELETON - sources, merges, forks, and
 // the node you're on - not every intermediate step. A node with >1 input (a merge/fan-in) is always kept.
@@ -1020,7 +1154,7 @@ function layoutSpec(){
   const phone=window.matchMedia&&matchMedia("(max-width:640px)").matches;
   return cat.find(l=>l.id===(LAYOUT_ID||(phone?"hoch":null))) || LAY.defaultLayout(SKETCH||{});
 }
-function layerLayout(nodes, edges, byId){ LAY.makeLayout(layoutSpec())(nodes, edges, byId); }
+function layerLayout(nodes, edges, byId){ const spec=layoutSpec(); if(ex){ ex.ortho=spec.route==="orthogonal"; ex.tb=spec.orient==="tb"; } LAY.makeLayout(spec)(nodes, edges, byId); }
 /**
  * What of the canvas the reader can actually SEE.
  *
@@ -1072,7 +1206,10 @@ function fitView(){ const cv=$("#cv"),DPR=devicePixelRatio||1; cv.width=cv.clien
   const lw=n=>{ if(n.type!=="foton") return RW*2; const t=String(stepLabel(n)||""), m=prof().node.label==="description"?40:22,
     px=+prof().node.font||11, w=+prof().node.wrap||0;
     return RW+5+px*0.58*(w?Math.min(t.length,w+2):Math.min(t.length,m+1)); };
-  let a=1e9,b=1e9,c=-1e9,d=-1e9; for(const n of ex.nodes){a=Math.min(a,n.x-RW);c=Math.max(c,n.x+lw(n));b=Math.min(b,n.y-RW);d=Math.max(d,n.y+RW);}
+  let a=1e9,b=1e9,c=-1e9,d=-1e9;
+  if(labelsBelow()) for(const n of ex.nodes){ const h=n.type==="note"?0:(n.type==="foton"?labelLines(n)*(+prof().node.font||11)*1.18+70:24), half=Math.max(RW,(lw(n)-RW)/2);
+    a=Math.min(a,n.x-half);c=Math.max(c,n.x+half);b=Math.min(b,n.y-RW);d=Math.max(d,n.y+RW+h); }
+  else for(const n of ex.nodes){a=Math.min(a,n.x-RW);c=Math.max(c,n.x+lw(n));b=Math.min(b,n.y-RW);d=Math.max(d,n.y+RW);}
   const gw=(c-a)||1, gh=(d-b)||1;
   // A sparse view may zoom IN: a flat cap of 1.7 is right for hundreds of nodes and turns eleven
   // into a thumbnail in the middle of an empty panel.
@@ -1116,12 +1253,17 @@ function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
   LOD = ex.nodes.length>220;                                       // level-of-detail: above this, drop labels + cull off-screen
   const M=70, wx0=(0-v.tx)/v.scale-M, wy0=(0-v.ty)/v.scale-M, wx1=(cv.width-v.tx)/v.scale+M, wy1=(cv.height-v.ty)/v.scale+M;
   const vis=n=>n&&n.x>=wx0&&n.x<=wx1&&n.y>=wy0&&n.y<=wy1;
+  // the data flow between a parent and the step based on it follows the based-on route, beside it, rather
+  // than a curve through the parent's note and the child's label
+  const tree=new Set(); for(const e of ex.edges) if(e.step&&e.kind==="parent-step") tree.add(e.from+"|"+e.to).add(e.to+"|"+e.from);
   for(const e of ex.edges){ const f=ex._byId.get(e.from),t=ex._byId.get(e.to); if(!f||!t)continue;
     if(LOD&&!vis(f)&&!vis(t)) continue;                            // skip edges wholly off-screen
+    if(!e.step&&tree.has(e.from+"|"+e.to)&&Math.abs(f.y-t.y)>RW*3){ const [p,c]=f.y<t.y?[f,t]:[t,f]; manhattan(ctx,p,c,css("--edge"),"",-6); continue; }
     const [L,R]= f._d>=t._d?[t,f]:[f,t]; const rel=e.kind!=="builds-on";
     // a derived edge is a READING, and must never look like an attestation: dotted, dimmer, named
     if(e.derived){ edgeArrow(ctx,L,R,css("--dim"),"dot",LOD?"":shortRel(e.kind)); continue; }
     // developed from (strong) / adapted from (light): a relation between two steps, from a verified claim
+    if(e.step&&e.kind==="parent-step"&&f.y>t.y+RW*3){ manhattan(ctx,t,f,css("--b"),LOD?"":e.label); continue; }
     if(e.step){ edgeArrow(ctx,L,R,e.kind==="parent-step"?css("--b"):(e.kind==="reproduces"||e.kind==="review-valid")?css("--ok"):e.kind==="review-invalid"?css("--bad"):css("--dim"),e.kind==="based-on",LOD?"":e.label); continue; }
     if(e.contracted){ edgeArrow(ctx,L,R,css("--about"),true,LOD?"":shortRel(e.kind)); continue; }
     edgeArrow(ctx,L,R,rel?css("--about"):css("--edge"),rel,(!LOD&&e.kind!=="builds-on"&&e.kind!=="about")?e.kind:""); }
@@ -1130,15 +1272,39 @@ function redraw(){ const cv=$("#cv"),ctx=cv.getContext("2d"),v=ex.view;
 const shortRel=(t)=>{ const i=Math.max(String(t).lastIndexOf(":"),String(t).lastIndexOf("/"),String(t).lastIndexOf("#")); return i<0?t:String(t).slice(i+1); };
 function edgeArrow(ctx,a,b,color,dash,lbl){
   // a top-down layout stacks the pair: leave the bottom of the upper node, enter the top of the lower
-  if(Math.abs(b.y-a.y)>Math.abs(b.x-a.x)){ const s=b.y>a.y?1:-1, x1=a.x,y1=a.y+s*RW,x2=b.x,y2=b.y-s*(RW+4),my=(y1+y2)/2;
-    ctx.strokeStyle=color;ctx.lineWidth=dash==="dot"?1:1.3;ctx.setLineDash(dash==="dot"?[2,3]:dash?[5,4]:[]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.bezierCurveTo(x1,my,x2,my,x2,y2);ctx.stroke();ctx.setLineDash([]);
+  if((ex&&ex.ortho&&ex.tb&&Math.abs(b.y-a.y)>RW*3)||Math.abs(b.y-a.y)>Math.abs(b.x-a.x)){ const s=b.y>a.y?1:-1, x1=a.x,y1=a.y+s*RW,x2=b.x,y2=b.y-s*(RW+4),my=(y1+y2)/2;
+    ctx.strokeStyle=color;ctx.lineWidth=dash==="dot"?1:1.3;ctx.setLineDash(dash==="dot"?[2,3]:dash?[5,4]:[]);ctx.beginPath();ctx.moveTo(x1,y1);
+    // an orthogonal layout: down, across, down - the across in the gap between the two rows
+    if(ex&&ex.ortho){ ctx.lineTo(x1,my);ctx.lineTo(x2,my);ctx.lineTo(x2,y2); } else ctx.bezierCurveTo(x1,my,x2,my,x2,y2);
+    ctx.stroke();ctx.setLineDash([]);
     const ang=Math.atan2(y2-my,x2-x2)||s*Math.PI/2,h=7;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-h*Math.cos(ang-.4),y2-h*Math.sin(ang-.4));ctx.lineTo(x2-h*Math.cos(ang+.4),y2-h*Math.sin(ang+.4));ctx.fill();
-    if(lbl){ ctx.fillStyle=color; ctx.font="italic 9px ui-sans-serif"; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.fillText(lbl,(x1+x2)/2+6,my); } return; }
+    if(lbl){ ctx.fillStyle=color; ctx.font="italic 9px ui-sans-serif"; ctx.textBaseline="middle";
+      // one column (a rerun under its run): the right side holds the labels and notes, so the left
+      if(Math.abs(x2-x1)<1){ ctx.textAlign="right"; ctx.fillText(lbl,x1-6,my); } else { ctx.textAlign="left"; ctx.fillText(lbl,(x1+x2)/2+6,my); } } return; }
   const x1=a.x+RW,y1=a.y,x2=b.x-RW-4,y2=b.y,mx=(x1+x2)/2;
-  ctx.strokeStyle=color;ctx.lineWidth=dash==="dot"?1:1.3;ctx.setLineDash(dash==="dot"?[2,3]:dash?[5,4]:[]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2);ctx.stroke();ctx.setLineDash([]);
+  ctx.strokeStyle=color;ctx.lineWidth=dash==="dot"?1:1.3;ctx.setLineDash(dash==="dot"?[2,3]:dash?[5,4]:[]);ctx.beginPath();ctx.moveTo(x1,y1);
+  // an orthogonal layout: across, up or down, across - the turn halfway between the two columns
+  let tx=mx;
+  if(ex&&ex.ortho){ tx=orthoTurn(a,b,x1,y1,x2,y2); ctx.lineTo(tx,y1);ctx.lineTo(tx,y2);ctx.lineTo(x2,y2); } else ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2);
+  ctx.stroke();ctx.setLineDash([]);
   const ang=Math.atan2(y2-y1,x2-mx),h=7;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-h*Math.cos(ang-.4),y2-h*Math.sin(ang-.4));ctx.lineTo(x2-h*Math.cos(ang+.4),y2-h*Math.sin(ang+.4));ctx.fill();
   // the label sits below the line, two thirds along: the source node's own label runs along the line's start
-  if(lbl){ ctx.fillStyle=color; ctx.font="italic 9px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="top"; ctx.fillText(lbl,x1+(x2-x1)*0.68,y1+(y2-y1)*0.68+7); } }
+  if(lbl){ ctx.fillStyle=color; ctx.font="italic 9px ui-sans-serif"; ctx.textAlign="center"; ctx.textBaseline="top"; if(ex&&ex.ortho) ctx.fillText(lbl,(tx+x2)/2,y2+7); else ctx.fillText(lbl,x1+(x2-x1)*0.68,y1+(y2-y1)*0.68+7); } }
+// where an across-up-across edge turns: just after the source, halfway, or just before the target -
+// whichever runs through the fewest other nodes and their labels (a label hangs under its node here)
+function orthoTurn(a,b,x1,y1,x2,y2){
+  const boxes=[]; const f=+prof().node.font||11, below=labelsBelow();
+  const halfOf=n=>n.type==="foton"?Math.max(RW+4,(+prof().node.wrap||22)*f*0.29):RW+4;
+  for(const n of ex.nodes){ if(n.type==="note") continue; const half=halfOf(n), lab=below&&n.type==="foton";
+    // the two ends' own dots are where the line starts and ends; their labels still count
+    if(n===a||n===b){ if(lab) boxes.push([n.x-half,labelTop(n,focusR(n)||RW)-2,n.x+half,labelTop(n,focusR(n)||RW)+labelLines(n)*f*1.18+50]); continue; }
+    boxes.push([n.x-half,n.y-RW-4,n.x+half,n.y+RW+(lab?labelLines(n)*f*1.18+60:4)]); }
+  const hits=(X0,Y0,X1,Y1)=>{ const [l,r]=X0<X1?[X0,X1]:[X1,X0], [t,u]=Y0<Y1?[Y0,Y1]:[Y1,Y0]; let k=0;
+    for(const q of boxes) if(r>=q[0]&&l<=q[2]&&u>=q[1]&&t<=q[3]) k++; return k; };
+  let best=(x1+x2)/2, bk=1e9;
+  const hb=below&&b.type==="foton"?halfOf(b):0, ha=below&&a.type==="foton"?halfOf(a):0;
+  for(const t of [x2-22,(x1+x2)/2,x1+22,b.x-hb-14,a.x+ha+14].filter(t=>t>x1&&t<x2)){ const k=hits(x1,y1,t,y1)+hits(t,y1,t,y2)+hits(t,y2,x2,y2); if(k<bk){ bk=k; best=t; } }
+  return best; }
 // A mark strip: one dot per claim standing about this node, drawn at a constant place so a column
 // of nodes stays scannable. The count, not the content - the content is one click away.
 // What to call a node. A foton's own label is its command - right for a machine, useless for a
@@ -1177,9 +1343,16 @@ function markStrip(ctx,n,r){
   ctx.beginPath(); ctx.arc(bx,by,7,0,7); ctx.fill();
   ctx.fillStyle="#0b0f18"; ctx.fillText(String(m.length),bx,by);
 }
+// an orthogonal left-to-right layout runs its lines through the nodes' rows: the label goes UNDER the
+// node there, so no line crosses it (labelsBelow), and a step's note goes under the label
+const labelsBelow=()=>!!(ex&&ex.ortho&&!ex.tb);
+function labelLines(n){ const step=n.type==="foton", w=step?(+prof().node.wrap||0):0; return w?Math.min(3,wrapText(stepLabel(n),w,3).length):1; }
+function labelTop(n,r){ const a=ANN.get(n.id); return n.y+r+5+(a&&a.marks&&a.marks.length?16:0); }
 function label(ctx,n,txt,r,max=22){ ctx.fillStyle=css("--ink");ctx.textAlign="left";ctx.textBaseline="middle";
   const step=n.type==="foton", px=step?(+prof().node.font||11):11, w=step?(+prof().node.wrap||0):0;
   ctx.font=px+"px ui-sans-serif,system-ui";
+  if(labelsBelow()){ const lines=w?wrapText(txt,w,3):[clip(txt,max)], lh=px*1.18, y0=labelTop(n,r); ctx.textAlign="center"; ctx.textBaseline="top";
+    lines.forEach((l,i)=>ctx.fillText(l,n.x,y0+i*lh)); return; }
   if(!w){ ctx.fillText(clip(txt,max),n.x+r+5,n.y); return; }
   const lines=wrapText(txt,w,3), lh=px*1.18; lines.forEach((l,i)=>ctx.fillText(l,n.x+r+5,n.y+(i-(lines.length-1)/2)*lh)); }
 // a step's name on the canvas, by node.label: "description" is what the modeler wrote about it (a
@@ -1187,8 +1360,9 @@ function label(ctx,n,txt,r,max=22){ ctx.fillStyle=css("--ink");ctx.textAlign="le
 function stepLabel(n){ const m=prof().node.label;
   if(m==="description"){ const s=stepInfo(n); return s.description||s.command; }
   return m==="command"?stepInfo(n).command:nodeName(n); }
-function noteDraw(ctx,n){ const s=ex._byId.get(n.step); if(s){ n.x=s.x+RW*1.4; n.y=s.y+RW*3.2; }
+function noteDraw(ctx,n){ const s=ex._byId.get(n.step);
   const lines=wrapText(n.text,34,3); ctx.font="italic 10px ui-sans-serif,system-ui"; const w=Math.max(...lines.map(l=>ctx.measureText(l).width))+10, h=lines.length*12+6;
+  if(s){ const g=noteBox(s,n.text); n.y=g.top; n.x=g.x==null?s.x-w/2:g.x; }
   ctx.fillStyle="rgba(245,182,66,.10)"; ctx.strokeStyle="rgba(245,182,66,.55)"; ctx.lineWidth=1; rrect(ctx,n.x,n.y,w,h,4); ctx.fill(); ctx.stroke();
   ctx.fillStyle=css("--b"); ctx.textAlign="left"; ctx.textBaseline="top"; lines.forEach((l,i)=>ctx.fillText(l,n.x+5,n.y+4+i*12)); }
 function wrapText(t,w,max){ const words=String(t||"").split(/\s+/), out=[]; let cur="";
@@ -1337,7 +1511,7 @@ function openNode(id){ const p=$("#panel"); const gn=ex&&ex._byId&&ex._byId.get(
     :n.origin==="signed"?` <span class="badge" title="no recorded step produced this file">signed only</span>`:``;
   const meta=isSrc?`<div class="kv">external input - referenced by content hash; not a signed record.</div>`
     :n.origin==="recorded"?`<div class="kv"><span class="badge vno" title="the recorder saw this step; no signed record has its outputs">recorded only - not signed</span></div>`
-    :`<div class="kv">${origin?origin.trim()+"<br>":""}signer <code>${esc(n.signer||"?")}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":"unverified"}</span>${n.repro>1?` <span class="badge vok" title="distinct independent signers that produced this exact output (↻N)">↻${n.repro} reproduced</span>`:``}${n.signers?`<br>co-signed by ${n.signers.map(k=>`<code>${esc((G.nodes.find(x=>x.signer===k&&x.participant)||{}).participant||k)}</code>`).join(", ")} - the same work, re-run and signed on this one record`:``}</div>`;
+    :`<div class="kv">${origin?origin.trim()+"<br>":""}signer <code>${esc(n.signer||"?")}</code> <span class="badge ${n.verified?'vok':'vno'}">${n.verified?"✓ verified":n.pkgSigned?`signed by admitted package ${esc(n.pkgSigned)}${n.pkgChecked?", signature checked":""} (not a trust tier)`:n.untrusted?"signer not in the trusted keys":"unverified"}</span>${n.repro>1?` <span class="badge vok" title="distinct independent signers that produced this exact output (↻N)">↻${n.repro} reproduced</span>`:``}${n.signers?`<br>co-signed by ${n.signers.map(k=>`<code>${esc((G.nodes.find(x=>x.signer===k&&x.participant)||{}).participant||k)}</code>`).join(", ")} - the same work, re-run and signed on this one record`:``}</div>`;
   const qOf=id=>QS.BUILTIN.find(q=>q.id===id);   // counts on the buttons - same questions the compass asks
   const linN=n.type==="foton"?QS.countFor(G,qOf("inputs"),n.id):0, impN=n.type==="foton"?QS.countFor(G,qOf("impact"),n.id):0;
   const PP=prof().panel, an=stepInfo(n);
@@ -1430,4 +1604,45 @@ document.addEventListener("click", function(e){
   if(t.hasAttribute("data-ungroup")){ ex.grouped=false; drawControls(); layoutAndRun(); return; }
   if(t.hasAttribute("data-recentre")) return recentre(t.getAttribute("data-recentre"));
 });
+/* ===== a block in a composition (C1.5 v3): the host answers graph@1 ===== *
+ * viewer.json says what this block needs (graph@1; product@1 and open@1 optional) and accepts. The first
+ * kton:set brings its use and the host; the graph comes as the answer to kton:request graph@1, in one of
+ * two forms: {records, keys, names, attested?} - verified here by the same wasm as a union - or {graph,
+ * sketch?, derived?, contracted?} - a graph the host built and vouches for (the verticle path). Every
+ * later set is a view state, applied as v2's was. Intents leave in the v3 form: {kind, …}. */
+let V3=null;
+const V3_ACCEPTS={ focus:{type:"hash"}, mode:{type:"literal"}, facets:{type:"object"}, layout:{type:"literal"}, view:{type:"literal|object"}, selection:{type:{set:"hash"}} };
+async function bootV3(){
+  await loadModules();
+  let started=false;
+  const b=HOST.connect({ requires:["graph@1"], optional:["product@1","open@1"], accepts:V3_ACCEPTS,
+    current:()=>G?viewState():null,
+    onSet:({state, host})=>{
+      if(started){ if(!G){ V3.pendingState=state; return {}; } return applyHostState(state); }
+      started=true; V3.pendingState=state; v3Load(host); return {}; } });
+  // the rest of this file talks v2 (BRIDGE.intent({type:"act", action, …}) / {type:"navigate", …});
+  // this is the one place that turns it into v3
+  V3={ bridge:b, pendingState:null,
+    answerSet:(r)=>{ if(r&&r.refused&&r.refused.length) b.refused(r.refused, r.why||"not accepted"); b.state(viewState()); } };
+  BRIDGE={ embedded:true, state:(st)=>b.state(st), refused:(what,why)=>b.refused(what,why), ready:()=>b.ready(),
+    intent:(i)=>{ const {type, action, ...rest}=i||{};
+      const v3=type==="act" ? {kind:action, ...rest} : type==="navigate" ? {kind:"navigate", value:rest.node, ...rest} : {kind:type, ...rest};
+      return b.intent(v3).then(r=>{ if(r&&r.refused) notice(`${v3.kind}: ${r.refused.why}`); return r; }); } };
+  b.ready();
+}
+async function v3Load(host){
+  try{
+    if(!(host&&host.provides||[]).includes("graph@1")) throw new Error("this host does not provide graph@1");
+    const r=await V3.bridge.request("graph@1", {});
+    if(r&&r.graph){
+      SKETCH=r.sketch||null; DERIVED=r.derived||null; CONTRACTED=r.contracted||null; if(!CONTRACTED) VIEW="attested";
+      GRAPH_PATH=null; renderPrebuilt(r.graph); return;
+    }
+    if(!r||!Array.isArray(r.records)) throw new Error("graph@1 answered neither {records} nor {graph}");
+    await initWasm();
+    const names=r.names||{}; ATTESTED_NAMES=new Set((r.attested||[]).map(k=>names[k]).filter(Boolean));
+    await usePackages(r.packages);
+    renderGraph(JSON.stringify(r.records.slice(0,RECORD_CAP)), JSON.stringify(r.keys||{}), JSON.stringify(names), null);
+  }catch(e){ showErr(e); V3.bridge.refused(["graph@1"], String(e&&e.message||e)); }
+}
 load();

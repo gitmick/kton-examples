@@ -1,0 +1,14 @@
+{
+  "viewer": "kton-web/lens",
+  "title": "Plankton lens",
+  "about": "A script a page includes: every marked plot gets a badge when a connected registry knows its bytes (sha256), verified in the browser; a click opens the lineage in the graph viewer. It decorates someone else's page, so it is neither a leaf nor a block today.",
+  "entry": "viewers/lens/lens.js",
+  "frame": "none",
+  "module": null,
+  "use": "<script src=\"lens.js\" data-planktons=\"<union.json>[,…]\" data-viewer=\"<graph viewer>\" data-mirror=\"<static mirror>\"></script>, plots marked img.lens or img[data-kton]",
+  "reads": "registries by URL (union.json with keys.json/names.json) or a static content-addressed mirror; the plots' own bytes",
+  "block": {
+    "state": "not built",
+    "planned": "a block that shows one product with its badge: requires product@1 (the bytes, by hash) and graph@1 (the records that made them, verified here); optional open@1 (the lineage in the graph viewer). VERTICLE-HOSTS.md §8 lists it with query@1 too; that is for the reproduction count and comes with the block."
+  }
+}

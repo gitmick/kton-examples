@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>kton · Kompass</title>
 <link rel="icon" type="image/png" href="../../core/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<!-- no web fonts: a viewer loads nothing from outside its pinned files (a host CSP refuses it anyway);
+     the font stacks below fall back to local and system fonts -->
 <link rel="stylesheet" href="compass.css">
 <style>
   /* The chrome borrows the element's OWN tokens - they are defined on .cp in compass.css, so this
@@ -94,6 +93,7 @@ import { mountCompass } from "./compass.js";
 import { binding } from "./binding-kton.js";
 import { readState, writeState, linkTo, regUrls, modeFromDepth, depthFromMode } from "../../core/viewstate.js";
 import { hostBridge } from "../../core/host.js";
+import { wantsV3, leafBridge } from "../../core/leaf.js";
 import { indexGraph } from "../../core/nav.js";
 import { catalogue, ask, countFor } from "../../core/questions.js";
 import { catalogue as groupings, makeKey } from "../../core/grouping.js";
@@ -127,13 +127,31 @@ function applyGrouping(id) {
  * the address bar. What it asks for and cannot have comes back as a refusal, by name: a host that
  * believes it steered while the reader sees something else is worse off than one that was told no.
  */
-const bridge = hostBridge({
+// In a frame with no ?union= the compass is a block (C1.5 v3, core/leaf.js): its graph is a graph@1
+// answer in the records form {records, keys, names} - it builds and verifies with its own wasm and reads
+// the predicate terms from the same records, so a graph built elsewhere ({graph}) is not enough.
+const V3 = wantsV3(["union"]);
+const V3_ACCEPTS = { focus: { type: "hash" }, p: { type: "literal" }, facets: { type: "object" }, g: { type: "literal" }, d: { type: "literal" }, depth: { type: "object" } };
+const bridge = V3 ? leafBridge({
+  requires: ["graph@1"], optional: ["open@1"], accepts: V3_ACCEPTS,
+  current: () => readState(),
+  start: async (api) => {
+    const r = await api.request("graph@1", {});
+    if (!Array.isArray(r?.records)) throw new Error("the compass needs graph@1 as {records, keys, names}");
+    await load({ texts: { union: JSON.stringify(r.records), keys: JSON.stringify(r.keys || {}), names: JSON.stringify(r.names || {}) } });
+    if (!compass) throw new Error($("#msg").textContent || "the compass could not be built");
+  },
+  apply: (st) => applyHost(st),
+}) : hostBridge({
   capabilities: { viewer: "compass", state: ["union", "keys", "names", "focus", "sketch", "p", "f"],
                   intents: ["navigate", "act", "reveal", "mask", "depth", "group"],
                   groupings: "siehe kton:ready capabilities.groupingIds",
                   depth: "je Richtung: origin, effect, about, mentions" },
   current: () => readState(),
-  apply: (st) => {
+  apply: (st) => applyHost(st),
+});
+
+function applyHost(st) {
     const refused = [];
     if (!compass) return { refused: ["*"], why: "der Betrachter lädt noch" };
     if (st.p) { if (CFG && CFG.perspectives().some((x) => x.id === st.p)) { compass.setPerspective(st.p); VS = writeState({ p: st.p }); }
@@ -150,8 +168,7 @@ const bridge = hostBridge({
       compass.setDepth(d); VS = writeState({ d: encodeDepth(d) }); }
     if (st.focus) { if (!compass.goTo(st.focus)) refused.push(`focus=${st.focus}`); }
     return { refused, why: "dieser Korpus oder dieser Sketch führt das nicht" };
-  },
-});
+}
 
 async function load(src) {
   msg("lade Register und Kernel…");
@@ -161,9 +178,11 @@ async function load(src) {
       if (!u) return fallback;
       try { const r = await fetch(u); return r.ok ? await r.text() : fallback; } catch { return fallback; }
     };
-    const [union, keys, names] = await Promise.all([grab(reg.union, null), grab(reg.keys, "{}"), grab(reg.names, "{}")]);
+    const [union, keys, names] = reg.texts ? [reg.texts.union, reg.texts.keys, reg.texts.names]   // handed over (v3)
+      : await Promise.all([grab(reg.union, null), grab(reg.keys, "{}"), grab(reg.names, "{}")]);
     if (!union) throw new Error(`kein union.json unter ${reg.union}`);
-    VS = writeState({ ...reg, sketch: SKETCH });   // the source is now addressable, at this depth or any other
+    // the source is now addressable, at this depth or any other - unless the host handed it over
+    VS = writeState(reg.texts ? { sketch: SKETCH } : { ...reg, sketch: SKETCH });
 
     const [kton, config] = await Promise.all([loadKton(), loadConfig(`../../sketches/${SKETCH}.json`)]);
     const graph = kton.buildGraph(union, keys, names);
@@ -189,7 +208,8 @@ async function load(src) {
       onIntent: (i) => {
         // the element reports what the reader wanted; resolving it is the host's business, and here
         // that means handing the SAME question to the other viewer rather than starting it over
-        if (i.type === "act" && i.action === "graph") {
+        // as a block, the frame does not navigate away: "graph" goes up, the host opens the graph
+        if (i.type === "act" && i.action === "graph" && !V3) {
           // carry the QUESTION, not only the address: an open origin cone becomes the graph's `anc`
           const st = { ...readState(), focus: i.node };
           const m = modeFromDepth(compass.depth());
@@ -221,7 +241,7 @@ async function load(src) {
     drawFacets(config);
     if (VS.g) { $("#grouping").value = VS.g; applyGrouping(VS.g); }
     drawQuestions();
-    bridge.ready();
+    if (!V3) bridge.ready();
     nodes = compass.nodes();
     $("#count").textContent = `${nodes.length} Knoten · ${(graph.edges || []).length} Kanten` +
       (unknown.length ? ` · ${unknown.reduce((a, [, c]) => a + c, 0)} Kanten mit ${unknown.length} unbekannten Termen` : "");
@@ -407,7 +427,8 @@ persp.addEventListener("click", (e) => {
 addEventListener("popstate", () => { VS = readState(); if (compass && VS.focus) compass.goTo(VS.focus, false); });
 
 // a source handed in by URL wins over the picker - that is how the graph hands work back
-if (VS.union) { const o = [...$("#fixture").options].find((x) => VS.union.endsWith(x.value.replace("../../", "") + "/union.json"));
+if (V3) bridge.ready();
+else if (VS.union) { const o = [...$("#fixture").options].find((x) => VS.union.endsWith(x.value.replace("../../", "") + "/union.json"));
   if (o) $("#fixture").value = o.value;
   // keys/names beside the union unless the URL names others - without them every signature reads unverified
   load({ ...regUrls(VS.union), ...(VS.keys && { keys: VS.keys }), ...(VS.names && { names: VS.names }) }); }
