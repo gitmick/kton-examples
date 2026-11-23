@@ -9,7 +9,7 @@ run** and you watch L0 vs L1 in the viewer. It takes a real tool - the test suit
 - **did the tests really run?** Yes. `run.sh` executes each test with `Rscript` twice (a reference
   environment and a candidate one). Nothing is fabricated; the fotons record real outputs.
 - **are they identical?** Two of the three are byte-identical across environments (**L0**).
-- **were they normalized?** The third prints a volatile `session:` line (pid + wall-clock), so its two
+- **were they normalized?** The third prints a volatile `session:` line (pid, wall clock, random nonce), so its two
   runs are *not* identical - they agree only after a real normalizer strips that line (**L1**). That
   normalizer is a **potential**: a content-addressed recipe, named by its own hash (more below).
 
@@ -32,7 +32,7 @@ Real output from a run:
 ```
 test-glm      -> sha256:1ebd..   (test-glm: mean-conc=4.4250 PASS)      reference
 test-glm      -> sha256:1ebd..   [IDENTICAL bytes]                      candidate  -> L0
-test-predict  -> sha256:b9a1..   (session: pid=5690 at=2026-07-16 ...)  reference
+test-predict  -> sha256:b9a1..   (session: pid=5690 at=2026-07-16 ... nonce=...)  reference
 test-predict  -> sha256:467e..   [DIFFERS (volatile line)]             candidate  -> not L0
   raw test-predict         : reproduction: none
   test-predict via potential: reproduction: L1

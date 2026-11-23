@@ -50,6 +50,9 @@
   <p class="tagline"><b>kton</b> turns each step of an analysis, and each statement about it, into a small,
   signed, content-addressed record. From those records you get lineage, reproduction, and review that a
   reader can verify themselves, with no central server and no need to trust whoever produced them.</p>
+  <p>To <b>use</b> kton, start with the <a href="https://github.com/kton-protocol/kton-cockpit">kton cockpit</a>:
+  one <code>cockpit</code> command that records runs, signs what you say about them and answers questions
+  over your registries. The examples below show what is underneath it, calling the two kernels directly.</p>
 
   <h2>What problem it solves</h2>
   <p>When results move between people, scripts, and tools, you lose track of <b>where a file came from</b>,
@@ -80,7 +83,7 @@
       <p>The substrate as a whole (plankton + nekton) plus a thin command that conducts both. "kton" is what
       you say when you mean the system; plankton and nekton are its two kinds of record. The examples call
       <code>plankton</code> and <code>nekton</code> directly - the <code>kton</code> command is optional,
-      needed only for the network features in <a href="https://github.com/gitmick/kton-examples/blob/main/examples/08-sigstore-github/README.md">example 08</a> (anchoring to a transparency log).</p>
+      needed only by <a href="https://github.com/gitmick/kton-examples/blob/main/examples/14-fetch/README.md">example 14</a>, to fetch bytes from where a record says they are.</p>
     </li>
   </ul>
 
@@ -305,15 +308,15 @@
   </ul>
   <p class="sub">The full argument - honesty, completeness, freshness, finality, and graded
   verification, each with its boundary - is in the protocol's
-  <a href="https://github.com/kton-protocol/kton/blob/v0.2.0/docs/trust.md">Trust chapter</a>.</p>
+  <a href="https://github.com/kton-protocol/kton/blob/v0.4.0/docs/trust.md">Trust chapter</a>.</p>
 
   <footer>
-    Run them yourself once the reference binaries are available (see the
-    <a href="https://github.com/gitmick/kton-examples">repo README</a>): <code>plankton</code> and
-    <code>nekton</code> on your PATH, then <code>bash examples/&lt;name&gt;/run.sh</code>. Until the
-    reference implementation is public you can still follow every example through its README and the live
-    graphs here - pre-generated snapshots; in the viewer, Esc or the browser Back button returns to the
-    overview.
+    Run them yourself: install <code>plankton</code> and <code>nekton</code> from
+    <a href="https://github.com/kton-protocol/kton/releases/tag/v0.4.0">kton v0.4.0</a> (see the
+    <a href="https://github.com/gitmick/kton-examples">repo README</a>), then
+    <code>bash examples/&lt;name&gt;/run.sh</code>. Without installing anything you can still follow every
+    example through its README and the live graphs here - pre-generated snapshots; in the viewer, Esc or the
+    browser Back button returns to the overview.
   </footer>
 </div>
 </body>

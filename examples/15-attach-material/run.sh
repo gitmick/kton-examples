@@ -69,7 +69,7 @@ echo "== what is attached to each record =="
 echo "-- foton --"; plankton material "$FOTON" | sed 's/^/  /'
 echo "-- claim --"; nekton   material "$CLAIM" | sed 's/^/  /'
 # Assert we can read back what we attached: `material` returning nothing is what a broken binding
-# looks like, and it would otherwise read as "no evidence yet" (docs/briefing-2026-09.md B3).
+# looks like, and it would otherwise read as "no evidence yet".
 NMAT=$(plankton material "$FOTON" --json | python3 -c "import json,sys;print(len(json.load(sys.stdin)['material']))")
 [ "$NMAT" -eq 1 ] || { echo "  !! expected 1 piece of material on the foton, read $NMAT" >&2; exit 1; }
 echo "  [asserted: the foton carries exactly 1 piece of material, read back through --json]"
