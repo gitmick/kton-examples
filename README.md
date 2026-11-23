@@ -62,8 +62,8 @@ two.)
 The examples assume `plankton` and `nekton` are installed and on your PATH (the `kton` command only for
 example 14). Some examples also use common tools; CI installs the same set:
 
-- `jq` (02, 14, `lib/records.sh`) and `python3` (05, 07, 10, 13, 15, 16, 17, and the graph snapshot every
-  example writes);
+- `jq` (02, 14, `lib/records.sh`) and `python3` (05, 07, 08, 10, 11, 12, 13, 15, 16, 17, and the graph snapshot
+  every example writes);
 - the Python packages `cryptography` (13, 15) and `rdflib` (11, 12);
 - `Rscript` (10, 12), and `cosign` for the step of 08 you run by hand.
 
@@ -89,7 +89,9 @@ The reference implementation is [kton-protocol/kton](https://github.com/kton-pro
 examples run against **v0.4.0**. Its [releases](https://github.com/kton-protocol/kton/releases) carry one
 archive per platform with a `.sha256` beside it - verify it, then put `plankton`, `nekton` and `kton` on
 your PATH (or into this repo's `bin/`, which the run scripts also add to PATH). The repository README
-has the exact commands. With Go 1.22 or newer, `go install` works too:
+has the exact commands. With Go 1.25 or newer, `go install` works too (kton.dev's import paths use the
+`go-import` subdirectory field, which Go reads from 1.25 on; older Go builds the modules, but resolves
+`kton.dev` only through the default module proxy):
 
 ```
 go install kton.dev/plankton/cmd/plankton@v0.4.0   # needed by every example

@@ -14,7 +14,7 @@
 # 2 matters because every condition here is monotone ("some record establishes X"), so on an empty
 # graph all seven simply fail and the gate prints a full checklist of unticked boxes - a confident
 # refusal built on nothing read. That is indistinguishable from an honest BLOCKED unless it is
-# separated out here. See docs/briefing-2026-09.md B3.
+# separated out here.
 import sys
 import rdflib
 

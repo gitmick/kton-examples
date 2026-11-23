@@ -119,7 +119,7 @@ snapshot() {
 # For negative controls: a tampered re-run that must not reproduce, bytes that must not be present.
 # `|| true` cannot express that. It accepts both outcomes, so on the day tamper-detection silently
 # starts passing, the example still exits 0 and the narration above it still reads like a
-# demonstration - the exact shape of failure catalogued in docs/briefing-2026-09.md B3. The command's
+# demonstration - a check that passes without having checked anything. The command's
 # own output still goes to stdout, so the example reads the same as before.
 # Call this DIRECTLY, not through a pipe. Piping runs it in a subshell, so its `exit 1` ends only
 # that subshell; the script then survives on `set -o pipefail` alone propagating the status. Every

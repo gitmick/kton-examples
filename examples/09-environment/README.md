@@ -52,7 +52,8 @@ about the R version, the packages, or the OS it ran under.
 You actually ran inside a digest-pinned image. A digest fixes the image byte-for-byte. Whether it
 belongs in the foton's identity depends on whether the foton declares an environment *class*
 (SPEC 6.5): **with** a class (stage 3), two images of that class are the same computation, and each
-producer's concrete image is **CARRIED** beside the record as `kton-env/v1` material, never covered.
+producer's concrete image is **CARRIED** beside the record, never covered: on a `foton/v1` record as
+`kton-env/v1` material. This example authors `foton/v0` throughout, so that material is not shown here.
 **Without** a class, the concrete environment is the only statement of what ran, and an authoring tool
 SHOULD keep it **covered** (the reference puts it in the descriptor as `envRef`) - otherwise two
 computations in different images collide on one action key.
