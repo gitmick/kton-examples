@@ -89,7 +89,7 @@ The reference implementation is [kton-protocol/kton](https://github.com/kton-pro
 examples run against **v0.4.0**. Its [releases](https://github.com/kton-protocol/kton/releases) carry one
 archive per platform with a `.sha256` beside it - verify it, then put `plankton`, `nekton` and `kton` on
 your PATH (or into this repo's `bin/`, which the run scripts also add to PATH). The repository README
-has the exact commands. With Go 1.25 or newer, `go install` works too:
+has the exact commands. With Go 1.22 or newer, `go install` works too:
 
 ```
 go install kton.dev/plankton/cmd/plankton@v0.4.0   # needed by every example
