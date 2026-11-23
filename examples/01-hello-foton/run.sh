@@ -10,11 +10,11 @@ source ../../lib/common.sh
 # is a store, not an execution environment like a container or an OS.) We use a throwaway .work/ dir
 # (gitignored) so the example is repeatable.
 export PLANKTON_DIR="$PWD/.work/registry"
-rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
+rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR"
 
 echo "== Create =="
 # 1) an identity. keygen writes me.key (PRIVATE - keep it) and me.pub (PUBLIC - share it).
-plankton keygen "$PWD/.work/keys/me" --seed "$(demoseed me)" >/dev/null
+plankton keygen "$KEYS/me" --seed "$(demoseed me)" >/dev/null
 
 # 2) the files the computation consumes/produces. plankton stores NO bytes, only their content
 #    hashes, so the files can live anywhere; we just need them to hash.
@@ -26,17 +26,17 @@ echo "mean=5"  > .work/result.txt
 #    verify it below; --add on its own (no -o) would ingest without writing any file.
 plankton author --cmd "mean data.txt result.txt" \
   --in .work/data.txt --out .work/result.txt \
-  --sign "$PWD/.work/keys/me.key" --add -o .work/mean.foton.json
+  --sign "$KEYS/me.key" --add -o .work/mean.foton.json
 
 echo ""
 echo "== Use =="
 echo "-- show the foton (inputs, outputs, protocol) --"
 plankton show .work/mean.foton.json
 echo "-- verify the signature against the public key --"
-plankton verify .work/mean.foton.json "$PWD/.work/keys/me.pub"
+plankton verify .work/mean.foton.json "$KEYS/me.pub"
 echo "-- query by OUTPUT hash: who produced result.txt? --"
 #    NOTE: hashes are written 'sha256:<hex>'. 'plankton hash' prints that form; pass it as-is.
 plankton producer "$(plankton hash .work/result.txt)"
 
 echo ""
-snapshot 01-hello-foton "$PWD/.work/keys" --reg "$PLANKTON_DIR"
+snapshot 01-hello-foton "$KEYS" --reg "$PLANKTON_DIR"

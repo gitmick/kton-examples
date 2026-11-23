@@ -5,6 +5,16 @@ EXROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="$EXROOT/bin:$PATH"
 EXNAME="$(basename "$PWD")"     # captured HERE: 09 cds into .work/ after sourcing this file
 
+# ---- private keys live outside the repository ----------------------------------------------------
+# Never inside a checkout, not even ignored ones: that is the rule a cockpit enforces (ADR-016, cockpit
+# SPEC §5.6 - an identity naming a key inside the repository is refused), and the examples follow it
+# rather than teach the opposite. Each example gets its own folder, emptied at the start of the run;
+# the keys come from fixed seeds (below), so emptying it changes nothing. The public halves sit next to
+# the private ones, which is also the --trust-keys folder and what `snapshot` reads.
+KEYS="${KTON_EXAMPLE_KEYS:-${XDG_CACHE_HOME:-$HOME/.cache}/kton-examples/keys}/$EXNAME"
+case "$KEYS" in "$EXROOT"/*) echo "KTON_EXAMPLE_KEYS points inside the repository ($KEYS)" >&2; exit 1 ;; esac
+rm -rf "$KEYS"; mkdir -p "$KEYS"
+
 # ---- reproducible demo identities and a fixed clock -------------------------------------------
 # The graph snapshots under docs/data/ are COMMITTED, so every run diffs against the last one. Two
 # things used to make that diff meaningless: a fresh random keypair per run - the public key lands
@@ -37,7 +47,7 @@ demoseed() { printf 'kton-examples/demo/%s/%s' "$EXNAME" "$1" | sha256sum | cut 
 # from the directory the example is authoring IN; the pin below is the ONE line rewritten at each
 # release/migration (gitmick -> kton-protocol, main -> the release commit SHA).
 KTON_RAW_REPO="${KTON_RAW_REPO:-gitmick/kton-examples}"
-KTON_RAW_COMMIT="${KTON_RAW_COMMIT:-v0.2.0}"          # PIN: the published ref these records point at
+KTON_RAW_COMMIT="${KTON_RAW_COMMIT:-v0.4.0}"          # PIN: the published ref these records point at
 
 plankton() {
   if [ "${1:-}" != "author" ]; then command plankton "$@"; return; fi
@@ -65,6 +75,35 @@ plankton() {
     esac
   done
   command plankton author "$@" ${extra[@]+"${extra[@]}"}
+}
+
+# ---- a pinned root for every nekton store (kton 0.4, #259) ------------------------------------------
+# Since 0.4 the first signed --add write into a store opens the store's ROOT scope: a root seed named
+# root/<random> at the wall clock, and every new seed and unscoped claim hangs off it. Left alone,
+# that puts a fresh random id into every snapshot on every run. `nekton init --name --when` pins it,
+# and that has to happen before the store's first write, with the key that would have opened it.
+# So `nekton` is shadowed the way `plankton` is above: before a signed --add write into a store that
+# has no root yet, it runs `nekton init` with a name of its own per store (two stores must not share
+# one) and the fixed clock, signed by that write's key. Everything else passes straight through.
+nekton() {
+  local -a a=("$@")
+  local i reg="${NEKTON_DIR:-}" key="" add="" rel
+  for ((i = 0; i < ${#a[@]}; i++)); do
+    case "${a[i]}" in
+      --add) add=1 ;;
+      --registry) reg="${a[i + 1]:-}" ;;
+      --sign) key="${a[i + 1]:-}" ;;
+      *.key) [ -n "$key" ] || key="${a[i]}" ;;   # `nekton claim <spec> <key.key> …` names it positionally
+    esac
+  done
+  if [ -n "$add" ] && [ -n "$key" ] && [ -n "$reg" ] && [ "${1:-}" != "init" ] \
+     && ! command nekton verify --root --registry "$reg" >/dev/null 2>&1; then
+    mkdir -p "$reg"
+    rel="$(cd "$reg" && pwd)"; rel="${rel#"$EXROOT"/examples/}"
+    command nekton init --sign "$key" --when "$KTON_WHEN" --name "root/kton-examples/$rel" \
+      --registry "$reg" >/dev/null
+  fi
+  command nekton "$@"
 }
 
 # snapshot <example-name> <keydir> --reg <registry-dir> [--reg ...]

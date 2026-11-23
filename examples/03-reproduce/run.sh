@@ -6,15 +6,15 @@ cd "$(dirname "$0")"
 source ../../lib/common.sh
 
 export PLANKTON_DIR="$PWD/.work/registry"
-rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
-plankton keygen "$PWD/.work/keys/me" --seed "$(demoseed me)" >/dev/null
+rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR"
+plankton keygen "$KEYS/me" --seed "$(demoseed me)" >/dev/null
 
 echo "== Create: record a foton whose output is a deterministic result =="
 echo "1 2 3 4" > .work/input.txt
 echo "sum=10"  > .work/result.txt        # a deterministic function of input.txt
 plankton author --cmd "sum input.txt result.txt" \
   --in .work/input.txt --out .work/result.txt \
-  --sign "$PWD/.work/keys/me.key" --add >/dev/null   # author + ingest in one step, no file needed
+  --sign "$KEYS/me.key" --add >/dev/null   # author + ingest in one step, no file needed
 REF="$(plankton hash .work/result.txt)"
 echo "  recorded result hash = $REF"
 
@@ -30,4 +30,4 @@ TAMP="$(plankton hash .work/result_tampered.txt)"
 echo -n "  reproduces (tampered): "; expect_fail "the tampered re-run" plankton reproduces "$REF" "$TAMP"
 
 echo ""
-snapshot 03-reproduce "$PWD/.work/keys" --reg "$PLANKTON_DIR"
+snapshot 03-reproduce "$KEYS" --reg "$PLANKTON_DIR"

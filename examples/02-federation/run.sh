@@ -13,9 +13,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 source ../../lib/common.sh
 
-rm -rf "$PWD/.work"; mkdir -p "$PWD/.work/keys"
-plankton keygen "$PWD/.work/keys/alice" --seed "$(demoseed alice)" >/dev/null
-plankton keygen "$PWD/.work/keys/bob" --seed "$(demoseed bob)"   >/dev/null
+rm -rf "$PWD/.work"; mkdir -p "$PWD/.work"
+plankton keygen "$KEYS/alice" --seed "$(demoseed alice)" >/dev/null
+plankton keygen "$KEYS/bob" --seed "$(demoseed bob)"   >/dev/null
 # The file bytes live in this working directory the whole time; on one machine every act just reads
 # them from here. plankton stores none of these bytes, only their hashes.
 echo "raw,data"     > .work/dataset.csv
@@ -30,10 +30,10 @@ S="$PWD/.work/shared"; mkdir -p "$S"
 # --add ingests into the shared store (--registry "$S") in one step; we keep the envelope files (-o)
 # so the later acts can re-file the SAME records into separate registries.
 plankton author --cmd "clean dataset.csv cleaned.csv" \
-  --in .work/dataset.csv --out .work/cleaned.csv --sign "$PWD/.work/keys/alice.key" \
+  --in .work/dataset.csv --out .work/cleaned.csv --sign "$KEYS/alice.key" \
   --add --registry "$S" -o .work/alice.foton.json >/dev/null
 plankton author --cmd "fit cleaned.csv model.txt" \
-  --in .work/cleaned.csv --out .work/model.txt --sign "$PWD/.work/keys/bob.key" \
+  --in .work/cleaned.csv --out .work/model.txt --sign "$KEYS/bob.key" \
   --add --registry "$S" -o .work/bob.foton.json >/dev/null
 echo "-- closing query: full lineage of model.txt, from the shared store --"
 PLANKTON_DIR="$S" plankton lineage "$MODEL"
@@ -81,4 +81,4 @@ echo "   ^ mirror is convenience on top of the read - not what makes federation 
 
 echo ""
 # the viewer shows the two registries as one federated graph, coloured per participant
-snapshot 02-federation "$PWD/.work/keys" --reg "$A" --reg "$B"
+snapshot 02-federation "$KEYS" --reg "$A" --reg "$B"

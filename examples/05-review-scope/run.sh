@@ -12,13 +12,13 @@ set -euo pipefail
 cd "$(dirname "$0")"
 source ../../lib/common.sh
 
-rm -rf "$PWD/.work"; mkdir -p "$PWD/.work/keys"
+rm -rf "$PWD/.work"; mkdir -p "$PWD/.work"
 PUB_DIR="$PWD/.work/public"
-nekton keygen "$PWD/.work/keys/board" --seed "$(demoseed board)"       >/dev/null   # authority: sets the rules AND closes
-nekton keygen "$PWD/.work/keys/reviewer-a" --seed "$(demoseed reviewer-a)"  >/dev/null
-nekton keygen "$PWD/.work/keys/reviewer-b" --seed "$(demoseed reviewer-b)"  >/dev/null
-K(){ echo "$PWD/.work/keys/$1.key"; }
-kid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/$1.pub').read().strip())).hexdigest()[:16])"; }
+nekton keygen "$KEYS/board" --seed "$(demoseed board)"       >/dev/null   # authority: sets the rules AND closes
+nekton keygen "$KEYS/reviewer-a" --seed "$(demoseed reviewer-a)"  >/dev/null
+nekton keygen "$KEYS/reviewer-b" --seed "$(demoseed reviewer-b)"  >/dev/null
+K(){ echo "$KEYS/$1.key"; }
+kid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$KEYS/$1.pub').read().strip())).hexdigest()[:16])"; }
 KA=$(kid16 reviewer-a); KB=$(kid16 reviewer-b)
 
 echo "== The public record: a standing PARENT scope, in its own store =="
@@ -131,4 +131,4 @@ assert h['heads'][0] == '$HEAD1', 'the head MOVED - a dangling prev joined the c
 print('  [asserted: the forged link is on record and unresolved, and the head is UNCHANGED]')"
 
 echo ""
-snapshot 05-review-scope "$PWD/.work/keys" --reg "$PUB_DIR" --reg "$PWD/.work/r1" --reg "$PWD/.work/plankton"
+snapshot 05-review-scope "$KEYS" --reg "$PUB_DIR" --reg "$PWD/.work/r1" --reg "$PWD/.work/plankton"
