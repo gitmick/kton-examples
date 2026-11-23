@@ -2,44 +2,15 @@
   "title": "plankton horizon",
   "files": [
     {
-      "hash": "sha256:287964469171677fba0adbed3db8f679f4cb6e84ae705e68ed422704b910ff42",
-      "paths": [
-        ".work/files/run1-qc.ext"
-      ],
-      "producedBy": "sha256:ee3a2f596a001be339f17f9a37dd61191d3495856c2ee8eab4d9055d258ba391",
-      "isOutput": true,
-      "isInput": true,
-      "leaf": false
-    },
-    {
-      "hash": "sha256:28aff5ae7a59457fb66d3d9b46914bf64c2adbb531c0c9ca0ebba70ac9d9b2a7",
-      "paths": [
-        ".work/files/pmxtools.spectrum.json"
-      ],
-      "isOutput": false,
-      "isInput": true,
-      "leaf": false
-    },
-    {
       "hash": "sha256:317fcb1239823e456141174fb89e5e0a6fcb0a76d6f1bd2995434f5745011ebe",
       "paths": [
         ".work/files/fit.ref.canon",
         ".work/files/fit.qc.canon"
       ],
-      "producedBy": "sha256:4e358c8626ae8fcdafee704b84b15e50afa66c2105d94caf4187cacb6440255a",
+      "producedBy": "sha256:a48d83572a9470c3faccf45f8a0b384003e4f3ff89e17ec5c4c3607cd2ee9892",
       "isOutput": true,
       "isInput": false,
       "leaf": true
-    },
-    {
-      "hash": "sha256:3477049aa0ec17331d10fb921a14806af16ef61dd790a2fca25f10004869a90e",
-      "paths": [
-        ".work/files/test-covariate.ref"
-      ],
-      "producedBy": "sha256:6410eb6fe9f2fbafda6dd561c2e7896b04ccc39b13f94c22e6aec1dfac492d77",
-      "isOutput": true,
-      "isInput": true,
-      "leaf": false
     },
     {
       "hash": "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
@@ -62,9 +33,9 @@
     {
       "hash": "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b",
       "paths": [
-        ".work/files/test-onecomp.csv",
         ".work/files/test-twocomp.csv",
-        ".work/files/test-covariate.csv"
+        ".work/files/test-covariate.csv",
+        ".work/files/test-onecomp.csv"
       ],
       "isOutput": false,
       "isInput": true,
@@ -75,7 +46,7 @@
       "paths": [
         ".work/files/diagnostics.txt"
       ],
-      "producedBy": "sha256:26534ca6795ae01bca351460456629904fae210b7f9626f81295df9573b948a0",
+      "producedBy": "sha256:47ff0faa3e88b3684dd0259842d7880f8f7ef55a91e474df491a0a897b5783a5",
       "isOutput": true,
       "isInput": false,
       "leaf": true
@@ -107,7 +78,7 @@
         ".work/files/cov.ref.canon",
         ".work/files/cov.cand.canon"
       ],
-      "producedBy": "sha256:98fde99f457566b278a52bfd41126eb548aa9985eb0a341482f949e01779de58",
+      "producedBy": "sha256:6ef77292f69347276fc1454a805ae5b2ad566e012d61eb6a4066ff2ccae9530b",
       "isOutput": true,
       "isInput": false,
       "leaf": true
@@ -117,10 +88,20 @@
       "paths": [
         ".work/files/fulfilment.txt"
       ],
-      "producedBy": "sha256:472c18271d8d10c7bfa2031612f8963eb45780e7d1c10b13ab713e529410efcd",
+      "producedBy": "sha256:7b45dda1de56079b94090d5c1293bcaea4e0c058c1c8155120bfa31a718c2914",
       "isOutput": true,
       "isInput": false,
       "leaf": true
+    },
+    {
+      "hash": "sha256:7a7b4a06553bf2028ed4beb8144dc1226c03a6e98010f669bf30b44533cbf93b",
+      "paths": [
+        ".work/files/run1-qc.ext"
+      ],
+      "producedBy": "sha256:a0853ef1c8b7d79e34a94c7b595100972d01fb45bb025c8df91d2fa88d9ed3b2",
+      "isOutput": true,
+      "isInput": true,
+      "leaf": false
     },
     {
       "hash": "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319",
@@ -163,11 +144,41 @@
       "leaf": false
     },
     {
+      "hash": "sha256:ba2de089d1f0d897cc184c3a2b3859835292be6a391f5dc5857e08bc5b5dda68",
+      "paths": [
+        ".work/files/run1.ext"
+      ],
+      "producedBy": "sha256:96e29daeaba49d76918eca2fff2cd97d8e5a17174b26c0362e12639846a43be1",
+      "isOutput": true,
+      "isInput": true,
+      "leaf": false
+    },
+    {
+      "hash": "sha256:bd1fcdcfa3131575c9bd42e637d522c39c39826d558bec24574eecb14b8c641c",
+      "paths": [
+        ".work/files/test-covariate.cand"
+      ],
+      "producedBy": "sha256:cfbcda152e7c814260cff2f34c549816f6dcf636e8718fb74fee44222fbc84e0",
+      "isOutput": true,
+      "isInput": true,
+      "leaf": false
+    },
+    {
       "hash": "sha256:cbff22ac6c730c9ed2068ac873caa2cd77667cea02ba7c402be7e66ceb3f64a1",
       "paths": [
         ".work/files/test-twocomp.ref"
       ],
       "producedBy": "sha256:187fc64879e295493681728ac4fe0c1856899da5a269dd63d5000bc6d6dfca75",
+      "isOutput": true,
+      "isInput": true,
+      "leaf": false
+    },
+    {
+      "hash": "sha256:d2565cfc893044bf71a90d60ed61e93bb8bb28014ff9a6f2caddf3f677c2d956",
+      "paths": [
+        ".work/files/test-covariate.ref"
+      ],
+      "producedBy": "sha256:9d27a2a6af622558e54b3c50576f46f683c6237032513039311395c0f8d7380b",
       "isOutput": true,
       "isInput": true,
       "leaf": false
@@ -182,12 +193,11 @@
       "leaf": false
     },
     {
-      "hash": "sha256:ec50224c9e78596e99e0830a79a2e3dd2d636764703aa0bbc2f2421d7195a8c4",
+      "hash": "sha256:eaa1d4d83c69dd18cc1d9357afa9f070832c1d13cd25edf262a6ed3cc9ba4f45",
       "paths": [
-        ".work/files/test-covariate.cand"
+        ".work/files/pmxtools.spectrum.json"
       ],
-      "producedBy": "sha256:01a6f51316f754bd026f2213404d22039b5ac20c39993f8c5dcfaa0aa1c6064b",
-      "isOutput": true,
+      "isOutput": false,
       "isInput": true,
       "leaf": false
     },
@@ -209,30 +219,52 @@
       "isOutput": true,
       "isInput": true,
       "leaf": false
-    },
-    {
-      "hash": "sha256:f82fd3dc49bce08497166791c7cf49d8007edbcdf41003ee9157fd8f6ed2834b",
-      "paths": [
-        ".work/files/run1.ext"
-      ],
-      "producedBy": "sha256:396cc35c8d659e27ffc05675342ac1d6dc8479d216d41eb69ae85bac38612ef7",
-      "isOutput": true,
-      "isInput": true,
-      "leaf": false
     }
   ],
   "fotons": [
     {
-      "id": "sha256:5ccd357ddf64ce16200fb95380ecd140843423017df088d4edfc2dc690951079",
-      "kind": "normalize",
-      "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
+      "id": "sha256:067977023b7a2d2b7ba0b6155df945f67d23664d83f4d1d73aa4ade9b2b12408",
+      "kind": "script",
+      "ref": "sha256:93865653fe432ac3319d1866347c0b2616fcef9bb081a6531782c380a55076b8",
       "inputs": [
-        "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
-        "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f"
+        "sha256:edfdbf5ac784e9a754ab412e015bc3a4667bb3a71f55ce6db797ae2658ada1e9",
+        "sha256:41dd2c69cb520a08d65f8537ff764f0b4627d00e073da4f6b44143bbea66102e"
       ],
       "outputs": [
-        "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f"
-      ]
+        "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:edfdbf5ac784e9a754ab412e015bc3a4667bb3a71f55ce6db797ae2658ada1e9",
+          "path": ".work/files/raw.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/raw.csv"
+          ]
+        },
+        {
+          "hash": "sha256:41dd2c69cb520a08d65f8537ff764f0b4627d00e073da4f6b44143bbea66102e",
+          "path": "tools/clean.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/clean.R"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7",
+          "path": ".work/files/analysis.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/analysis.csv"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "Rscript tools/clean.R raw.csv analysis.csv"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
     },
     {
       "id": "sha256:09ca14d1452a70d4e444a4210502705de314d0668a6cbb02cb421db70fdf09bf",
@@ -244,19 +276,41 @@
       ],
       "outputs": [
         "sha256:5dc79aabe6cd677f6dabdd5cfac66fbbc3e77bcea9cb315d5b18517e649028b3"
-      ]
-    },
-    {
-      "id": "sha256:9efca012a00765f6812dd4dc3fb5892439954d6b2905026eda081d5fd3a9c7b8",
-      "kind": "script",
-      "ref": "sha256:10a54e878ce099193d6254a9f1f18b44571c0492f3e912b768c05bdcadcd9434",
-      "inputs": [
-        "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
-        "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b"
       ],
-      "outputs": [
-        "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319"
-      ]
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:5dc79aabe6cd677f6dabdd5cfac66fbbc3e77bcea9cb315d5b18517e649028b3",
+          "path": ".work/files/norm-b.in",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-b.in"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:5dc79aabe6cd677f6dabdd5cfac66fbbc3e77bcea9cb315d5b18517e649028b3",
+          "path": ".work/files/norm-b.canon",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-b.canon"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
     },
     {
       "id": "sha256:187fc64879e295493681728ac4fe0c1856899da5a269dd63d5000bc6d6dfca75",
@@ -268,143 +322,175 @@
       ],
       "outputs": [
         "sha256:cbff22ac6c730c9ed2068ac873caa2cd77667cea02ba7c402be7e66ceb3f64a1"
-      ]
-    },
-    {
-      "id": "sha256:6410eb6fe9f2fbafda6dd561c2e7896b04ccc39b13f94c22e6aec1dfac492d77",
-      "kind": "script",
-      "ref": "sha256:138d5e81245eab25b872ba1702b8b7b845b5ce832fa4bcb78825f7275da06334",
-      "inputs": [
-        "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
-        "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b"
       ],
-      "outputs": [
-        "sha256:3477049aa0ec17331d10fb921a14806af16ef61dd790a2fca25f10004869a90e"
-      ]
-    },
-    {
-      "id": "sha256:01a6f51316f754bd026f2213404d22039b5ac20c39993f8c5dcfaa0aa1c6064b",
-      "kind": "script",
-      "ref": "sha256:138d5e81245eab25b872ba1702b8b7b845b5ce832fa4bcb78825f7275da06334",
-      "inputs": [
-        "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
-        "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b"
+      "inputRefs": [
+        {
+          "hash": "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
+          "path": "tools/pmxtest.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/pmxtest.R"
+          ]
+        },
+        {
+          "hash": "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b",
+          "path": ".work/files/test-twocomp.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-twocomp.csv"
+          ]
+        }
       ],
-      "outputs": [
-        "sha256:ec50224c9e78596e99e0830a79a2e3dd2d636764703aa0bbc2f2421d7195a8c4"
-      ]
-    },
-    {
-      "id": "sha256:c19bc4a51bc5faf51910ec64c9604c25bcd58c26556df25388c0b27a5a8f2ec6",
-      "kind": "normalize",
-      "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
-      "inputs": [
-        "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
-        "sha256:3477049aa0ec17331d10fb921a14806af16ef61dd790a2fca25f10004869a90e"
+      "outputRefs": [
+        {
+          "hash": "sha256:cbff22ac6c730c9ed2068ac873caa2cd77667cea02ba7c402be7e66ceb3f64a1",
+          "path": ".work/files/test-twocomp.ref",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-twocomp.ref"
+          ]
+        }
       ],
-      "outputs": [
-        "sha256:60046cd7e1670fccffba9e4270079eb95865af8c8b61625e034224da37b64cad"
-      ]
-    },
-    {
-      "id": "sha256:98fde99f457566b278a52bfd41126eb548aa9985eb0a341482f949e01779de58",
-      "kind": "normalize",
-      "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
-      "inputs": [
-        "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
-        "sha256:ec50224c9e78596e99e0830a79a2e3dd2d636764703aa0bbc2f2421d7195a8c4"
+      "descriptor": {
+        "cmd": "Rscript tools/pmxtest.R test-twocomp.csv"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
       ],
-      "outputs": [
-        "sha256:60046cd7e1670fccffba9e4270079eb95865af8c8b61625e034224da37b64cad"
-      ]
+      "signerVerified": "unchecked"
     },
     {
-      "id": "sha256:472c18271d8d10c7bfa2031612f8963eb45780e7d1c10b13ab713e529410efcd",
-      "kind": "script",
-      "ref": "sha256:28715d77a3d21d4d9eac82f0dad5ece2897f6b5eb0d444cb79ab587a158aca50",
-      "inputs": [
-        "sha256:28aff5ae7a59457fb66d3d9b46914bf64c2adbb531c0c9ca0ebba70ac9d9b2a7",
-        "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319",
-        "sha256:cbff22ac6c730c9ed2068ac873caa2cd77667cea02ba7c402be7e66ceb3f64a1",
-        "sha256:ec50224c9e78596e99e0830a79a2e3dd2d636764703aa0bbc2f2421d7195a8c4"
-      ],
-      "outputs": [
-        "sha256:71a4612403f9c537dfdc2a875d40e8e96cdcf04593e490b32fac1de62c4f9913"
-      ]
-    },
-    {
-      "id": "sha256:067977023b7a2d2b7ba0b6155df945f67d23664d83f4d1d73aa4ade9b2b12408",
-      "kind": "script",
-      "ref": "sha256:93865653fe432ac3319d1866347c0b2616fcef9bb081a6531782c380a55076b8",
-      "inputs": [
-        "sha256:edfdbf5ac784e9a754ab412e015bc3a4667bb3a71f55ce6db797ae2658ada1e9",
-        "sha256:41dd2c69cb520a08d65f8537ff764f0b4627d00e073da4f6b44143bbea66102e"
-      ],
-      "outputs": [
-        "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7"
-      ]
-    },
-    {
-      "id": "sha256:396cc35c8d659e27ffc05675342ac1d6dc8479d216d41eb69ae85bac38612ef7",
-      "kind": "script",
-      "ref": "sha256:4d1dd4d3505e90b177a6e1fa10b46c53672e81461f15380904da8a89ba8352df",
-      "inputs": [
-        "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7",
-        "sha256:dc6fb622c6c9c359b0e370cdd72e9309290a234d74eeba7aaf43653815362f07",
-        "sha256:b47ba7c64a575698f54d0b4df6e8fe8f0d8212f471639a683306d88019cb6d89"
-      ],
-      "outputs": [
-        "sha256:f82fd3dc49bce08497166791c7cf49d8007edbcdf41003ee9157fd8f6ed2834b"
-      ]
-    },
-    {
-      "id": "sha256:26534ca6795ae01bca351460456629904fae210b7f9626f81295df9573b948a0",
+      "id": "sha256:47ff0faa3e88b3684dd0259842d7880f8f7ef55a91e474df491a0a897b5783a5",
       "kind": "script",
       "ref": "sha256:e5d2b67083afb10e709662b9cd8101d66b15668886caa314485d616b0775c1ac",
       "inputs": [
-        "sha256:f82fd3dc49bce08497166791c7cf49d8007edbcdf41003ee9157fd8f6ed2834b",
+        "sha256:ba2de089d1f0d897cc184c3a2b3859835292be6a391f5dc5857e08bc5b5dda68",
         "sha256:94be8cc4ae8ab90747f49a20c0ddbe24f17e4d9c2bff2c5f0a8d307cbd29862d"
       ],
       "outputs": [
         "sha256:4e559c40e05b4f94f1aa013e8176522baeac5a25d66a4bee06e81eedfb214270"
-      ]
-    },
-    {
-      "id": "sha256:ee3a2f596a001be339f17f9a37dd61191d3495856c2ee8eab4d9055d258ba391",
-      "kind": "script",
-      "ref": "sha256:4d1dd4d3505e90b177a6e1fa10b46c53672e81461f15380904da8a89ba8352df",
-      "inputs": [
-        "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7",
-        "sha256:dc6fb622c6c9c359b0e370cdd72e9309290a234d74eeba7aaf43653815362f07",
-        "sha256:b47ba7c64a575698f54d0b4df6e8fe8f0d8212f471639a683306d88019cb6d89"
       ],
-      "outputs": [
-        "sha256:287964469171677fba0adbed3db8f679f4cb6e84ae705e68ed422704b910ff42"
-      ]
+      "inputRefs": [
+        {
+          "hash": "sha256:ba2de089d1f0d897cc184c3a2b3859835292be6a391f5dc5857e08bc5b5dda68",
+          "path": ".work/files/run1.ext",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/run1.ext"
+          ]
+        },
+        {
+          "hash": "sha256:94be8cc4ae8ab90747f49a20c0ddbe24f17e4d9c2bff2c5f0a8d307cbd29862d",
+          "path": "tools/gof.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/gof.R"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:4e559c40e05b4f94f1aa013e8176522baeac5a25d66a4bee06e81eedfb214270",
+          "path": ".work/files/diagnostics.txt",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/diagnostics.txt"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "Rscript tools/gof.R run1.ext"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
     },
     {
-      "id": "sha256:0b25cb0a6ea0068e6138ac8e124a561c5b305171798e85c2df016fcf7d4dd3c0",
+      "id": "sha256:5ccd357ddf64ce16200fb95380ecd140843423017df088d4edfc2dc690951079",
       "kind": "normalize",
       "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
       "inputs": [
         "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
-        "sha256:f82fd3dc49bce08497166791c7cf49d8007edbcdf41003ee9157fd8f6ed2834b"
+        "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f"
       ],
       "outputs": [
-        "sha256:317fcb1239823e456141174fb89e5e0a6fcb0a76d6f1bd2995434f5745011ebe"
-      ]
+        "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f",
+          "path": ".work/files/norm-a.in",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-a.in"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f",
+          "path": ".work/files/norm-a.canon",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-a.canon"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
     },
     {
-      "id": "sha256:4e358c8626ae8fcdafee704b84b15e50afa66c2105d94caf4187cacb6440255a",
+      "id": "sha256:5ce536fa000c1314c25fd564d950b4e67d182b35ba382039507fede53a7b730f",
       "kind": "normalize",
       "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
       "inputs": [
         "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
-        "sha256:287964469171677fba0adbed3db8f679f4cb6e84ae705e68ed422704b910ff42"
+        "sha256:d2565cfc893044bf71a90d60ed61e93bb8bb28014ff9a6f2caddf3f677c2d956"
       ],
       "outputs": [
-        "sha256:317fcb1239823e456141174fb89e5e0a6fcb0a76d6f1bd2995434f5745011ebe"
-      ]
+        "sha256:60046cd7e1670fccffba9e4270079eb95865af8c8b61625e034224da37b64cad"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:d2565cfc893044bf71a90d60ed61e93bb8bb28014ff9a6f2caddf3f677c2d956",
+          "path": ".work/files/test-covariate.ref",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-covariate.ref"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:60046cd7e1670fccffba9e4270079eb95865af8c8b61625e034224da37b64cad",
+          "path": ".work/files/cov.ref.canon",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/cov.ref.canon"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
     },
     {
       "id": "sha256:5d910a51d08fa1acbe17bc9adad3b75bc29d351df830cb475a3ef5460d2148da",
@@ -416,7 +502,477 @@
       ],
       "outputs": [
         "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f"
-      ]
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f",
+          "path": ".work/files/norm-a.in",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-a.in"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:b6a7eed7506a07c095bcee2b24a1f4ebdf7788b551782a582c812f544374bb2f",
+          "path": ".work/files/norm-a.recheck",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-a.recheck"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "1aa32ef87fe5e3f8"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:669c1d23e306cdb283eabdeb6cbb60f0932613308a49e90abbc59588b9208d1e",
+      "kind": "normalize",
+      "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
+      "inputs": [
+        "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+        "sha256:ba2de089d1f0d897cc184c3a2b3859835292be6a391f5dc5857e08bc5b5dda68"
+      ],
+      "outputs": [
+        "sha256:317fcb1239823e456141174fb89e5e0a6fcb0a76d6f1bd2995434f5745011ebe"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:ba2de089d1f0d897cc184c3a2b3859835292be6a391f5dc5857e08bc5b5dda68",
+          "path": ".work/files/run1.ext",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/run1.ext"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:317fcb1239823e456141174fb89e5e0a6fcb0a76d6f1bd2995434f5745011ebe",
+          "path": ".work/files/fit.ref.canon",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/fit.ref.canon"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "1e9069577f9881d0"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:6ef77292f69347276fc1454a805ae5b2ad566e012d61eb6a4066ff2ccae9530b",
+      "kind": "normalize",
+      "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
+      "inputs": [
+        "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+        "sha256:bd1fcdcfa3131575c9bd42e637d522c39c39826d558bec24574eecb14b8c641c"
+      ],
+      "outputs": [
+        "sha256:60046cd7e1670fccffba9e4270079eb95865af8c8b61625e034224da37b64cad"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:bd1fcdcfa3131575c9bd42e637d522c39c39826d558bec24574eecb14b8c641c",
+          "path": ".work/files/test-covariate.cand",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-covariate.cand"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:60046cd7e1670fccffba9e4270079eb95865af8c8b61625e034224da37b64cad",
+          "path": ".work/files/cov.cand.canon",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/cov.cand.canon"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:7b45dda1de56079b94090d5c1293bcaea4e0c058c1c8155120bfa31a718c2914",
+      "kind": "script",
+      "ref": "sha256:28715d77a3d21d4d9eac82f0dad5ece2897f6b5eb0d444cb79ab587a158aca50",
+      "inputs": [
+        "sha256:eaa1d4d83c69dd18cc1d9357afa9f070832c1d13cd25edf262a6ed3cc9ba4f45",
+        "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319",
+        "sha256:cbff22ac6c730c9ed2068ac873caa2cd77667cea02ba7c402be7e66ceb3f64a1",
+        "sha256:bd1fcdcfa3131575c9bd42e637d522c39c39826d558bec24574eecb14b8c641c"
+      ],
+      "outputs": [
+        "sha256:71a4612403f9c537dfdc2a875d40e8e96cdcf04593e490b32fac1de62c4f9913"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:eaa1d4d83c69dd18cc1d9357afa9f070832c1d13cd25edf262a6ed3cc9ba4f45",
+          "path": ".work/files/pmxtools.spectrum.json",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/pmxtools.spectrum.json"
+          ]
+        },
+        {
+          "hash": "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319",
+          "path": ".work/files/test-onecomp.ref",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-onecomp.ref"
+          ]
+        },
+        {
+          "hash": "sha256:cbff22ac6c730c9ed2068ac873caa2cd77667cea02ba7c402be7e66ceb3f64a1",
+          "path": ".work/files/test-twocomp.ref",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-twocomp.ref"
+          ]
+        },
+        {
+          "hash": "sha256:bd1fcdcfa3131575c9bd42e637d522c39c39826d558bec24574eecb14b8c641c",
+          "path": ".work/files/test-covariate.cand",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-covariate.cand"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:71a4612403f9c537dfdc2a875d40e8e96cdcf04593e490b32fac1de62c4f9913",
+          "path": ".work/files/fulfilment.txt",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/fulfilment.txt"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "plankton spectrum check pmxtools-1.2.0"
+      },
+      "keyids": [
+        "1e9069577f9881d0"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:96e29daeaba49d76918eca2fff2cd97d8e5a17174b26c0362e12639846a43be1",
+      "kind": "script",
+      "ref": "sha256:a0ae96d8718ccf112dc4f1d3bcd7535daddbaa9653316d72d8a82f8722ed3cd3",
+      "inputs": [
+        "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7",
+        "sha256:dc6fb622c6c9c359b0e370cdd72e9309290a234d74eeba7aaf43653815362f07",
+        "sha256:b47ba7c64a575698f54d0b4df6e8fe8f0d8212f471639a683306d88019cb6d89"
+      ],
+      "outputs": [
+        "sha256:ba2de089d1f0d897cc184c3a2b3859835292be6a391f5dc5857e08bc5b5dda68"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7",
+          "path": ".work/files/analysis.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/analysis.csv"
+          ]
+        },
+        {
+          "hash": "sha256:dc6fb622c6c9c359b0e370cdd72e9309290a234d74eeba7aaf43653815362f07",
+          "path": ".work/files/run12.mod",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/run12.mod"
+          ]
+        },
+        {
+          "hash": "sha256:b47ba7c64a575698f54d0b4df6e8fe8f0d8212f471639a683306d88019cb6d89",
+          "path": "tools/fit.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/fit.R"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:ba2de089d1f0d897cc184c3a2b3859835292be6a391f5dc5857e08bc5b5dda68",
+          "path": ".work/files/run1.ext",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/run1.ext"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "Rscript tools/fit.R analysis.csv",
+        "environment": "sha256:eaa1d4d83c69dd18cc1d9357afa9f070832c1d13cd25edf262a6ed3cc9ba4f45"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:9d27a2a6af622558e54b3c50576f46f683c6237032513039311395c0f8d7380b",
+      "kind": "script",
+      "ref": "sha256:138d5e81245eab25b872ba1702b8b7b845b5ce832fa4bcb78825f7275da06334",
+      "inputs": [
+        "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
+        "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b"
+      ],
+      "outputs": [
+        "sha256:d2565cfc893044bf71a90d60ed61e93bb8bb28014ff9a6f2caddf3f677c2d956"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
+          "path": "tools/pmxtest.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/pmxtest.R"
+          ]
+        },
+        {
+          "hash": "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b",
+          "path": ".work/files/test-covariate.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-covariate.csv"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:d2565cfc893044bf71a90d60ed61e93bb8bb28014ff9a6f2caddf3f677c2d956",
+          "path": ".work/files/test-covariate.ref",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-covariate.ref"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "Rscript tools/pmxtest.R test-covariate.csv banner"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:9efca012a00765f6812dd4dc3fb5892439954d6b2905026eda081d5fd3a9c7b8",
+      "kind": "script",
+      "ref": "sha256:10a54e878ce099193d6254a9f1f18b44571c0492f3e912b768c05bdcadcd9434",
+      "inputs": [
+        "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
+        "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b"
+      ],
+      "outputs": [
+        "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
+          "path": "tools/pmxtest.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/pmxtest.R"
+          ]
+        },
+        {
+          "hash": "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b",
+          "path": ".work/files/test-onecomp.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-onecomp.csv"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:94bc9bc47ea042d5a2ec3d80ce63407cb65a750e291e21f36c25e42e69a81319",
+          "path": ".work/files/test-onecomp.ref",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-onecomp.ref"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "Rscript tools/pmxtest.R test-onecomp.csv"
+      },
+      "keyids": [
+        "20d55a87dc01305a"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:a0853ef1c8b7d79e34a94c7b595100972d01fb45bb025c8df91d2fa88d9ed3b2",
+      "kind": "script",
+      "ref": "sha256:a0ae96d8718ccf112dc4f1d3bcd7535daddbaa9653316d72d8a82f8722ed3cd3",
+      "inputs": [
+        "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7",
+        "sha256:dc6fb622c6c9c359b0e370cdd72e9309290a234d74eeba7aaf43653815362f07",
+        "sha256:b47ba7c64a575698f54d0b4df6e8fe8f0d8212f471639a683306d88019cb6d89"
+      ],
+      "outputs": [
+        "sha256:7a7b4a06553bf2028ed4beb8144dc1226c03a6e98010f669bf30b44533cbf93b"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:ef1a9818805296b021090af8e611b90bc2a11d547b14018c9b5a5f4a9647ecf7",
+          "path": ".work/files/analysis.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/analysis.csv"
+          ]
+        },
+        {
+          "hash": "sha256:dc6fb622c6c9c359b0e370cdd72e9309290a234d74eeba7aaf43653815362f07",
+          "path": ".work/files/run12.mod",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/run12.mod"
+          ]
+        },
+        {
+          "hash": "sha256:b47ba7c64a575698f54d0b4df6e8fe8f0d8212f471639a683306d88019cb6d89",
+          "path": "tools/fit.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/fit.R"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:7a7b4a06553bf2028ed4beb8144dc1226c03a6e98010f669bf30b44533cbf93b",
+          "path": ".work/files/run1-qc.ext",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/run1-qc.ext"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "Rscript tools/fit.R analysis.csv",
+        "environment": "sha256:eaa1d4d83c69dd18cc1d9357afa9f070832c1d13cd25edf262a6ed3cc9ba4f45"
+      },
+      "keyids": [
+        "1e9069577f9881d0"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:a48d83572a9470c3faccf45f8a0b384003e4f3ff89e17ec5c4c3607cd2ee9892",
+      "kind": "normalize",
+      "ref": "sha256:281c331e1386fda68318e174bc4059b8bd2e1d7f70ca75e11826d68d5bc7b8d1",
+      "inputs": [
+        "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+        "sha256:7a7b4a06553bf2028ed4beb8144dc1226c03a6e98010f669bf30b44533cbf93b"
+      ],
+      "outputs": [
+        "sha256:317fcb1239823e456141174fb89e5e0a6fcb0a76d6f1bd2995434f5745011ebe"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:7a7b4a06553bf2028ed4beb8144dc1226c03a6e98010f669bf30b44533cbf93b",
+          "path": ".work/files/run1-qc.ext",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/run1-qc.ext"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:317fcb1239823e456141174fb89e5e0a6fcb0a76d6f1bd2995434f5745011ebe",
+          "path": ".work/files/fit.qc.canon",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/fit.qc.canon"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "1e9069577f9881d0"
+      ],
+      "signerVerified": "unchecked"
+    },
+    {
+      "id": "sha256:cfbcda152e7c814260cff2f34c549816f6dcf636e8718fb74fee44222fbc84e0",
+      "kind": "script",
+      "ref": "sha256:138d5e81245eab25b872ba1702b8b7b845b5ce832fa4bcb78825f7275da06334",
+      "inputs": [
+        "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
+        "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b"
+      ],
+      "outputs": [
+        "sha256:bd1fcdcfa3131575c9bd42e637d522c39c39826d558bec24574eecb14b8c641c"
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:3e5e272218d5feccbac7afdc45782c89129e611bc4968e459ebe29298c88493e",
+          "path": "tools/pmxtest.R",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/pmxtest.R"
+          ]
+        },
+        {
+          "hash": "sha256:4bf0e63035dd1fafdbe5915d64110833dacd4754cfbb5e70330440fd3bb5f53b",
+          "path": ".work/files/test-covariate.csv",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-covariate.csv"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:bd1fcdcfa3131575c9bd42e637d522c39c39826d558bec24574eecb14b8c641c",
+          "path": ".work/files/test-covariate.cand",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/test-covariate.cand"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "Rscript tools/pmxtest.R test-covariate.csv banner"
+      },
+      "keyids": [
+        "1e9069577f9881d0"
+      ],
+      "signerVerified": "unchecked"
     },
     {
       "id": "sha256:e9b3930dbbcf9863fbf6f4f22e1dc828283a6fd3f06522d0fb7c3195b5992ea1",
@@ -428,7 +984,41 @@
       ],
       "outputs": [
         "sha256:5dc79aabe6cd677f6dabdd5cfac66fbbc3e77bcea9cb315d5b18517e649028b3"
-      ]
+      ],
+      "inputRefs": [
+        {
+          "hash": "sha256:57c0b557ed3df0ed02cb6cc80f4bd5a1561130b9b9b3c9f609146863472cd424",
+          "path": "tools/strip-banner.sh",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/tools/strip-banner.sh"
+          ]
+        },
+        {
+          "hash": "sha256:5dc79aabe6cd677f6dabdd5cfac66fbbc3e77bcea9cb315d5b18517e649028b3",
+          "path": ".work/files/norm-b.in",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-b.in"
+          ]
+        }
+      ],
+      "outputRefs": [
+        {
+          "hash": "sha256:5dc79aabe6cd677f6dabdd5cfac66fbbc3e77bcea9cb315d5b18517e649028b3",
+          "path": ".work/files/norm-b.recheck",
+          "uri": [
+            "https://raw.githubusercontent.com/gitmick/kton-examples/v0.4.0/examples/12-submission/.work/files/norm-b.recheck"
+          ]
+        }
+      ],
+      "descriptor": {
+        "cmd": "sh tools/strip-banner.sh",
+        "envRef": "oci://ghcr.io/cro/pmxtools:1.2.0@sha256:d34db33fcafe000000000000000000000000000000000000000000000000beef",
+        "environment": "sha256:ac8afa130063441f1e561e87f048f132743283d3106dfc16f500f1b805b0f1fc"
+      },
+      "keyids": [
+        "1aa32ef87fe5e3f8"
+      ],
+      "signerVerified": "unchecked"
     }
   ]
 }

@@ -3,7 +3,7 @@ bin/plankton
 bin/nekton
 bin/kton
 # private key material must NEVER be committed to a public repo (belt-and-suspenders: keep this even
-# though each example writes its keys under .work/keys/, which we otherwise now PERSIST - see below)
+# though no example writes a key into the repository any more - lib/common.sh puts them outside it)
 *.key
 *.pem
 # Each example PERSISTS its .work/ so every foton's recorded input/output path is a real, fetchable

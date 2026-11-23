@@ -12,8 +12,8 @@ cd "$EXDIR"; source ../../lib/common.sh
 export PLANKTON_DIR=".work/plankton"
 export NEKTON_DIR=".work/nekton"                 # the reviews registry
 export NEKTON_TEMPLATES="$EXROOT/templates"             # the shared, curated template set
-export NEKTON_ALIASES="$EXROOT/aliases.json"
-rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" ".work/keys"
+export NEKTON_ALIASES="$EXROOT/.kton/aliases.json"
+rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR"
 W=".work"
 APPROVE="https://schema.org/AcceptAction"               # reused schema.org verdicts (no minted terms)
 REJECT="https://schema.org/RejectAction"
@@ -22,19 +22,19 @@ echo "########## Part 1 - the template (the classical mechanism, vs the raw clai
 nekton templates --show review/decision | sed 's/^/  /'
 
 echo; echo "########## Part 2 - a foton to review ##########"
-plankton keygen "$W/keys/author" --seed "$(demoseed author)" >/dev/null
+plankton keygen "$KEYS/author" --seed "$(demoseed author)" >/dev/null
 printf "auc\n42.0\n" > "$W/result.csv"; echo "verdict=within-range" > "$W/assessment.txt"
 FOTON=$(plankton author --cmd "assess result.csv" --in "$W/result.csv" --out "$W/assessment.txt" \
-  --sign "$W/keys/author.key" --add -o "$W/foton.dsse.json" --print-id)
+  --sign "$KEYS/author.key" --add -o "$W/foton.dsse.json" --print-id)
 echo "  foton = $FOTON"
 
 echo; echo "########## Part 3 - THREE reviewers, each APPROVE with a comment file (nothing overwritten) #####"
 for who in alice bob carol; do
-  nekton keygen "$W/keys/$who" --seed "$(demoseed "$who")" >/dev/null
+  nekton keygen "$KEYS/$who" --seed "$(demoseed "$who")" >/dev/null
   printf "# %s\nReproduced locally; AUC within range. Approve.\n" "$who" > "$W/$who.md"
   nekton annotate --foton "$W/foton.dsse.json" --template review/decision \
     --set decision="$APPROVE" --set comment="$W/$who.md" \
-    --by "CN=${who^}" --when "$KTON_WHEN" --sign "$W/keys/$who.key" --add >/dev/null
+    --by "CN=${who^}" --when "$KTON_WHEN" --sign "$KEYS/$who.key" --add >/dev/null
   echo "  $who approved (schema:AcceptAction) + attached $who.md"
 done
 echo "  --- correctness checks ---"
@@ -60,10 +60,10 @@ echo; echo "########## Part 4 - register the template itself in a SEPARATE nekto
 TPLHASH=$(plankton hash "$NEKTON_TEMPLATES/review-decision.json")
 echo "  template content hash = $TPLHASH"
 PUB="$W/nekton-publisher"; mkdir -p "$PUB"
-nekton keygen "$W/keys/standards" --seed "$(demoseed standards)" >/dev/null
+nekton keygen "$KEYS/standards" --seed "$(demoseed standards)" >/dev/null
 printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/1999/02/22-rdf-syntax-ns#type","object":{"id":"https://kton.dev/template/v0"},"why":"the review/decision template (approve/reject a foton + a comment file)","by":"CN=Standards","when":"2026-07-16T00:00:00Z"}' \
   "$TPLHASH" > "$W/register.spec.json"
-nekton claim "$W/register.spec.json" "$W/keys/standards.key" --registry "$PUB" --add | sed 's/^/  /'
+nekton claim "$W/register.spec.json" "$KEYS/standards.key" --registry "$PUB" --add | sed 's/^/  /'
 echo "  a consumer federates the two registries (like example 02); the template DEFINITION now"
 echo "  resolves by hash next to the reviews built from it:"
 nekton mirror "$PUB" | sed 's/^/  /'
@@ -82,7 +82,7 @@ records_required "$NEKTON_DIR" "records to export" 3 > "$W/export-records.jsonl"
 exported=0
 while IFS= read -r rec; do
   printf '%s\n' "$rec" > "$W/rec.json"
-  if nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$W/reviews.trig" 2>>"$W/export.err"; then
+  if nekton export --nanopub --trust-keys "$KEYS" "$W/rec.json" >> "$W/reviews.trig" 2>>"$W/export.err"; then
     exported=$((exported + 1)); echo >> "$W/reviews.trig"
   fi
 done < "$W/export-records.jsonl"
@@ -106,4 +106,4 @@ else
 fi
 
 echo
-snapshot 11-review-template "$W/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"
+snapshot 11-review-template "$KEYS" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"

@@ -16,18 +16,18 @@ python3 -c "import cryptography" 2>/dev/null || { echo "this example needs pytho
 
 export PLANKTON_DIR="$PWD/.work/plankton"
 export NEKTON_DIR="$PWD/.work/nekton"
-rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys"
+rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR"
 W=".work"
-plankton keygen "$W/keys/analyst"  --seed "$(demoseed analyst)"  >/dev/null
-nekton   keygen "$W/keys/reviewer" --seed "$(demoseed reviewer)" >/dev/null
+plankton keygen "$KEYS/analyst"  --seed "$(demoseed analyst)"  >/dev/null
+nekton   keygen "$KEYS/reviewer" --seed "$(demoseed reviewer)" >/dev/null
 
 echo "########## Part 1 - two ordinary records: a foton and a claim about it ##########"
 echo "raw" > "$W/data.csv"; echo "fit" > "$W/model.txt"
 FOTON=$(plankton author --cmd "fit data.csv model.txt" --in "$W/data.csv" --out "$W/model.txt" \
-  --sign "$W/keys/analyst.key" -o "$W/foton.dsse.json" --add --print-id)
+  --sign "$KEYS/analyst.key" -o "$W/foton.dsse.json" --add --print-id)
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reviewed","object":{"value":"looks correct"},"by":"CN=Reviewer","when":"%s"}' \
   "$FOTON" "$KTON_WHEN" > "$W/review.spec.json"
-CLAIM=$(nekton claim "$W/review.spec.json" "$W/keys/reviewer.key" "$W/claim.dsse.json" --add --print-id)
+CLAIM=$(nekton claim "$W/review.spec.json" "$KEYS/reviewer.key" "$W/claim.dsse.json" --add --print-id)
 echo "  foton = $FOTON"
 echo "  claim = $CLAIM"
 
@@ -100,4 +100,4 @@ expect_fail "the claim's token checked against the foton" \
   python3 notary.py verify "$W/foton.dsse.json" "$W/claim.token.json"
 
 echo
-snapshot 15-attach-material "$W/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"
+snapshot 15-attach-material "$KEYS" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"

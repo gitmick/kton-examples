@@ -20,15 +20,15 @@ source ../../lib/common.sh
 export PLANKTON_DIR="$PWD/.work/plankton"     # results + the local content (blob) store fetch pins into
 export NEKTON_DIR="$PWD/.work/nekton"         # the signed located-at claims
 rm -rf "$PWD/.work"
-mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys" "$PWD/.work/store" "$PWD/.work/mirror"
-plankton keygen "$PWD/.work/keys/lab" --seed "$(demoseed lab)"      >/dev/null   # the producer
-nekton  keygen "$PWD/.work/keys/stranger" --seed "$(demoseed stranger)" >/dev/null    # an UNTRUSTED third party (Stage C)
+mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/store" "$PWD/.work/mirror"
+plankton keygen "$KEYS/lab" --seed "$(demoseed lab)"      >/dev/null   # the producer
+nekton  keygen "$KEYS/stranger" --seed "$(demoseed stranger)" >/dev/null    # an UNTRUSTED third party (Stage C)
 # A trust policy is a DIRECTORY OF PUBLIC KEYS the consumer chose. Two of them here, because the
 # difference between them is the point of Stage C.
 mkdir -p "$PWD/.work/trust-lab" "$PWD/.work/trust-both"
-cp "$PWD/.work/keys/lab.pub"      "$PWD/.work/trust-lab/"
-cp "$PWD/.work/keys/lab.pub"      "$PWD/.work/trust-both/"
-cp "$PWD/.work/keys/stranger.pub" "$PWD/.work/trust-both/"
+cp "$KEYS/lab.pub"      "$PWD/.work/trust-lab/"
+cp "$KEYS/lab.pub"      "$PWD/.work/trust-both/"
+cp "$KEYS/stranger.pub" "$PWD/.work/trust-both/"
 # --allow-local: these locators are file:// under .work. A signature about CONTENT says nothing about
 # a path on this machine, so reading one takes a second, explicit yes from the operator.
 FETCH=(kton fetch --trust-keys "$PWD/.work/trust-lab" --allow-local)
@@ -37,7 +37,7 @@ echo "########## A - a record names its bytes by HASH; the local content store i
 echo "dose,conc" > .work/data.csv
 echo "result=42" > .work/result.txt
 FOTON="$(plankton author --cmd "analyze data.csv result.txt" \
-  --in .work/data.csv --out .work/result.txt --sign "$PWD/.work/keys/lab.key" --add --print-id)"
+  --in .work/data.csv --out .work/result.txt --sign "$KEYS/lab.key" --add --print-id)"
 RESULT="$(plankton hash .work/result.txt)"
 echo "  foton = $FOTON"
 echo "  its result is named by content hash: $RESULT"
@@ -52,7 +52,7 @@ echo; echo "########## B - a signed dcat:downloadURL says WHERE; kton fetch veri
 # hash, object = a URI. It is a signed, post-hoc, plural SUGGESTION - the kernel never dereferences it.
 printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/dcat#downloadURL","object":{"uri":"file://.work/store/result.bytes"},"by":"CN=lab","when":"2026-07-16T00:00:00Z"}' \
   "$RESULT" > .work/loc.json
-nekton claim .work/loc.json "$PWD/.work/keys/lab.key" --add >/dev/null
+nekton claim .work/loc.json "$KEYS/lab.key" --add >/dev/null
 "${FETCH[@]}" "$RESULT"
 echo -n "  pinned now? "; plankton blob "$RESULT"
 echo "  -> content-present: the bytes are here AND they hash to what the record named. Now you can"
@@ -63,7 +63,7 @@ echo; echo "########## C1 - an untrusted stranger's location is never even opene
 echo "result=999 (forged)" > .work/mirror/result.bytes
 printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/dcat#downloadURL","object":{"uri":"file://.work/mirror/result.bytes"},"by":"CN=stranger","when":"2026-07-16T00:00:00Z"}' \
   "$RESULT" > .work/bad.json
-nekton claim .work/bad.json "$PWD/.work/keys/stranger.key" --add >/dev/null
+nekton claim .work/bad.json "$KEYS/stranger.key" --add >/dev/null
 # count the records, not the wire form's fields: .records is the array SPEC §12 pins.
 CLAIMED=$(nekton about "$RESULT" --json 2>/dev/null | jq '.records | length')
 SEEN=$("${FETCH[@]}" "$RESULT" 2>&1 | sed -n 's/.*, \([0-9]*\) signed by a trusted key.*/\1/p')
@@ -93,4 +93,4 @@ echo "  stored, and kept per a retention policy - a named obligation, not a trus
 echo
 # the viewer shows the result foton and the located-at claims (both the good and the forged locator):
 # the graph shows CLAIMED locations - verification happens at fetch, on arrival, not in the picture.
-snapshot 14-fetch "$PWD/.work/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"
+snapshot 14-fetch "$KEYS" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"

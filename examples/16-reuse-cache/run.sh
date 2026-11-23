@@ -15,10 +15,10 @@ cd "$(dirname "$0")"
 source ../../lib/common.sh
 
 export PLANKTON_DIR="$PWD/.work/plankton"
-rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys"
+rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR"
 W=".work"
-plankton keygen "$W/keys/alice" --seed "$(demoseed alice)" >/dev/null   # runs it first
-plankton keygen "$W/keys/mallory" --seed "$(demoseed mallory)" >/dev/null   # runs the same thing later
+plankton keygen "$KEYS/alice" --seed "$(demoseed alice)" >/dev/null   # runs it first
+plankton keygen "$KEYS/mallory" --seed "$(demoseed mallory)" >/dev/null   # runs the same thing later
 
 # hits <statement> - how many prior computations plankton reports for this action key.
 # --json carries per hit what the printed form only hints at in a stderr note: `declaredSigner` and
@@ -31,7 +31,7 @@ echo "########## Part 1 - alice records a computation ##########"
 echo "id,conc"  > "$W/pk.csv"; printf '1,4.2\n' >> "$W/pk.csv"
 echo "cl=4.200" > "$W/fit.out"
 plankton author --cmd "fit pk.csv" --in "$W/pk.csv" --out "$W/fit.out" \
-  --sign "$W/keys/alice.key" -o "$W/alice.dsse.json" --add >/dev/null
+  --sign "$KEYS/alice.key" -o "$W/alice.dsse.json" --add >/dev/null
 echo "  alice's foton is on record."
 
 echo
@@ -48,7 +48,7 @@ echo "########## Part 3 - mallory answers the same question DIFFERENTLY ########
 # honest-looking foton. The action key does not care what the output is, so it collides on purpose.
 echo "cl=9.999" > "$W/fit.out"
 plankton author --cmd "fit pk.csv" --in "$W/pk.csv" --out "$W/fit.out" \
-  --sign "$W/keys/mallory.key" -o "$W/mallory.dsse.json" --add >/dev/null
+  --sign "$KEYS/mallory.key" -o "$W/mallory.dsse.json" --add >/dev/null
 plankton reuse "$W/alice.dsse.json" | sed 's/^/  /'
 N=$(hits "$W/alice.dsse.json"); [ "$N" = "2" ] || { echo "  !! expected 2 hits, got '${N:-none}'" >&2; exit 1; }
 echo "  [asserted: 2 prior computations, same action key, DIFFERENT outputs]"
@@ -58,10 +58,10 @@ echo "     and no amount of hashing decides between them; only a signer you trus
 echo
 echo "== so the consumer picks a signer and checks, instead of taking the cache's word =="
 echo "-- alice's foton, against alice's key --"
-plankton verify "$W/alice.dsse.json" "$W/keys/alice.pub" | sed 's/^/    /'
+plankton verify "$W/alice.dsse.json" "$KEYS/alice.pub" | sed 's/^/    /'
 echo "-- mallory's foton, against alice's key (must NOT verify) --"
 expect_fail "mallory's foton verified against alice's key" \
-  plankton verify "$W/mallory.dsse.json" "$W/keys/alice.pub"
+  plankton verify "$W/mallory.dsse.json" "$KEYS/alice.pub"
 echo "  (WRONG KEY, as it must be: the cache offered both, the signature separates them)"
 
 echo
@@ -69,7 +69,7 @@ echo "########## Part 4 - change one input byte and it is a different question #
 printf '2,3.8\n' >> "$W/pk.csv"                    # one row more: a different input hash
 echo "cl=4.000" > "$W/fit2.out"
 plankton author --cmd "fit pk.csv" --in "$W/pk.csv" --out "$W/fit2.out" \
-  --sign "$W/keys/alice.key" -o "$W/other.dsse.json" >/dev/null      # authored, NOT filed
+  --sign "$KEYS/alice.key" -o "$W/other.dsse.json" >/dev/null      # authored, NOT filed
 plankton reuse "$W/other.dsse.json" | sed 's/^/  /'
 # Ask the field, not the sentence. Same reason as 12's signature gate: a `grep -q` over a tool's
 # output depends on that output's shape AND on nothing following the matched line.
@@ -111,4 +111,4 @@ echo "The cache answers 'was this asked?'. Example 03 answers 'do two results ma
 echo "example 17 answers 'how many INDEPENDENT signers got this same output?'. Three different"
 echo "questions; only the last two are about trust."
 echo
-snapshot 16-reuse-cache "$W/keys" --reg "$PLANKTON_DIR"
+snapshot 16-reuse-cache "$KEYS" --reg "$PLANKTON_DIR"

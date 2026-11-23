@@ -14,12 +14,12 @@ cd "$(dirname "$0")"
 source ../../lib/common.sh
 
 export PLANKTON_DIR="$PWD/.work/plankton"
-rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/keys" "$PWD/.work/trusted"
+rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$PWD/.work/trusted"
 W=".work"
-for who in alice bob mallory; do plankton keygen "$W/keys/$who" --seed "$(demoseed "$who")" >/dev/null; done
+for who in alice bob mallory; do plankton keygen "$KEYS/$who" --seed "$(demoseed "$who")" >/dev/null; done
 # The verifier's OWN trust set: the two labs it knows. mallory is not in it - not because she is
 # suspected, but because nobody vouched for her. That is the whole mechanism.
-cp "$W/keys/alice.pub" "$W/keys/bob.pub" "$W/trusted/"
+cp "$KEYS/alice.pub" "$KEYS/bob.pub" "$W/trusted/"
 
 # repro_json <trust-keys-dir|-> - the machine form of the same question shown just above. stderr is
 # dropped ONLY here: the human call immediately preceding printed the very same warnings, and
@@ -34,7 +34,7 @@ echo "########## Part 1 - alice runs it ##########"
 echo "id,conc" > "$W/pk.csv"; printf '1,4.2\n2,3.8\n' >> "$W/pk.csv"
 echo "cl=4.000" > "$W/fit.out"
 plankton author --cmd "fit pk.csv" --in "$W/pk.csv" --out "$W/fit.out" \
-  --sign "$W/keys/alice.key" --add >/dev/null
+  --sign "$KEYS/alice.key" --add >/dev/null
 OUT=$(plankton hash "$W/fit.out")
 echo "  output under discussion: $OUT"
 
@@ -44,7 +44,7 @@ echo "########## Part 2 - bob runs the same thing, independently ##########"
 # record IS alice's record - and his signature lands on it as a CO-SIGNATURE. Independent
 # reproduction is not two documents agreeing; it is two signatures on one content-addressed fact.
 plankton author --cmd "fit pk.csv" --in "$W/pk.csv" --out "$W/fit.out" \
-  --sign "$W/keys/bob.key" --add >/dev/null
+  --sign "$KEYS/bob.key" --add >/dev/null
 plankton reproductions --trust-keys "$W/trusted" "$OUT" | sed 's/^/  /'
 N=$(repro_json "$W/trusted" | field distinctSigners)
 [ "$N" = "2" ] || { echo "  !! expected ↻2 verified, got $N" >&2; exit 1; }
@@ -62,7 +62,7 @@ echo "########## Part 4 - mallory inflates ↻N, and it costs her nothing ######
 # not covered by the signature, so rewriting it is free and breaks nothing she needs.
 for i in 1 2 3; do
   plankton author --cmd "fit pk.csv # pass $i" --in "$W/pk.csv" --out "$W/fit.out" \
-    --sign "$W/keys/mallory.key" -o "$W/m$i.json" >/dev/null
+    --sign "$KEYS/mallory.key" -o "$W/m$i.json" >/dev/null
   python3 - "$W/m$i.json" "$W/forged$i.json" "$i" <<'PY'
 import json, sys
 env = json.load(open(sys.argv[1]))
@@ -92,4 +92,4 @@ echo "     still in the registry, still well-formed. The only thing that changed
 echo "     was asked - over declared labels, or over signatures against keys you chose to trust."
 
 echo
-snapshot 17-reproductions "$W/keys" --reg "$PLANKTON_DIR"
+snapshot 17-reproductions "$KEYS" --reg "$PLANKTON_DIR"

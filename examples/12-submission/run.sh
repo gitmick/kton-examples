@@ -14,14 +14,14 @@ set -euo pipefail
 EXDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$EXDIR"; source ../../lib/common.sh
 command -v Rscript >/dev/null || { echo "this capstone runs real R; install Rscript"; exit 1; }
-export NEKTON_TEMPLATES="$EXROOT/templates" NEKTON_ALIASES="$EXROOT/aliases.json"
+export NEKTON_TEMPLATES="$EXROOT/templates" NEKTON_ALIASES="$EXROOT/.kton/aliases.json"
 # Best practice: author with paths RELATIVE to the example dir (cwd stays $EXDIR), so a foton's
 # recorded input/output NAMES never bake in an absolute machine path (/home, /mnt, ...) that would
 # then live forever in the committed, public snapshot. `.work/` is gitignored; only the names leak.
-W=".work"; rm -rf "$W"; mkdir -p "$W"/{files,keys}
+W=".work"; rm -rf "$W"; mkdir -p "$W"/files
 for org in cro sponsor agency; do mkdir -p "$W/$org/plankton" "$W/$org/nekton"; done
 F="$W/files"; T="$EXDIR/tools"
-key(){ echo "$W/keys/$1"; }
+key(){ echo "$KEYS/$1"; }
 for k in cro-org sponsor-org analyst qc lead submitter reviewer; do nekton keygen "$(key $k)" --seed "$(demoseed "$k")" >/dev/null; done
 keyiri(){ echo "https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest())")"; }
 keyid16(){ python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$(key $1).pub').read().strip())).hexdigest()[:16])"; }
@@ -296,7 +296,7 @@ PLANKTON_DIR="$W/agency/plankton" plankton export "$F/agency-plankton.json"
 # never the self-declared keyid - a relabelled attribution is dropped (nk:signerVerified false), so the
 # gate can never read a forged signer as an established author/reviewer. These RDF files are the gate's
 # working intermediate (what rdflib parses), re-derivable from the two registry bundles above.
-plankton export --rdf --trust-keys "$W/keys" -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf --trust-keys "$W/keys" > "$F/submission.ttl"
+plankton export --rdf --trust-keys "$KEYS" -o "$F/submission.ttl" >/dev/null 2>&1 || plankton export --rdf --trust-keys "$KEYS" > "$F/submission.ttl"
 : > "$F/attestations.trig"
 # The claims ARE the gate's evidence, so read them with the asserting form and count what survives the
 # export. Both halves matter: a reader that cannot see the store returns an empty list rather than an
@@ -307,7 +307,7 @@ records_required "$W/agency/nekton" "agency claims" 1 > "$F/agency-records.jsonl
 attested=0
 while IFS= read -r rec; do
   printf '%s\n' "$rec" > "$W/rec.json"
-  if nekton export --nanopub --trust-keys "$W/keys" "$W/rec.json" >> "$F/attestations.trig" 2>>"$W/export.err"; then
+  if nekton export --nanopub --trust-keys "$KEYS" "$W/rec.json" >> "$F/attestations.trig" 2>>"$W/export.err"; then
     attested=$((attested + 1)); echo >> "$F/attestations.trig"
   fi
 done < "$F/agency-records.jsonl"
@@ -357,5 +357,5 @@ fi
 echo
 # the viewer relabels a signer to its attested principal ONLY for bindings vouched by a trusted
 # authority (the two org authorities) - a sock-puppet's self/ring-signed binding is never shown attested.
-snapshot 12-submission "$W/keys" --reg "$W/agency/plankton" --reg "$W/agency/nekton" \
+snapshot 12-submission "$KEYS" --reg "$W/agency/plankton" --reg "$W/agency/nekton" \
   --authority "$(keyid16 cro-org)" --authority "$(keyid16 sponsor-org)"
