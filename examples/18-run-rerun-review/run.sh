@@ -71,6 +71,7 @@ done
 review(){
   local NAME="$1"; shift; local RD="$D/$NAME"
   local REV; REV=$(NEKTON_DIR="$RD" nekton seed "$NAME" --parent "$PUB" --sign "$(K michael)" --by michael --when "$WHEN" --add 2>&1 | seedid)
+  echo "$REV" > "$W/$NAME.scope"   # check reads this scope's file by its id (the store also holds its root scope)
   local rule; rule=$(claim "$RD" michael "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"foton":"%s","by":"michael","when":"%s","scope":"%s","prev":"%s"}}' \
     "$REV" "$(plankton hash four-eyes.rq)" "$F" "$WHEN" "$REV" "$REV")")
   local anchor; anchor=$(claim "$PUBD" michael "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"by":"michael","when":"%s","scope":"%s","prev":"%s"}}' \
@@ -97,8 +98,13 @@ review(){
 check(){
   local NAME="$1" C="$W/check/$1"; mkdir -p "$C"
   local fr="$PLANKTON_DIR/objects/sha256/${F#sha256:}.json"
-  local ps; ps=$(ls "$PUBD"/objects/scope/*.nekton.jsonl); local rs; rs=$(ls "$D/$NAME"/objects/scope/*.nekton.jsonl)
-  local ts="$NEKTON_DIR/objects/unscoped.nekton.jsonl"     # the llm's description and rationale
+  # each scope's file by its id: since kton 0.4 every store also holds its root scope's file
+  local ps="$PUBD/objects/scope/${PUB#sha256:}.nekton.jsonl" rs; rs="$D/$NAME/objects/scope/$(sed 's/^sha256://' "$W/$NAME.scope").nekton.jsonl"
+  [ -f "$ps" ] && [ -f "$rs" ] || { echo "  !! no scope file for $PUB or $(cat "$W/$NAME.scope")" >&2; exit 1; }
+  # the llm's description and rationale: since kton 0.4 they chain in the store's root scope, its only
+  # scope file here (there is no unscoped nekton any more); more than one would make the input ambiguous
+  local ts; ts=$(ls "$NEKTON_DIR"/objects/scope/*.nekton.jsonl)
+  [ "$(printf '%s\n' "$ts" | wc -l)" -eq 1 ] || { echo "  !! $NEKTON_DIR holds more than one scope file" >&2; exit 1; }
   fr="${fr#"$PWD"/}"; ps="${ps#"$PWD"/}"; rs="${rs#"$PWD"/}"; ts="${ts#"$PWD"/}"
   ./check.sh trust "$fr" "$ts" "$ps" "$rs" > "$C/verdict.csv"
   sed 's/^/     /' "$C/verdict.csv"
