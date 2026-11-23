@@ -7,27 +7,27 @@ source ../../lib/common.sh
 
 export PLANKTON_DIR="$PWD/.work/plankton"
 export NEKTON_DIR="$PWD/.work/nekton"
-rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys" "$PWD/.work/exports"
-plankton keygen "$PWD/.work/keys/analyst" --seed "$(demoseed analyst)"  >/dev/null
-nekton  keygen "$PWD/.work/keys/reviewer" --seed "$(demoseed reviewer)" >/dev/null
+rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/exports"
+plankton keygen "$KEYS/analyst" --seed "$(demoseed analyst)"  >/dev/null
+nekton  keygen "$KEYS/reviewer" --seed "$(demoseed reviewer)" >/dev/null
 
 echo "== Create: a foton + a claim about it =="
 echo "raw" > .work/data.csv; echo "model" > .work/model.txt
 FOTON="$(plankton author --cmd "fit data.csv model.txt" --in .work/data.csv --out .work/model.txt \
-  --sign "$PWD/.work/keys/analyst.key" --add --print-id)"
+  --sign "$KEYS/analyst.key" --add --print-id)"
 # active, unary predicate: the object is the VERDICT, the reviewer is the signer (see example 04 -
 # passive pav:reviewedBy would claim the foton was reviewed by "approved")
 printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reviewed","object":{"value":"approved"},"by":"CN=Reviewer","when":"2026-07-16T00:00:00Z"}' "$FOTON" > .work/review.spec.json
 # keep the envelope file (for the nanopub export below) AND ingest, in one step
-nekton claim .work/review.spec.json "$PWD/.work/keys/reviewer.key" .work/review.dsse.json --add >/dev/null
+nekton claim .work/review.spec.json "$KEYS/reviewer.key" .work/review.dsse.json --add >/dev/null
 
 echo ""
 echo "== Use: export both layers as RDF =="
 echo "-- plankton lineage as RDF/Turtle (PROV) --"
-plankton export --rdf --trust-keys .work/keys -o .work/exports/lineage.ttl
+plankton export --rdf --trust-keys "$KEYS" -o .work/exports/lineage.ttl
 grep -E "a prov:Activity|prov:wasGeneratedBy" .work/exports/lineage.ttl | sed 's/^/    /'
 echo "-- nekton claim as nanopublication (RDF/TriG) --"
-nekton export --nanopub --trust-keys .work/keys .work/review.dsse.json -o .work/exports/claim.trig 2>/dev/null
+nekton export --nanopub --trust-keys "$KEYS" .work/review.dsse.json -o .work/exports/claim.trig 2>/dev/null
 grep -E "nk:reviewed" .work/exports/claim.trig   # the export abbreviates https://kton.dev/v/ to nk: | sed 's/^/    /'
 FHEX="${FOTON#sha256:}"
 echo "-- the JOIN: both name the same node pk:${FHEX:0:16}... --"
@@ -45,4 +45,4 @@ if [ "$NACT" -lt 1 ] || [ "$NREF" -lt 1 ]; then
 fi
 
 echo ""
-snapshot 06-nanopub-rdf "$PWD/.work/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"
+snapshot 06-nanopub-rdf "$KEYS" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"

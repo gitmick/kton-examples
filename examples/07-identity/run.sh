@@ -6,16 +6,16 @@ set -euo pipefail
 cd "$(dirname "$0")"
 source ../../lib/common.sh
 export NEKTON_DIR="$PWD/.work/nekton"
-rm -rf "$PWD/.work"; mkdir -p "$NEKTON_DIR" "$PWD/.work/keys"
+rm -rf "$PWD/.work"; mkdir -p "$NEKTON_DIR"
 
 echo "########## Part 1 - a key is an identity (self-asserted) ##########"
 # Give two models their own signing keys. The keyid is the fingerprint of the public key: it IS the
 # cryptographic identity. The human 'by' label, by contrast, is just text anyone could type.
-nekton keygen "$PWD/.work/keys/opus"   --seed "$(demoseed opus)"   >/dev/null
-nekton keygen "$PWD/.work/keys/sonnet" --seed "$(demoseed sonnet)" >/dev/null
+nekton keygen "$KEYS/opus"   --seed "$(demoseed opus)"   >/dev/null
+nekton keygen "$KEYS/sonnet" --seed "$(demoseed sonnet)" >/dev/null
 # `keyid` maps a key file to the id claims carry, so we ask for it instead of parsing keygen's prose.
-OPUS=$(nekton keyid "$PWD/.work/keys/opus.pub")
-SONNET=$(nekton keyid "$PWD/.work/keys/sonnet.pub")
+OPUS=$(nekton keyid "$KEYS/opus.pub")
+SONNET=$(nekton keyid "$KEYS/sonnet.pub")
 echo "  opus   keyid = $OPUS"
 echo "  sonnet keyid = $SONNET"
 
@@ -24,8 +24,8 @@ mkclaim(){ # $1 keyfile  $2 by-label  $3 statement
   printf '{"subject":[{"uri":"urn:result:auc"}],"predicate":"nk:assessed","object":{"value":"%s"},"by":"%s","when":"2026-07-16T00:00:00Z"}' "$3" "$2" > .work/c.spec.json
   nekton claim .work/c.spec.json "$1" --add >/dev/null
 }
-mkclaim "$PWD/.work/keys/opus.key"   "claude-opus-4-8" "AUC is within the expected range"
-mkclaim "$PWD/.work/keys/sonnet.key" "claude-sonnet-5" "AUC looks plausible"
+mkclaim "$KEYS/opus.key"   "claude-opus-4-8" "AUC is within the expected range"
+mkclaim "$KEYS/sonnet.key" "claude-sonnet-5" "AUC looks plausible"
 
 echo "-- which claims came from the opus key? --"
 nekton by signer "$OPUS"
@@ -40,13 +40,13 @@ echo "########## Part 2 - binding a key to a named model (attested) ##########"
 # Who says keyid $OPUS really belongs to 'claude-opus-4-8'? An AUTHORITY signs an identity claim
 # ABOUT the key. A consumer believes the attribution only if they trust that authority. Note this is
 # just another single-signed claim (decision: one claim, one signer) - no new machinery.
-nekton keygen "$PWD/.work/keys/deployer" --seed "$(demoseed deployer)" >/dev/null
+nekton keygen "$KEYS/deployer" --seed "$(demoseed deployer)" >/dev/null
 # The key's IRI is its full content hash (the keyid is that hash's first 16 hex). The binding is a
 # lightweight Verifiable Credential: <key> sec:controller <principal>, sec: = W3C Security Vocabulary.
 # Written as a full IRI because the bare `nekton claim` path does not resolve aliases (annotate does).
-OPUS_IRI="https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/opus.pub').read().strip())).hexdigest())")"
+OPUS_IRI="https://kton.dev/o/$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$KEYS/opus.pub').read().strip())).hexdigest())")"
 printf '{"subject":[{"uri":"%s"}],"predicate":"https://w3id.org/security#controller","object":{"id":"model:anthropic/claude-opus-4-8"},"by":"CN=Deployment","when":"2026-07-16T00:00:00Z"}' "$OPUS_IRI" > .work/id.spec.json
-nekton claim .work/id.spec.json "$PWD/.work/keys/deployer.key" --add >/dev/null
+nekton claim .work/id.spec.json "$KEYS/deployer.key" --add >/dev/null
 echo "-- what is asserted about the opus key (by its content-addressed IRI)? --"
 nekton about "$OPUS_IRI"
 echo "  ^ a signed Verifiable Credential: this key (a sec:Multikey, IRI = pk:<full key hash>)"
@@ -58,5 +58,5 @@ echo ""
 # attested label (opus -> claude-opus-4-8) is shown ONLY because we name the DEPLOYER as a trusted
 # authority here: the viewer marks a sec:controller binding attested only if its signer is trusted, so
 # a self- or ring-signed binding would NOT relabel a key. Trust who vouched, not that someone did.
-DEPLOYER_KID=$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$PWD/.work/keys/deployer.pub').read().strip())).hexdigest()[:16])")
-snapshot 07-identity "$PWD/.work/keys" --reg "$NEKTON_DIR" --authority "$DEPLOYER_KID"
+DEPLOYER_KID=$(python3 -c "import hashlib;print(hashlib.sha256(bytes.fromhex(open('$KEYS/deployer.pub').read().strip())).hexdigest()[:16])")
+snapshot 07-identity "$KEYS" --reg "$NEKTON_DIR" --authority "$DEPLOYER_KID"

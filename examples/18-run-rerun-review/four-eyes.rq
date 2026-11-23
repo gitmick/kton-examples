@@ -29,7 +29,9 @@ WHERE {
   OPTIONAL { ?tn np:hasAssertion ?tg ; prov:wasDerivedFrom ?text . GRAPH ?tg { ?foton ?tp0 ?tx } FILTER(?tp0 IN (dct:description, ep:hasRationale)) }
   BIND(EXISTS { ?n np:hasAssertion ?g ; prov:wasDerivedFrom ?c . GRAPH ?g { ?foton ?dp ?x } FILTER(?dp IN (dct:description, ep:hasRationale))
                 FILTER NOT EXISTS { ?a2 prov:wasAttributedTo ?who ; nk:signerVerified true . GRAPH ?a2 { ?c nk:reviewed ?o2 . ?o2 ?p2 ?v2 } FILTER(STR(?v2) = STR(?verdict)) } } AS ?uncovered)
-  OPTIONAL { ?who rdfs:label ?label }
+  # a signer's name, not the "key:<keyid>" a record without a by gives it (since kton 0.4 the store's root seed
+  # is such a record, signed with the key of the store's first write); a signer with no name shows as its IRI
+  OPTIONAL { ?who rdfs:label ?label FILTER(!STRSTARTS(STR(?label), "key:")) }
   BIND(EXISTS { ?foton nk:claimedSigner ?who } AS ?author)
   BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:Person } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?person)
   BIND(EXISTS { GRAPH ?d { ?who rdf:type ?t . ?t ?tp prov:SoftwareAgent } ?d prov:wasAttributedTo ?owner ; nk:signerVerified true } AS ?agent)

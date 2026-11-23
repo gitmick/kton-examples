@@ -87,7 +87,7 @@ also add to PATH):
 
 ## What is NOT here
 
-Private keys (`*.key`) and the kton binaries are git-ignored - this is a public repo.
+Private keys never enter the repository: each example writes its (demo) keys to `~/.cache/kton-examples/keys/<example>/` (`KTON_EXAMPLE_KEYS` to move it; `lib/common.sh`), the rule a kton cockpit enforces. The kton binaries are git-ignored - this is a public repo.
 
 `examples/*/.work/` is a split: the **data** an example reads and writes stays tracked, because every
 foton's recorded input/output carries a raw permalink to it, so you can fetch the exact bytes behind
@@ -107,12 +107,12 @@ distinction demonstrable.
 
 ## Curated nekton templates
 
-`templates/` + `aliases.json` are **application/example content, not the protocol.** The kton kernel
+`templates/` + `.kton/aliases.json` are **application/example content, not the protocol.** The kton kernel
 is ontology-free: it stores signed subject-predicate-object claims and treats every predicate as an
 opaque IRI it never interprets (spec Clause 7). Which predicates exist, and any templates for
 authoring them, are *federated data*, deliberately kept out of the protocol repo.
 
-- **`aliases.json`** - CURIE/term sugar that resolves to canonical IRIs *before* a claim is built, so
+- **`.kton/aliases.json`** (where the cockpit reads it, SPEC since v0.5.0) - CURIE/term sugar that resolves to canonical IRIs *before* a claim is built, so
   the signed wire form always carries the full IRI. Vocabulary policy: reuse a published ontology
   wherever one fits - **PROV** (lineage), **PAV** (`pav:createdBy` and the authoring terms), **DCAT**
   (`dcat:downloadURL` for location), **schema.org** (`AcceptAction`/`RejectAction` for a review verdict),
@@ -129,7 +129,7 @@ authoring them, are *federated data*, deliberately kept out of the protocol repo
   example); `pmx-model-role.json` (a pharmacometrics domain example).
 
 ```sh
-NEKTON_TEMPLATES=./templates NEKTON_ALIASES=./aliases.json \
+NEKTON_TEMPLATES=./templates NEKTON_ALIASES=./.kton/aliases.json \
   nekton annotate <subject> --template prov/derived-from --set ... --sign key.key
 ```
 

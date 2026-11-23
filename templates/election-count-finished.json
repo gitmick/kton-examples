@@ -8,9 +8,9 @@
   "requiresAllResponsible": true,
   "closesChain": true,
   "fields": {
-    "result":  {"type": "tally", "required": true,  "widget": "tally",   "role": "object",
-                "note": "per-choice counted totals for this scope"},
-    "turnout": {"type": "int",   "required": true,  "widget": "text",    "role": "object"},
+    "result":  {"type": "string", "required": true,  "widget": "tally",   "role": "object",
+                "note": "per-choice counted totals for this scope, as a JSON object {\"<choice>\": <count>, ...} (kton v0.4.0 has no tally type; the widget still shows a tally)"},
+    "turnout": {"type": "integer", "required": true,  "widget": "text",    "role": "object"},
     "protocol":{"type": "file",  "required": false, "widget": "file",    "role": "evidence",
                 "note": "signed count-board protocol / tally sheet, by hash"}
   }
