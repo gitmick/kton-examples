@@ -2,7 +2,7 @@
 # 14 - fetch: getting the bytes back to re-hash them.
 #   Every record names its bytes by HASH; plankton stores NO bytes. So "verify by re-hashing" needs the
 #   bytes from somewhere. A signed dcat:downloadURL located-at claim says WHERE they can be had; the
-#   `kton fetch` cockpit command dereferences it and checks sha256(bytes)==hash BEFORE trusting a single
+#   `kton fetch` command dereferences it and checks sha256(bytes)==hash BEFORE trusting a single
 #   byte. That is the Trust chapter's middle rung: record-authentic (always) < CONTENT-PRESENT (this
 #   example, needs bytes) < reproduced. The kernels never dereference a URI; resolving is kton's job.
 #

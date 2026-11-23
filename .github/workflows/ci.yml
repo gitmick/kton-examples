@@ -1,6 +1,6 @@
 name: ci
 
-# Runs every one of the 14 examples end to end. The examples need the reference binaries
+# Runs every one of the 17 examples end to end. The examples need the reference binaries
 # (plankton / nekton / kton), which are built from the kernel repo - so this job checks it out and
 # builds them.
 #
@@ -47,7 +47,7 @@ jobs:
 
       - name: toolchain (rdflib for the SPARQL gates; cryptography for the foreign verifier; xxd for the OpenSSL example)
         run: |
-          python -m pip install --quiet rdflib cryptography
+          python -m pip install --quiet "rdflib==7.6.0" cryptography   # rdflib pinned: a new release must not change the gates unseen
           command -v xxd >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y xxd; }
 
       - name: build the three reference binaries onto PATH (bin/ is gitignored)

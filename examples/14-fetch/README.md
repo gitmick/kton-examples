@@ -6,7 +6,8 @@ names its content by hash; a signed **`dcat:downloadURL`** located-at claim says
 be had; and **`kton fetch`** dereferences that suggestion and verifies `sha256(bytes) == hash` before
 trusting a single byte.
 
-Assumes `plankton`, `nekton`, and `kton` are on your PATH. (`kton` is the cockpit; the kernels never
+Assumes `plankton`, `nekton`, and `kton` are on your PATH. (`kton` is the kton command from the
+reference implementation, not the [kton cockpit](https://github.com/kton-protocol/kton-cockpit); the kernels never
 dereference a URI - resolving one is `kton`'s job, [example 05](../05-review-scope/) explains the split.)
 
 ## Verification is two operations
@@ -15,7 +16,7 @@ Verifying the **record** - its signature (who signed) and its id (integrity) - n
 It works offline, forever, and is exactly what [example 01](../01-hello-foton/) and multi-source read
 ([example 02](../02-federation/)) give you. Verifying the **content** - that a file really hashes to its
 recorded hash, or that re-running reproduces it - needs the actual **bytes**, which travel separately.
-So assurance is a ladder (the protocol's [Trust chapter](https://github.com/kton-protocol/kton/blob/v0.3.0/docs/trust.md),
+So assurance is a ladder (the protocol's [Trust chapter](https://github.com/kton-protocol/kton/blob/v0.4.0/docs/trust.md),
 section 5):
 
 | rung | proves | needs |
@@ -110,7 +111,7 @@ retention boundary). Availability is never a *trust* problem - only a liveness o
 
 ## What this example needs from which binary
 
-This is the **only** example that needs the `kton` cockpit binary, and after `plankton blob`
+This is the **only** example that needs the `kton` command, and after `plankton blob`
 absorbed the blob store (kton #102) it needs exactly one command from it: **`kton fetch`**.
 Everything else here — authoring the foton, signing the `located-at` claim, asking the local store
 whether the bytes are present — is kernel.
@@ -128,13 +129,13 @@ and never go and ask. Dereferencing is a request made **from your host** — for
 your disk — and that is an act with consequences a later hash check cannot retract. Putting it in a
 kernel would make every reader of a record a potential client of whatever a stranger signed.
 
-So if the cockpit ever leaves this repository, the cut is already drawn:
+So if the `kton` command ever leaves the reference implementation, the cut is already drawn:
 
 | part | needs | goes where |
 |---|---|---|
 | A — a record names its bytes, the local store is empty | `plankton author`, `plankton hash`, `plankton blob` | stays |
 | the signed `dcat:downloadURL` locator itself | `nekton claim` | stays |
-| B, C1, C2 — dereference, verify on arrival, trust policy | **`kton fetch`** | goes with the cockpit |
+| B, C1, C2 — dereference, verify on arrival, trust policy | **`kton fetch`** | goes with the `kton` command |
 
 Measured rather than assumed: with the `kton` binary removed from `PATH`, sixteen of the seventeen
 examples still pass, and this one fails at the first `kton fetch` — everything above it, through
@@ -142,7 +143,7 @@ signing and filing the locator claim, has already run.
 
 Part A plus the claim is a complete kernel-side lesson on its own: a record names bytes it does not
 hold, and the hash is the only thing that will ever decide whether what comes back is the right
-thing. What the cockpit adds is the going-and-getting.
+thing. What `kton fetch` adds is the going-and-getting.
 
 ## Run it yourself
 

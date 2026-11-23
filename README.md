@@ -6,6 +6,11 @@ what came out. This repo also holds a curated set of example nekton **templates*
 
 Live viewer: **https://gitmick.github.io/kton-examples/**
 
+**To use kton, start with the [kton cockpit](https://github.com/kton-protocol/kton-cockpit)**: one
+`cockpit` command that records runs, signs what you say about them and answers questions over your
+registries and the ones you trust. These examples show what is underneath it: they call the two kernels,
+`plankton` and `nekton`, directly, so every record and every check is visible.
+
 ## The one thing to understand first: a registry
 
 A plankton **registry is just a directory** where records are filed, the *store*. You name it two
@@ -54,7 +59,15 @@ two.)
 
 ## Run them yourself
 
-The examples assume `plankton` and `nekton` are installed and on your PATH. Then just:
+The examples assume `plankton` and `nekton` are installed and on your PATH (the `kton` command only for
+example 14). Some examples also use common tools; CI installs the same set:
+
+- `jq` (02, 14, `lib/records.sh`) and `python3` (05, 07, 10, 13, 15, 16, 17, and the graph snapshot every
+  example writes);
+- the Python packages `cryptography` (13, 15) and `rdflib` (11, 12);
+- `Rscript` (10, 12), and `cosign` for the step of 08 you run by hand.
+
+A missing one makes the example stop with a message rather than skip a check. Then just:
 
 ```
 bash examples/01-hello-foton/run.sh
@@ -73,15 +86,15 @@ the graphs are already live.
 <details><summary>Not installed yet?</summary>
 
 The reference implementation is [kton-protocol/kton](https://github.com/kton-protocol/kton); the
-examples run against **v0.3.0**. Its [releases](https://github.com/kton-protocol/kton/releases) carry one
+examples run against **v0.4.0**. Its [releases](https://github.com/kton-protocol/kton/releases) carry one
 archive per platform with a `.sha256` beside it - verify it, then put `plankton`, `nekton` and `kton` on
 your PATH (or into this repo's `bin/`, which the run scripts also add to PATH). The repository README
 has the exact commands. With Go 1.25 or newer, `go install` works too:
 
 ```
-go install kton.dev/plankton/cmd/plankton@v0.3.0   # needed by every example
-go install kton.dev/nekton/cmd/nekton@v0.3.0       # needed from example 04 on
-go install kton.dev/kton/cmd/kton@v0.3.0           # OPTIONAL: only 08 (anchor) + 14 (fetch)
+go install kton.dev/plankton/cmd/plankton@v0.4.0   # needed by every example
+go install kton.dev/nekton/cmd/nekton@v0.4.0       # needed from example 04 on
+go install kton.dev/kton/cmd/kton@v0.4.0           # OPTIONAL: only example 14 (kton fetch)
 ```
 
 Without installing anything you can still follow every example through its README and the
