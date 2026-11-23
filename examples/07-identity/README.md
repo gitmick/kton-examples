@@ -82,7 +82,7 @@ nekton about "$KEYIRI"
 ```
 
 The predicate is written as a full IRI because the bare `nekton claim` path stores it verbatim; the
-`sec:controller` / `actsAs` aliases in `aliases.json` resolve to exactly this IRI when you author via
+`sec:controller` / `actsAs` aliases in `.kton/aliases.json` resolve to exactly this IRI when you author via
 `nekton annotate` instead. A consumer resolves key -> principal via the claim, and **believes it only
 if they trust the deployer's key**. It is still one claim, one signer; no new machinery.
 

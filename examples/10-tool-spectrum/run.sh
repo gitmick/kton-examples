@@ -12,10 +12,10 @@ command -v Rscript >/dev/null || { echo "this example runs real R; install Rscri
 
 export PLANKTON_DIR=".work/plankton"
 export NEKTON_DIR=".work/nekton"
-rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" ".work/keys"
+rm -rf ".work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR"
 W=".work"
-plankton keygen "$W/keys/author" --seed "$(demoseed author)" >/dev/null
-nekton  keygen "$W/keys/lab" --seed "$(demoseed lab)"    >/dev/null
+plankton keygen "$KEYS/author" --seed "$(demoseed author)" >/dev/null
+nekton  keygen "$KEYS/lab" --seed "$(demoseed lab)"    >/dev/null
 printf "conc\n4.2\n3.8\n5.1\n4.6\n" > "$W/pk.csv"          # the shared test fixture
 TESTS="test-glm test-summary test-predict"
 declare -A REFID CANDID REFOUT CANDOUT LEVEL
@@ -25,7 +25,7 @@ for t in $TESTS; do
   Rscript "tests/$t.R" "$W/pk.csv" > "$W/$t.ref.out"       # <-- the test ACTUALLY runs
   REFID[$t]=$(plankton author --cmd "Rscript tests/$t.R pk.csv" \
     --in "$W/pk.csv" --in "tests/$t.R" --out "$W/$t.ref.out" \
-    --sign "$W/keys/author.key" --add --print-id)
+    --sign "$KEYS/author.key" --add --print-id)
   REFOUT[$t]=$(plankton hash "$W/$t.ref.out")
   printf "  %-13s -> %s   (%s)\n" "$t" "${REFOUT[$t]}" "$(head -c 40 "$W/$t.ref.out" | tr -d '\n')"
 done
@@ -40,7 +40,7 @@ for t in $TESTS; do
   Rscript "tests/$t.R" "$W/pk.csv" > "$W/$t.cand.out"      # <-- runs again, independently
   CANDID[$t]=$(plankton author --cmd "Rscript tests/$t.R pk.csv" \
     --in "$W/pk.csv" --in "tests/$t.R" --out "$W/$t.cand.out" \
-    --environment "$CANDENV" --sign "$W/keys/author.key" --add --print-id)
+    --environment "$CANDENV" --sign "$KEYS/author.key" --add --print-id)
   CANDOUT[$t]=$(plankton hash "$W/$t.cand.out")
   if [ "${CANDOUT[$t]}" = "${REFOUT[$t]}" ]; then eq="IDENTICAL bytes"; else eq="DIFFERS (volatile line)"; fi
   printf "  %-13s -> %s   [%s]\n" "$t" "${CANDOUT[$t]}" "$eq"
@@ -51,8 +51,8 @@ echo; echo "############ STAGE C: normalize the volatile test (real sed), then c
 # BOTH raws with the SAME descriptor, so both share one normalizer potential.
 sh tests/normalize.sh "$W/test-predict.ref.out"  > "$W/predict.ref.canon"
 sh tests/normalize.sh "$W/test-predict.cand.out" > "$W/predict.cand.canon"
-plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "tests/normalize.sh" --in "$W/test-predict.ref.out"  --out "$W/predict.ref.canon"  --sign "$W/keys/author.key" --add -o "$W/nr.foton.json" >/dev/null
-plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "tests/normalize.sh" --in "$W/test-predict.cand.out" --out "$W/predict.cand.canon" --sign "$W/keys/author.key" --add -o "$W/nc.foton.json" >/dev/null
+plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "tests/normalize.sh" --in "$W/test-predict.ref.out"  --out "$W/predict.ref.canon"  --sign "$KEYS/author.key" --add -o "$W/nr.foton.json" >/dev/null
+plankton author --cmd "sh tests/normalize.sh" --kind normalize --in "tests/normalize.sh" --in "$W/test-predict.cand.out" --out "$W/predict.cand.canon" --sign "$KEYS/author.key" --add -o "$W/nc.foton.json" >/dev/null
 POT=$(python3 -c "import json,base64;print(json.loads(base64.b64decode(json.load(open('$W/nr.foton.json'))['payload']))['predicate']['protocol']['ref'])")
 echo "  normalizer potential: $POT"
 # the potential is not a separate object: it is this shared protocol ref, REGISTERED via its
@@ -83,7 +83,7 @@ plankton spectrum check "$W/mypkg.spectrum.json" \
 # reproducible check, so completeness is re-derivable.
 CHECK=$(plankton author --cmd "plankton spectrum check mypkg-1.2.0-suite" \
   --in "$W/mypkg.spectrum.json" --in "$W/test-glm.cand.out" --in "$W/test-summary.cand.out" --in "$W/test-predict.cand.out" \
-  --out "$W/fulfilment.txt" --sign "$W/keys/author.key" --add --print-id)
+  --out "$W/fulfilment.txt" --sign "$KEYS/author.key" --add --print-id)
 echo "  fulfilment recorded as a reproducible foton (commits to the candidate result hashes): $CHECK"
 
 echo; echo "############ STAGE E: record the fulfilment so the GRAPH shows it ############"
@@ -92,7 +92,7 @@ for t in $TESTS; do
   if [ "${CANDOUT[$t]}" = "${REFOUT[$t]}" ]; then LEVEL[$t]="L0"; else LEVEL[$t]="L1"; fi
   printf '{"subject":[{"hash":"%s"}],"predicate":"https://kton.dev/v/reproduces","object":{"%s":{"hash":"%s"}},"why":"candidate %s reproduces reference at %s","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
     "${CANDID[$t]}" "${LEVEL[$t]}" "${REFID[$t]}" "$t" "${LEVEL[$t]}" > "$W/rep-$t.spec.json"
-  nekton claim "$W/rep-$t.spec.json" "$W/keys/lab.key" "$W/rep-$t.dsse.json" --add >/dev/null
+  nekton claim "$W/rep-$t.spec.json" "$KEYS/lab.key" "$W/rep-$t.dsse.json" --add >/dev/null
   printf "  %-13s candidate reproduces reference at %s\n" "$t" "${LEVEL[$t]}"
 done
 # the candidate environment qualifies-as the tool spectrum (all members fulfilled) - signed acceptance.
@@ -101,8 +101,8 @@ done
 # pk: IRI, so a downstream gate could not follow it.
 printf '{"subject":[{"hash":"%s","uri":"oci://rocker/r-ver:4.3.2"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"spectrum":"https://kton.dev/o/%s","fulfilment":"https://kton.dev/o/%s"},"why":"3/3 fulfilled, re-derivable in the spectrum-check foton (2 L0, 1 via potential)","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
   "$CANDENV" "${SPECID#sha256:}" "${CHECK#sha256:}" > "$W/qualifies.spec.json"
-nekton claim "$W/qualifies.spec.json" "$W/keys/lab.key" "$W/qualifies.dsse.json" --add >/dev/null
+nekton claim "$W/qualifies.spec.json" "$KEYS/lab.key" "$W/qualifies.dsse.json" --add >/dev/null
 echo "  candidate environment --qualifies-as--> the tool spectrum (signed)"
 
 echo
-snapshot 10-tool-spectrum "$W/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"
+snapshot 10-tool-spectrum "$KEYS" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"

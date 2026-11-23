@@ -19,11 +19,11 @@ source ../../lib/common.sh
 # Two registries (both just directories): plankton = results, nekton = signed statements.
 export PLANKTON_DIR="$PWD/.work/plankton"
 export NEKTON_DIR="$PWD/.work/nekton"
-export NEKTON_ALIASES="$PWD/../../aliases.json"
-rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR" "$PWD/.work/keys"
+export NEKTON_ALIASES="$PWD/../../.kton/aliases.json"
+rm -rf "$PWD/.work"; mkdir -p "$PLANKTON_DIR" "$NEKTON_DIR"
 cd "$PWD/.work"
-plankton keygen keys/author --seed "$(demoseed author)" >/dev/null    # produces the results
-nekton  keygen keys/lab --seed "$(demoseed lab)"    >/dev/null     # signs the environment statements
+plankton keygen "$KEYS/author" --seed "$(demoseed author)" >/dev/null    # produces the results
+nekton  keygen "$KEYS/lab" --seed "$(demoseed lab)"    >/dev/null     # signs the environment statements
 
 # the exact container the analyst ran in (a digest-pinned image). Same one all the way through.
 OCI="oci://rocker/r-ver:4.3.2@sha256:d34db33fcaf00000000000000000000000000000000000000000000000000beef"
@@ -34,7 +34,7 @@ printf "id,conc\n1,4.2\n2,3.8\n" > pk.csv
 printf 'd <- read.csv("pk.csv"); cat(sprintf("cl=%%.3f\\n", mean(d$conc)))\n' > fit.R
 printf "cl=4.000\n" > fit.out                                   # what your local R produced
 BARE=$(plankton author --cmd "Rscript fit.R" --in pk.csv --in fit.R --out fit.out \
-  --sign keys/author.key --add --print-id)
+  --sign "$KEYS/author.key" --add --print-id)
 echo "  foton: $BARE"
 echo "  no environment recorded: reproducible BYTES, but silent about the R stack behind them."
 
@@ -46,7 +46,7 @@ echo "  here it is neither - the foton stays as it is, and the image rides in th
 echo "  prov:used on the result:"
 printf '{"subject":[{"hash":"%s"}],"predicate":"http://www.w3.org/ns/prov#used","object":{"id":"%s"},"why":"produced inside this exact image","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
   "$BARE" "$OCI" > used.spec.json
-nekton claim used.spec.json keys/lab.key used.dsse.json --add >/dev/null
+nekton claim used.spec.json "$KEYS/lab.key" used.dsse.json --add >/dev/null
 echo "  recorded. But a pin only proves SAMENESS - it does not say the image is CORRECT. For that:"
 
 echo; echo "############ STAGE 3: specify a spectrum = the pkg test suite, ONE FOTON PER TEST ############"
@@ -58,7 +58,7 @@ for t in test-glm test-summary test-predict; do
   # bind the test SCRIPT itself as a covered input - a foton whose --cmd names a script but does not --in
   # it would not actually pin the code that produced the result.
   plankton author --cmd "Rscript $t.R $t.fixture" --in "$t.R" --in "$t.fixture" --out "$t.result" \
-    --sign keys/author.key --add >/dev/null
+    --sign "$KEYS/author.key" --add >/dev/null
   echo "  reference foton: $t -> $(plankton hash "$t.result")"
 done
 plankton spectrum define --id "r-4.3.2-mypkg-1.2.0" \
@@ -72,7 +72,7 @@ echo "  env-spectrum id: $SPECID"
 echo
 echo "  now author the analysis UNDER that qualified environment (--environment). It is COVERED:"
 QUAL=$(plankton author --cmd "Rscript fit.R" --in pk.csv --in fit.R --out fit.out \
-  --environment "$SPECID" --sign keys/author.key --add --print-id)
+  --environment "$SPECID" --sign "$KEYS/author.key" --add --print-id)
 echo "    unqualified foton: $BARE"
 echo "    qualified   foton: $QUAL"
 echo "    -> different foton id and action key: 'produced under a qualified-R env' is a DISTINCT"
@@ -94,7 +94,7 @@ printf "test-predict: FAIL (predict.glm output changed in 1.3.0)\n" > cand-test-
 # output" - which it would do for a random hash too. That is a different sentence from "it ran and
 # produced something else", and only the second is what this stage claims to show.
 plankton author --cmd "Rscript run-suite.R  # in the 1.3.0 image" \
-  --in fit.R --out cand-test-predict.result --sign keys/author.key --add >/dev/null
+  --in fit.R --out cand-test-predict.result --sign "$KEYS/author.key" --add >/dev/null
 # expect_fail, not `if … then :;`. The old form ACCEPTED success silently: with a candidate that
 # happened to reproduce, this stage printed "3/3 member(s) fulfilled" directly under the heading
 # "qualification refused" and exited 0. A negative control that cannot fail is not a control.
@@ -108,7 +108,7 @@ echo; echo "############ STAGE 4b: SIGN the binding - this exact image qualifies
 echo "  fulfilment is a reproducible FACT; ACCEPTING the image as qualified is a signed claim on top:"
 printf '{"subject":[{"hash":"%s","uri":"%s"}],"predicate":"https://kton.dev/v/qualifies-as","object":{"id":"https://kton.dev/o/%s"},"why":"rocker/r-ver:4.3.2 reproduced the mypkg 1.2.0 suite 3/3","by":"CN=Lab","when":"2026-07-16T00:00:00Z"}' \
   "$OCIDIGEST" "$OCI" "${SPECID#sha256:}" > qualifies.spec.json
-nekton claim qualifies.spec.json keys/lab.key qualifies.dsse.json --add >/dev/null
+nekton claim qualifies.spec.json "$KEYS/lab.key" qualifies.dsse.json --add >/dev/null
 nekton show qualifies.dsse.json | sed 's/^/    /'
 echo
 echo "  the join: fit.out --environment--> the env-spectrum <--qualifies-as-- the exact image."
@@ -116,4 +116,4 @@ echo "  anyone can compose them: the result names a qualification; the image is 
 
 echo
 cd "$OLDPWD"
-snapshot 09-environment "$PWD/.work/keys" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"
+snapshot 09-environment "$KEYS" --reg "$PLANKTON_DIR" --reg "$NEKTON_DIR"
