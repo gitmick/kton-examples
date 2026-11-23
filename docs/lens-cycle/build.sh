@@ -76,6 +76,15 @@ run audit.R           penguins-named.csv    ethics-audit.txt
 run anonymise.R       penguins-named.csv    ethics-recheck.csv
 
 R="$W/reg"; mkdir -p "$R"/{llm,rerun,review,ethics,ethics-internal}/{plankton,nekton} "$W/pub" "$W/rev"
+# kton 0.4: a nekton store's first signed write opens its root scope (a random name at the wall clock), and
+# every claim without a scope of its own chains there. Pin each root first - fixed name and time, signed by
+# the store's owner - so the records stay a function of this script, as in lib/common.sh.
+root(){ nekton init --registry "$1" --sign "$(K "$2")" --by "$4" --name "root/lens-cycle/$3" --when "2026-04-01T00:00:00Z" >/dev/null; }
+root "$R/llm/nekton" llm llm "Station LLM"; root "$R/rerun/nekton" lena rerun "Lena Moreau"
+root "$R/review/nekton" editor review "Journal editor"
+root "$R/ethics/nekton" ethics ethics "Animal Welfare and Ethics Committee"
+root "$R/ethics-internal/nekton" ethics ethics-internal "Animal Welfare and Ethics Committee"
+root "$W/pub" editor journal editor; root "$W/rev" editor review-scope editor
 claim(){ # claim NEKTON_DIR KEY JSON -> claim id
   printf '%s' "$3" > "$W/c.json"; NEKTON_DIR="$1" nekton claim "$W/c.json" "$2" --add 2>&1 | firstid; }
 desc(){ # desc PARTY FOTON TEXT [WHY]: a short dc:description (the node's label in the graph), and its rationale
@@ -167,8 +176,9 @@ echo "  rule anchored -> reviewer1, reviewer2 approve -> sealed into the journal
 
 # the records the check reads, published under records/ (commit B)
 cp "$R/llm/plankton/objects/sha256/${F#sha256:}.json" "$HERE/records/foton.json"
-cp "$W"/pub/objects/scope/*.nekton.jsonl "$HERE/records/journal.nekton.jsonl"
-cp "$W"/rev/objects/scope/*.nekton.jsonl "$HERE/records/review.nekton.jsonl"
+# each scope's own file, by its id (since kton 0.4 each store also holds its root scope's file)
+cp "$W/pub/objects/scope/${PUB#sha256:}.nekton.jsonl" "$HERE/records/journal.nekton.jsonl"
+cp "$W/rev/objects/scope/${REV#sha256:}.nekton.jsonl" "$HERE/records/review.nekton.jsonl"
 cd "$HERE"
 CHECK_IN=(records/foton.json records/journal.nekton.jsonl records/review.nekton.jsonl)
 ./check.sh trust "${CHECK_IN[@]}" > review/verdict.csv
@@ -199,7 +209,7 @@ claim "$R/review/nekton" "$(K editor)" "$(jq -nc --arg c "$CHECKF" --arg f "$F" 
   why:"four-eyes.rq over the signed records: two approvals by declared people, no rejects, nobody approving their own work",
   evidence:[{hash:$v}],by:"Journal editor",when:"2026-05-11T09:30:00Z"}')" >/dev/null
 echo "  the check is foton $CHECKF; verdict.svg builds on it"
-mkdir -p "$R/review/nekton/objects/scope"; cp "$W"/pub/objects/scope/*.nekton.jsonl "$W"/rev/objects/scope/*.nekton.jsonl "$R/review/nekton/objects/scope/"
+mkdir -p "$R/review/nekton/objects/scope"; cp "$W/pub/objects/scope/${PUB#sha256:}.nekton.jsonl" "$W/rev/objects/scope/${REV#sha256:}.nekton.jsonl" "$R/review/nekton/objects/scope/"
 cd "$W"
 
 # Reviewer 2 approved: the step reproduces and the number is right. And asked for the species split,
