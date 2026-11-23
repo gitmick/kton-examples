@@ -1,13 +1,14 @@
 <!doctype html><meta charset="utf-8"><title>Example 18 · the nekton</title>
 <script>
 // Example 18's scopes, each its own source: the parent "examples" (who is who, the review's anchor
-// and seal), the review scope, the llm's unscoped claims, and the foton under review (it names the
+// and seal), the review scope, the llm's claims (its store's root scope, since kton 0.4), and the foton under review (it names the
 // run). The rule file is hashed in the browser so its hash reads as four-eyes.rq.
 var E = "../../examples/18-run-rerun-review/", W = E + ".work/";
 var src = [
-  W + "public/objects/scope/07318faa4c170e82cb0827570361d7241e8d0cdef45ed54a163268df4ce2d692.nekton.jsonl",
-  W + "review-whales/objects/scope/eec5cd218f6cd04b919a1ea8150f9d9ee1efa420115dcebcf2371dba17c66f9f.nekton.jsonl",
-  W + "nekton/objects/unscoped.nekton.jsonl",
+  W + "public/objects/scope/ee39f7cf74439b62277a25a0b06b220076255fc4d55bb0121cf6854b2ae7f35d.nekton.jsonl",   // its root scope (kton 0.4)
+  W + "public/objects/scope/3831163750dbb910b82659811983ad76fe56a12a073f6386d1bd71f014915177.nekton.jsonl",
+  W + "review-whales/objects/scope/f389f912bda32a2f2ddef4ebcc4e840f7d86927e6713dbf19d0892d5668a1ad0.nekton.jsonl",
+  W + "nekton/objects/scope/1bc5e5780298393e992c7bb280fdf0bce11f425ec4a71f1946e66a08a3478645.nekton.jsonl",
   W + "plankton/objects/sha256/16adc85a2d8c6fe89412c046d35a030075e1ff1ef3334236bf43bd5ae83f4f16.json"];
 var A = function (u) { return new URL(u, location.href).href; }, q = new URLSearchParams(location.search), out = new URLSearchParams();
 out.set("src", src.map(A).join(","));

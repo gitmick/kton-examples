@@ -1,0 +1,42 @@
+{
+  "viewer": "kton-web/compass",
+  "title": "Compass",
+  "about": "Four directions at every node (origin, effect, what is said about it, what it mentions), under a perspective, with facets, grouping, depth and named questions. Builds and verifies the graph with the kernel wasm and reads the predicate terms from the same records.",
+  "entry": "viewers/compass/index.html",
+  "frame": "leaf",
+  "module": null,
+  "requires": ["graph@1"],
+  "optional": ["open@1"],
+  "data": {
+    "graph@1": { "args": {}, "answer": "{records, keys, names} only: a graph built elsewhere ({graph}) is refused, the compass needs the records for the terms" }
+  },
+  "files": "its own pinned files: runtime/wasm/ (manifest.json, the .wasm) and sketches/<sketch>.json, fetched from the viewer's origin (the leaf CSP needs connect-src for that origin; tests/e2e/leaf-csp.mjs)",
+  "accepts": {
+    "focus":  { "type": "hash",    "about": "the node to stand on; a hash prefix is accepted" },
+    "p":      { "type": "literal", "about": "a perspective the sketch declares" },
+    "facets": { "type": "object",  "about": "{facet: [values]} for facets the sketch declares; others are refused by name" },
+    "g":      { "type": "literal", "about": "a grouping id the sketch declares; '' = none" },
+    "d":      { "type": "literal", "about": "depth per direction, 'origin:3,effect:2'" },
+    "depth":  { "type": "object",  "about": "the same as {origin: 3, effect: 2}" }
+  },
+  "emits": {
+    "focus":    { "from": "state.focus",     "type": "hash" },
+    "p":        { "from": "state.p",         "type": "literal" },
+    "navigate": { "from": "intent.navigate", "type": "hash", "about": "the reader walked to a node (node)" }
+  },
+  "intents": {
+    "navigate": "{kind:'navigate', node} - wirable",
+    "graph":    "{kind:'graph', node} - an act: show the same place in the graph viewer (the host opens it; as a page it navigates there itself)",
+    "reveal":   "{kind:'reveal', …} - the reader asked to show what the perspective hides",
+    "mask":     "{kind:'mask', perspective}",
+    "depth":    "{kind:'depth', …}",
+    "group":    "{kind:'group', …}"
+  },
+  "slots": {
+    "record-view": { "subject": ["foton", "file", "claim"], "binds": { "focus": "subject" }, "intents": ["navigate", "graph", "open"] }
+  },
+  "handover": {
+    "v3": "a frame with no ?union=: kton:ready, then kton:request graph@1 after the first kton:set (core/leaf.js)",
+    "static": "?union=<url> with sibling keys.json/names.json, or the fixture picker"
+  }
+}

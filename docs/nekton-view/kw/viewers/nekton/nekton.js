@@ -24,6 +24,14 @@ const bare = (h) => String(h || "").replace(/^sha256:/, "").toLowerCase();
 const short = (h) => bare(h).slice(0, 8) + "…";
 const lastSeg = (u) => String(u || "").replace(/[/#]+$/, "").split(/[/#]/).pop();
 const clip = (s, n) => { s = String(s || ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+// A box title fits beside its kind label (16px bold, about 9.6px a character). A long name is cut; a path-like
+// name (a root scope is named after its store, root/<…>/.work/public) keeps its end, the part that differs.
+function boxName(s, BW) {
+    const name = s.kind === "unscoped" ? "unscoped" : s.name;
+    const room = Math.floor((BW - 28 - (s.kind === "scope" && !s.parent ? 78 : 48)) / 9.6);
+    if (name.length <= room) return name;
+    return name.includes("/") ? "…" + name.slice(name.length - room + 1) : name.slice(0, room - 1) + "…";
+}
 
 const qs = new URLSearchParams(location.search);
 const list = (k) => qs.getAll(k).flatMap((s) => s.split(",")).map((s) => s.trim()).filter(Boolean);
@@ -237,7 +245,7 @@ function overview() {
         let dx = 0; const dots = [...sg].map(([n, c]) => { const t = `<circle cx="${A.x + 20 + dx}" cy="${A.y + 46}" r="6" fill="${W.colour[n] || "var(--faint)"}"><title>${esc(n)}</title></circle><text x="${A.x + 30 + dx}" y="${A.y + 50}" font-size="12" class="dimt">${c}</text>`; dx += 22 + String(c).length * 7; return t; }).join("");
         items.push(`<g class="node" data-go="${esc(s.kind === "missing" ? "" : s.id)}">` +
             `<rect class="box" x="${A.x}" y="${A.y}" width="${BW}" height="${A.h}" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5" ${s.kind !== "scope" ? 'stroke-dasharray="6 4"' : ""}/>` +
-            `<text x="${A.x + 14}" y="${A.y + 25}" font-size="16" font-weight="650">${esc(s.kind === "unscoped" ? "unscoped" : s.name)}</text>` +
+            `<text x="${A.x + 14}" y="${A.y + 25}" font-size="16" font-weight="650">${esc(boxName(s, BW))}<title>${esc(s.kind === "unscoped" ? "unscoped" : s.name)}</title></text>` +
             `<text x="${A.x + BW - 12}" y="${A.y + 24}" font-size="11" text-anchor="end" class="dimt">${s.kind === "scope" ? (s.parent ? "scope" : "root scope") : s.kind === "unscoped" ? "nekton" : ""}</text>` +
             dots + L.map((l, i) => `<text x="${A.x + 14}" y="${A.y + 76 + i * LH}" font-size="12.5" class="${l.c}">${esc(clip(l.t, 40))}</text>`).join("") + `</g>`);
     }

@@ -34,7 +34,9 @@ const BUILTIN = [
       note: "layers top to bottom - for a narrow, tall window" },
     { id: "entwicklung", label: "Modellentwicklung", by: "layers", dx: 96, dy: 300, wrap: 6, orient: "tb",
       note: "parents above children: a model development reads top to bottom (run001 → … → run064)" },
-    { id: "fluss-baum", label: "Fluss mit Modellbaum", by: "mixed", dx: 300, dy: 70, tdx: 330, tdy: 130,
+    { id: "baum", label: "top to bottom", by: "layers", dx: 170, dy: 280, orient: "tb", route: "orthogonal",
+      note: "everything top to bottom - data, the steps, a step based on another directly below it, the deliverables - every edge down, across, down" },
+    { id: "fluss-baum", label: "Fluss mit Modellbaum", by: "mixed", dx: 300, dy: 150, tdx: 330, tdy: 170, route: "orthogonal",
       note: "the data flow left to right (data → runs → deliverables), only the model tree (parent-step) top to bottom" },
 ];
 

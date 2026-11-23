@@ -18,7 +18,7 @@ const RATIONALE = /(^|[/#])hasRationale$/i;
 const lastSeg = (uri) => String(uri || "").split(/[/#]/).pop();
 const MARK = { "key-step": "key", "base-model": "base", "final-model": "final", "not-followed": "not followed" };
 const MARK_VALUE = { key: "key", base: "base", final: "final", "not-followed": "not followed" };
-const RELATION = { "parent-step": "developed from", "based-on": "adapted from", "review-valid": "reviewed · valid", "review-invalid": "reviewed · not valid" };
+const RELATION = { "parent-step": "based on", "based-on": "adapted from", "review-valid": "reviewed · valid", "review-invalid": "reviewed · not valid" };
 const strip = (h) => String(h || "").replace(/^sha256:/, "").toLowerCase();
 
 function payloadOf(rec) {
