@@ -61,7 +61,7 @@ the query which review scope, which foton and which rule file it checks, and run
 
 ```
 foton,ruleAnchored,approvalsByPeople,rejects,textsOnFoton,reviewers,fourEyesPeopleOnly
-…/16adc85a…,yes,2,0,2,"ben approve, ana approve",yes
+…/a02917ea…,yes,2,0,2,"ben approve, ana approve",yes
 ```
 
 `textsOnFoton` counts the texts said about the foton (its description and rationale), the ones under
@@ -72,27 +72,27 @@ The script ends with four rehearsals that are not in the graph, and each must sa
 approve:
 
 ```
-…/16adc85a…,yes,1,0,2,"llm approve (not counted: software agent), ana approve",no
+…/a02917ea…,yes,1,0,2,"llm approve (not counted: software agent), ana approve",no
 ```
 
 ana and ben approve the run, but not the texts:
 
 ```
-…/16adc85a…,yes,0,0,2,"ben approve (not counted: did not cover the description and rationale), ana approve (not counted: …)",no
+…/a02917ea…,yes,0,0,2,"ben approve (not counted: did not cover the description and rationale), ana approve (not counted: …)",no
 ```
 
 The llm runs a review of its own: it seeds the review scope, writes the rule, anchors it in the parent
 and declares itself a person there. None of that is michael's word:
 
 ```
-…/16adc85a…,no,1,0,2,"llm approve (not counted: software agent), ana approve",no
+…/a02917ea…,no,1,0,2,"ana approve, llm approve (not counted: software agent)",no
 ```
 
 michael declares the llm a person by mistake, and the llm approves its own run. Whoever signed the foton
 does not count, person or not:
 
 ```
-…/16adc85a…,yes,1,0,2,"llm approve (not counted: signed the foton), ana approve",no
+…/a02917ea…,yes,1,0,2,"llm approve (not counted: signed the foton), ana approve",no
 ```
 
 One approval per item rather than one claim with three subjects, so each is its own signed statement and

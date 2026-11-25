@@ -17,6 +17,11 @@
 # exact bytes. Keys are demo fixtures from fixed seeds; the data are simulated.
 set -euo pipefail
 cd "$(dirname "$0")"
+# Example 18 is not in the v0.4.0 tag. Until a release tag holds it, its permalinks point at commits of
+# its own history: the run's bytes (whales.R, whales.svg) at the first line, the records the verdict
+# reads at the second. At that release, drop both lines and regenerate with the suite's pin.
+: "${KTON_RAW_COMMIT:=23fd4136142f9373f4faef8804c55fe11748a699}"
+: "${KTON_RECORDS_COMMIT:=5ad071b9d37b35ab0791cb9f4790279f559b856e}"
 source ../../lib/common.sh
 
 W=.work; D="$PWD/$W"
