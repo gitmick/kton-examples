@@ -6,7 +6,8 @@
 # provenance graph (verified against the trusted keys), its scope from ITS pubinfo graph. A triple that
 # merely appears in some other claim's assertion counts for nothing.
 #
-# - The owner is the verified signer of the genesis of P, the scope R names as its parent.
+# - The owner is given by check.sh (the checker's input, by keyid). P, the scope R names as its parent,
+#   counts only if the owner signed P's genesis; another signature on that genesis adds no owner.
 # - The rule holds only if the owner anchored R in P (review-initialised -> the rule claim) and the rule
 #   claim, signed by the owner in R, names the hash of THIS file.
 # - Who is a person or a software agent: only the owner's declarations in P.
@@ -31,10 +32,10 @@ SELECT ?foton ?fotonVerified ?ruleAnchored
        (GROUP_CONCAT(DISTINCT ?note; separator=", ") AS ?reviewers)
        (IF(?fotonVerified = "yes" && ?ruleAnchored = "yes" && COUNT(DISTINCT ?counted) >= 2 && COUNT(DISTINCT ?rejecter) = 0, "yes", "no") AS ?fourEyesPeopleOnly)
 WHERE {
-  GRAPH <urn:kton:check> { ?chk nk:reviewScope ?R ; nk:foton ?foton ; nk:ruleFile ?ruleFile }
+  GRAPH <urn:kton:check> { ?chk nk:reviewScope ?R ; nk:foton ?foton ; nk:ruleFile ?ruleFile ; nk:owner ?owner }
   BIND(IF(EXISTS { GRAPH <urn:kton:lineage> { ?foton nk:signerVerified true } }, "yes", "no") AS ?fotonVerified)
 
-  # R's genesis names its parent P; the owner is the verified signer of P's genesis
+  # R's genesis names its parent P; P counts only if the owner signed its genesis
   OPTIONAL {
   GRAPH ?gR_h { ?gR np:hasAssertion ?gR_a ; np:hasPublicationInfo ?gR_i }
   FILTER(STR(?gR_h) = CONCAT(STR(?gR), "#Head") && STR(?gR_a) = CONCAT(STR(?gR), "#assertion") && STR(?gR_i) = CONCAT(STR(?gR), "#pubinfo"))
@@ -47,7 +48,7 @@ WHERE {
   }
 
   # the rule holds: anchored by the owner in P, the rule claim by the owner in R names this file's hash
-  BIND(IF(BOUND(?owner) && EXISTS {
+  BIND(IF(BOUND(?P) && EXISTS {
     GRAPH ?an_h { ?an np:hasAssertion ?an_a ; np:hasProvenance ?an_p ; np:hasPublicationInfo ?an_i }
     FILTER(STR(?an_h) = CONCAT(STR(?an), "#Head") && STR(?an_a) = CONCAT(STR(?an), "#assertion") && STR(?an_p) = CONCAT(STR(?an), "#provenance") && STR(?an_i) = CONCAT(STR(?an), "#pubinfo"))
     GRAPH ?an_i { ?an nk:scope ?P }
@@ -97,14 +98,14 @@ WHERE {
   } AS ?uncovered)
 
   # who is who: the owner's declarations in P only
-  BIND(BOUND(?owner) && EXISTS {
+  BIND(BOUND(?P) && EXISTS {
     GRAPH ?k_h { ?k np:hasAssertion ?k_a ; np:hasProvenance ?k_p ; np:hasPublicationInfo ?k_i }
     FILTER(STR(?k_h) = CONCAT(STR(?k), "#Head") && STR(?k_a) = CONCAT(STR(?k), "#assertion") && STR(?k_p) = CONCAT(STR(?k), "#provenance") && STR(?k_i) = CONCAT(STR(?k), "#pubinfo"))
     GRAPH ?k_i { ?k nk:scope ?P }
     GRAPH ?k_p { ?k_a prov:wasAttributedTo ?owner ; nk:signerVerified true }
     GRAPH ?k_a { ?who rdf:type ?k_o . ?k_o ?k_tp prov:Person }
   } AS ?person)
-  BIND(BOUND(?owner) && EXISTS {
+  BIND(BOUND(?P) && EXISTS {
     GRAPH ?g_h { ?g np:hasAssertion ?g_a ; np:hasProvenance ?g_p ; np:hasPublicationInfo ?g_i }
     FILTER(STR(?g_h) = CONCAT(STR(?g), "#Head") && STR(?g_a) = CONCAT(STR(?g), "#assertion") && STR(?g_p) = CONCAT(STR(?g), "#provenance") && STR(?g_i) = CONCAT(STR(?g), "#pubinfo"))
     GRAPH ?g_i { ?g nk:scope ?P }

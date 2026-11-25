@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 # The review check, as one recorded step. Its inputs are the signed records themselves:
-#   check.sh <trusted-keys-dir> <foton-record.json> <scope.nekton.jsonl>... <review-scope.nekton.jsonl>
+#   check.sh <trusted-keys-dir> <owner.pub> <foton-record.json> <scope.nekton.jsonl>... <review-scope.nekton.jsonl>
 #     -> the verdict, CSV, on stdout
 # It projects them to RDF with the kernel's own projections (plankton export --rdf, nekton export
 # --nanopub, signatures checked against the trusted keys on both), loads them into Oxigraph and runs
 # four-eyes.rq. The foton's lineage goes into the graph <urn:kton:lineage>. What is checked goes in as
 # the graph <urn:kton:check>, every id computed by the kernel from content, none taken from a file name:
 # the foton (the id plankton computes from its envelope), the review scope (the scope of the genesis
-# claim that opens the LAST scope file, as nekton projects it) and the hash of the four-eyes.rq that runs.
+# claim that opens the LAST scope file, as nekton projects it), the hash of the four-eyes.rq that runs and
+# the owner, by the keyid of <owner.pub>: whose review this is is the checker's input, like the trusted
+# keys, not something a signature on the parent scope's genesis could add.
 # The Oxigraph image is pinned by digest (OXIGRAPH); it is the step's environment.
 set -euo pipefail
 OXIGRAPH="${OXIGRAPH:-oxigraph/oxigraph@sha256:10677fb643f8c5a7bfb03dd8f7971c79a84b01e795c24201c8cfa12fd569f1c0}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-TRUST="$(cd "$1" && pwd)"; FOTON="$2"; shift 2
+TRUST="$(cd "$1" && pwd)"; OWNER="$(command plankton keyid "$2")"; FOTON="$3"; shift 3
 RULE="$(command plankton hash "$HERE/four-eyes.rq")"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 # plankton: the foton, with all its signatures -> PROV; its id as plankton computes it
@@ -33,8 +35,8 @@ for scope in "$@"; do
     nekton export --nanopub "$T/c$i.dsse.json" --trust-keys "$TRUST" >> "$T/review.trig" 2>/dev/null && echo >> "$T/review.trig"
   done < "$scope"
 done
-printf '<urn:kton:check> { <urn:kton:check> <https://kton.dev/v/reviewScope> <https://kton.dev/o/%s> ;\n  <https://kton.dev/v/foton> <https://kton.dev/o/%s> ; <https://kton.dev/v/ruleFile> <https://kton.dev/o/%s> . }\n' \
-  "$REVIEW" "$FID" "${RULE#sha256:}" > "$T/check.trig"
+printf '<urn:kton:check> { <urn:kton:check> <https://kton.dev/v/reviewScope> <https://kton.dev/o/%s> ;\n  <https://kton.dev/v/foton> <https://kton.dev/o/%s> ; <https://kton.dev/v/ruleFile> <https://kton.dev/o/%s> ;\n  <https://kton.dev/v/owner> <https://kton.dev/agent/%s> . }\n' \
+  "$REVIEW" "$FID" "${RULE#sha256:}" "$OWNER" > "$T/check.trig"
 cp "$HERE/four-eyes.rq" "$T/"
 docker run --rm -u "$(id -u):$(id -g)" -v "$T:/d" "$OXIGRAPH" load --location /d/db --file /d/lineage.ttl --graph urn:kton:lineage >/dev/null 2>&1
 docker run --rm -u "$(id -u):$(id -g)" -v "$T:/d" "$OXIGRAPH" load --location /d/db --file /d/review.trig /d/check.trig >/dev/null 2>&1

@@ -42,7 +42,9 @@ every claim through its own nanopublication: who signed it from that claim's pro
 against the trusted keys, and which scope it is in from that claim's pubinfo graph. A triple that merely
 appears in some other claim counts for nothing. Then:
 
-- the **owner** is whoever signed the parent scope's genesis: michael;
+- the **owner** is the checker's input, like the trusted keys: `check.sh` is told whose review it checks
+  (`trust/michael.pub`), and the parent scope counts only if that key signed its genesis. A second
+  signature on the genesis makes nobody an owner;
 - the **rule holds** only if the owner anchored the review scope in the parent and signed, in the
   review scope, the rule claim that names the hash of the `four-eyes.rq` being run;
 - **who is a person** counts only as the owner declared it in the parent;
@@ -76,7 +78,7 @@ The script ends with four rehearsals that are not in the graph, and each must sa
 approve:
 
 ```
-…/a02917ea…,yes,yes,1,0,2,"ana approve, llm approve (not counted: software agent)",no
+…/a02917ea…,yes,yes,1,0,2,"llm approve (not counted: software agent), ana approve",no
 ```
 
 ana and ben approve the run, but not the texts:
