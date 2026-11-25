@@ -57,11 +57,15 @@ Four eyes means the rule holds, at least two such approvals and no reject.
 claims, the parent scope and the review scope (their `.nekton.jsonl`), the foton's record, the keys we trust (`trust/`),
 the rule and the script. It projects them with the kernel's own projections (`plankton export --rdf`,
 `nekton export --nanopub`, both with `--trust-keys`), loads them into Oxigraph, pinned by digest, tells
-the query which review scope, which foton and which rule file it checks, and runs it:
+the query which review scope, which foton and which rule file it checks, and runs it. Those ids are the
+kernel's, computed from the content (the foton's from its envelope, the review scope's from the genesis
+claim that opens its file), never a file name. The foton's lineage sits in a graph of its own, and only
+there does the rule read whether the foton verifies and who signed it. There is always one row: a foton
+that does not verify, a rule that does not hold or a review without verdicts says `no` explicitly.
 
 ```
-foton,ruleAnchored,approvalsByPeople,rejects,textsOnFoton,reviewers,fourEyesPeopleOnly
-…/a02917ea…,yes,2,0,2,"ben approve, ana approve",yes
+foton,fotonVerified,ruleAnchored,approvalsByPeople,rejects,textsOnFoton,reviewers,fourEyesPeopleOnly
+…/a02917ea…,yes,yes,2,0,2,"ana approve, ben approve",yes
 ```
 
 `textsOnFoton` counts the texts said about the foton (its description and rationale), the ones under
@@ -72,27 +76,27 @@ The script ends with four rehearsals that are not in the graph, and each must sa
 approve:
 
 ```
-…/a02917ea…,yes,1,0,2,"llm approve (not counted: software agent), ana approve",no
+…/a02917ea…,yes,yes,1,0,2,"ana approve, llm approve (not counted: software agent)",no
 ```
 
 ana and ben approve the run, but not the texts:
 
 ```
-…/a02917ea…,yes,0,0,2,"ben approve (not counted: did not cover the description and rationale), ana approve (not counted: …)",no
+…/a02917ea…,yes,yes,0,0,2,"ana approve (not counted: did not cover the description and rationale), ben approve (not counted: …)",no
 ```
 
 The llm runs a review of its own: it seeds the review scope, writes the rule, anchors it in the parent
 and declares itself a person there. None of that is michael's word:
 
 ```
-…/a02917ea…,no,1,0,2,"ana approve, llm approve (not counted: software agent)",no
+…/a02917ea…,yes,no,1,0,2,"ana approve, llm approve (not counted: software agent)",no
 ```
 
 michael declares the llm a person by mistake, and the llm approves its own run. Whoever signed the foton
 does not count, person or not:
 
 ```
-…/a02917ea…,yes,1,0,2,"llm approve (not counted: signed the foton), ana approve",no
+…/a02917ea…,yes,yes,1,0,2,"ana approve, llm approve (not counted: signed the foton)",no
 ```
 
 One approval per item rather than one claim with three subjects, so each is its own signed statement and
