@@ -5,9 +5,11 @@ participant is a git checkout with its own identity (`cockpit keygen`), and ever
 committed and shared to `origin`. The protocol underneath is the same: the records it writes are the
 fotons and claims `run.sh` writes by hand.
 
-Status, 17.11.2026, cockpit `(devel)` on kton v0.3.0: steps 1 and 2 **run as shown** (output below is
-real). Steps 3 and 4 are **written, not yet run**: they need a `reviewed` template, a vocabulary
-package that brings `four-eyes.rq`, and the SPARQL engine, which is in the cockpit's unreleased build.
+**A sketch, not a current transcript.** Written on 17.11.2026 against cockpit `(devel)` on kton v0.3.0
+and not re-run since; the cockpit's verbs and output may differ today. Then, steps 1 and 2 ran as shown
+(the output below is from that run). Steps 3 and 4 were written, not run: they need a `reviewed`
+template, a vocabulary package that brings `four-eyes.rq`, and the cockpit's SPARQL engine. `run.sh` is
+the version that runs.
 
 ## 1. The llm runs it and says what it is (tested)
 

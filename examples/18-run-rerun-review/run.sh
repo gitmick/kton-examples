@@ -118,7 +118,7 @@ check(){
 }
 review review-whales ana:approve ben:approve
 
-echo "== 4. is the review valid? plankton checks"
+echo "== 4. is the review valid? one query decides, plankton records it"
 check review-whales
 echo "   verdict recorded as foton $(cat "$W/check/review-whales/foton.txt")"
 # re-derive: anyone with the same records, keys and rule runs the check again; same verdict bytes?
