@@ -57,25 +57,30 @@ echo -n "   "; plankton reproduces "$FIRST" "$OUT" | head -1
 plankton reproductions --trust-keys "$W/keys" "$OUT" 2>/dev/null | head -1 | sed 's/^/   /'
 
 echo "== 3. the review, as its own scope"
-PUBD="$D/public"
-PUB=$(NEKTON_DIR="$PUBD" nekton seed examples --sign "$(K michael)" --by michael --when "$WHEN" --add 2>&1 | seedid)
+# declare <signer> <who> <Kind>: in the parent scope, <signer> says that <who>'s key is a prov:<Kind>
+declare(){
+  prev=$(claim "$PUBD" "$1" "$(printf '{"subject":[{"uri":"https://kton.dev/agent/%s"}],"predicateBody":{"predicate":{"uri":"http://www.w3.org/1999/02/22-rdf-syntax-ns#type"},"object":{"uri":"http://www.w3.org/ns/prov#%s"},"by":"%s","when":"%s","scope":"%s","prev":"%s"}}' "$(kid "$2")" "$3" "$1" "$WHEN" "$PUB" "$prev")")
+  echo "   $1: $2 is a $3"
+}
+# public <dir> <who:Kind>...: the parent scope, michael's; first he says who is who
+public(){
+  PUBD="$1"; shift
+  PUB=$(NEKTON_DIR="$PUBD" nekton seed examples --sign "$(K michael)" --by michael --when "$WHEN" --add 2>&1 | seedid)
+  prev="$PUB"
+  local d; for d in "$@"; do declare michael "${d%%:*}" "${d##*:}"; done
+}
 # who is who: michael says which keys are people and which is an agent. Without it, nobody counts.
-prev="$PUB"
-for who in llm ana ben; do
-  kind=Person; [ "$who" = llm ] && kind=SoftwareAgent
-  prev=$(claim "$PUBD" michael "$(printf '{"subject":[{"uri":"https://kton.dev/agent/%s"}],"predicateBody":{"predicate":{"uri":"http://www.w3.org/1999/02/22-rdf-syntax-ns#type"},"object":{"uri":"http://www.w3.org/ns/prov#%s"},"by":"michael","when":"%s","scope":"%s","prev":"%s"}}' "$(kid $who)" "$kind" "$WHEN" "$PUB" "$prev")")
-  echo "$prev" >> "$W/kinds"
-  echo "   michael: $who is a $kind"
-done
+public "$D/public" llm:SoftwareAgent ana:Person ben:Person
 # review <name> <who:verdict...>   -> the review scope's deliveries, in $W/<name>.deliveries
+# OWNER (default michael) seeds the review scope, writes the rule, anchors and seals it
 review(){
-  local NAME="$1"; shift; local RD="$D/$NAME"
-  local REV; REV=$(NEKTON_DIR="$RD" nekton seed "$NAME" --parent "$PUB" --sign "$(K michael)" --by michael --when "$WHEN" --add 2>&1 | seedid)
+  local NAME="$1"; shift; local RD="$D/$NAME" O="${OWNER:-michael}"
+  local REV; REV=$(NEKTON_DIR="$RD" nekton seed "$NAME" --parent "$PUB" --sign "$(K "$O")" --by "$O" --when "$WHEN" --add 2>&1 | seedid)
   echo "$REV" > "$W/$NAME.scope"   # check reads this scope's file by its id (the store also holds its root scope)
-  local rule; rule=$(claim "$RD" michael "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"foton":"%s","by":"michael","when":"%s","scope":"%s","prev":"%s"}}' \
-    "$REV" "$(plankton hash four-eyes.rq)" "$F" "$WHEN" "$REV" "$REV")")
-  local anchor; anchor=$(claim "$PUBD" michael "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"by":"michael","when":"%s","scope":"%s","prev":"%s"}}' \
-    "$REV" "$rule" "$WHEN" "$PUB" "$prev")")
+  local rule; rule=$(claim "$RD" "$O" "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"foton":"%s","by":"%s","when":"%s","scope":"%s","prev":"%s"}}' \
+    "$REV" "$(plankton hash four-eyes.rq)" "$F" "$O" "$WHEN" "$REV" "$REV")")
+  local anchor; anchor=$(claim "$PUBD" "$O" "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/review-initialised"},"object":{"hash":"%s"},"by":"%s","when":"%s","scope":"%s","prev":"%s"}}' \
+    "$REV" "$rule" "$O" "$WHEN" "$PUB" "$prev")")
   local p="$rule" d who v; : > "$W/$NAME.deliveries"
   local items="$F $DESC $RAT"; [ "${RUN_ONLY:-}" ] && items="$F"
   for d in "$@"; do who="${d%%:*}"; v="${d##*:}"
@@ -88,9 +93,9 @@ review(){
     echo "$p" >> "$W/$NAME.deliveries"
   done
   local HEAD; HEAD=$(NEKTON_DIR="$RD" nekton head "$REV" | awk '/^head:/{print $2}')
-  prev=$(claim "$PUBD" michael "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/closed"},"object":{"hash":"%s"},"by":"michael","when":"%s","scope":"%s","prev":"%s"}}' \
-    "$REV" "$HEAD" "$WHEN" "$PUB" "$anchor")")
-  echo "   $NAME: rule (four-eyes.rq) -> anchored in the parent -> $* -> sealed in the parent"
+  prev=$(claim "$PUBD" "$O" "$(printf '{"subject":[{"hash":"%s"}],"predicateBody":{"predicate":{"uri":"https://kton.dev/v/closed"},"object":{"hash":"%s"},"by":"%s","when":"%s","scope":"%s","prev":"%s"}}' \
+    "$REV" "$HEAD" "$O" "$WHEN" "$PUB" "$anchor")")
+  echo "   $NAME: $O's rule (four-eyes.rq) -> anchored in the parent by $O -> $* -> sealed in the parent"
 }
 # check <name>: the review check as a recorded step. Its inputs are the signed records themselves (the
 # parent scope, the review scope, the foton), the keys we trust, the rule and the script; its output is
@@ -137,3 +142,13 @@ check review-llm
 echo "-- rehearsal: ana and ben approve the run only, not the texts; neither approval counts"
 RUN_ONLY=1 review review-runonly ana:approve ben:approve
 check review-runonly
+echo "-- rehearsal: the llm runs a review of its own: it seeds the review scope, anchors its rule in the parent"
+echo "   and says there that it is a person; ana and the llm approve. Only michael's word counts in the parent"
+declare llm llm Person
+OWNER=llm review review-byllm ana:approve llm:approve
+check review-byllm
+echo "-- rehearsal: michael declares the llm a person by mistake; the llm approves its own run with ana."
+echo "   Whoever signed the foton (the llm ran it, michael reran it) does not count, person or not"
+public "$D/rehearsal-mistake" llm:Person ana:Person ben:Person
+review review-ownrun ana:approve llm:approve
+check review-ownrun
