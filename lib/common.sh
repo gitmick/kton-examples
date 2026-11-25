@@ -33,7 +33,7 @@ KTON_WHEN="${KTON_WHEN:-2026-07-16T00:00:00Z}"   # the same fixed instant the cl
 demoseed() { printf 'kton-examples/demo/%s/%s' "$EXNAME" "$1" | sha256sum | cut -d" " -f1; }
 
 # TWO EXAMPLES STAY VOLATILE ON PURPOSE, and must not be "fixed": 10-tool-spectrum and
-# 12-submission print a session banner carrying a pid and a wall clock (tests/test-predict.R,
+# 12-submission print a session banner carrying a pid, a wall clock and a random nonce (tests/test-predict.R,
 # tools/fit.R, tools/pmxtest.R). That volatility IS their subject - it is what makes two runs differ
 # byte-for-byte (no L0) while still agreeing once the normalizer strips the banner (L1), and in 12
 # the release gate turns on exactly that L1 reproduction. Their snapshots therefore change on every
@@ -119,7 +119,7 @@ snapshot() {
 # For negative controls: a tampered re-run that must not reproduce, bytes that must not be present.
 # `|| true` cannot express that. It accepts both outcomes, so on the day tamper-detection silently
 # starts passing, the example still exits 0 and the narration above it still reads like a
-# demonstration - the exact shape of failure catalogued in docs/briefing-2026-09.md B3. The command's
+# demonstration - a check that passes without having checked anything. The command's
 # own output still goes to stdout, so the example reads the same as before.
 # Call this DIRECTLY, not through a pipe. Piping runs it in a subshell, so its `exit 1` ends only
 # that subshell; the script then survives on `set -o pipefail` alone propagating the status. Every

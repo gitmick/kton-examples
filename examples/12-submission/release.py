@@ -14,7 +14,7 @@
 # 2 matters because every condition here is monotone ("some record establishes X"), so on an empty
 # graph all seven simply fail and the gate prints a full checklist of unticked boxes - a confident
 # refusal built on nothing read. That is indistinguishable from an honest BLOCKED unless it is
-# separated out here. See docs/briefing-2026-09.md B3.
+# separated out here.
 import sys
 import rdflib
 
@@ -41,7 +41,7 @@ ds = rdflib.Dataset()  # default_union stays FALSE
 # ?rauthor binding and let the author self-review slip past ?r1 != ?rauthor (four-eyes bypass v2).
 ds.get_context(LINEAGE).parse(ttl, format="turtle")
 ds.parse(trig, format="trig")    # each nanopub -> its own named graph
-dg = ds.default_context
+dg = ds.default_graph            # rdflib >= 7.6 (default_context is deprecated); CI pins rdflib
 for (s, p, o, _g) in list(ds.quads((None, None, None, None))):
     dg.add((s, p, o))            # merge ALL (lineage + nanopubs) into the default graph for bare patterns
 # the trust root as DATA, not a query-string placeholder (rdf-interop F3): each trusted authority IS a

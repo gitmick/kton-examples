@@ -259,7 +259,14 @@ if cmp -s "$F/re.ref.canon" "$F/re.qc.canon"; then echo "qualified; both fit out
 echo -n "  2. environment fulfils spectrum:    "
 sh "$T/strip-banner.sh" "$F/test-covariate.ref"  > "$F/re.cov.ref.canon"
 sh "$T/strip-banner.sh" "$F/test-covariate.cand" > "$F/re.cov.cand.canon"
-if plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" >/dev/null 2>&1 && cmp -s "$F/re.cov.ref.canon" "$F/re.cov.cand.canon"; then echo "fully fulfilled (regulator re-normalized the L1 member)"; else echo "NOT fully fulfilled -> abort"; exit 1; fi
+# The sentence follows the check's own statuses (--json), not a literal: when both runs of a test happen
+# to print the same banner, that member is "identical" and there is no L1 member to re-normalize
+# (kton-review E7; the banner's nonce now makes that the exception, not a container's normal case).
+FUL=$(plankton spectrum check "$F/pmxtools.spectrum.json" --candidate "test-onecomp=${REF[test-onecomp]}" --candidate "test-twocomp=${REF[test-twocomp]}" --candidate "test-covariate=$(plankton hash "$F/test-covariate.cand")" --json 2>/dev/null) \
+  && cmp -s "$F/re.cov.ref.canon" "$F/re.cov.cand.canon" || { echo "NOT fully fulfilled -> abort"; exit 1; }
+VIA=$(printf '%s' "$FUL" | python3 -c "import json,sys; print(', '.join(m['name'] for m in json.load(sys.stdin)['members'] if m['status']=='via'))")
+if [ -n "$VIA" ]; then echo "fully fulfilled (regulator re-normalized the L1 member: $VIA)"
+else echo "fully fulfilled (every member byte-identical: no L1 member to re-normalize)"; fi
 # Read the EXIT CODE, not the wording. `plankton verify` defines one (0 genuine and storable,
 # 1 tampered, 2 wrong key, 3 genuine but ingest would refuse it) and a gate should turn on that.
 # Grepping the output for "VALID" used to work and then silently stopped: the 0.2 kernel added a
