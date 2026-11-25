@@ -37,34 +37,62 @@ into the parent: each scope is a short chain of its own, and its seal goes into 
 
 ## 4. Is the review valid? One query decides, plankton records it
 
-The whole rule is one SPARQL query, `four-eyes.rq`; its hash is what the review anchored. It counts an
-approval only if its signature verifies, its signer did not sign the foton, michael declared the
-signer a person and not a software agent, and the same signer also approved every description and
-rationale said about the foton. Four eyes means at least two such approvals and no reject.
+The whole rule is one SPARQL query, `four-eyes.rq`; its hash is what the review anchored. It reads
+every claim through its own nanopublication: who signed it from that claim's provenance graph, verified
+against the trusted keys, and which scope it is in from that claim's pubinfo graph. A triple that merely
+appears in some other claim counts for nothing. Then:
+
+- the **owner** is whoever signed the parent scope's genesis: michael;
+- the **rule holds** only if the owner anchored the review scope in the parent and signed, in the
+  review scope, the rule claim that names the hash of the `four-eyes.rq` being run;
+- **who is a person** counts only as the owner declared it in the parent;
+- an **approval counts** only from the review scope, if its signature verifies, the owner declared its
+  signer a person and not a software agent, its signer did not sign the foton (neither the llm who ran
+  it nor michael who reran it), and the same signer also approved every description and rationale said
+  about the foton.
+
+Four eyes means the rule holds, at least two such approvals and no reject.
 
 `check.sh` is the check as one recorded step. Its inputs are the signed records themselves: the llm's
 claims, the parent scope and the review scope (their `.nekton.jsonl`), the foton's record, the keys we trust (`trust/`),
 the rule and the script. It projects them with the kernel's own projections (`plankton export --rdf`,
-`nekton export --nanopub`), loads them into Oxigraph, pinned by digest, and runs the query:
+`nekton export --nanopub`, both with `--trust-keys`), loads them into Oxigraph, pinned by digest, tells
+the query which review scope, which foton and which rule file it checks, and runs it:
 
 ```
-foton,approvalsByPeople,rejects,textsReviewed,reviewers,fourEyesPeopleOnly
-…/16adc85a…,2,0,2,"ben approve, ana approve",yes
+foton,ruleAnchored,approvalsByPeople,rejects,textsOnFoton,reviewers,fourEyesPeopleOnly
+…/16adc85a…,yes,2,0,2,"ben approve, ana approve",yes
 ```
 
-The verdict is a foton over those inputs. Run the check again and plankton compares the bytes: **L0**.
+`textsOnFoton` counts the texts said about the foton (its description and rationale), the ones under
+review, not the texts someone approved. The verdict is a foton over those inputs. Run the check again
+and plankton compares the bytes: **L0**.
 
-The script ends with two rehearsals that are not in the graph. ana and the llm approve:
-
-```
-…/16adc85a…,1,0,2,"ana approve, llm approve (not counted: software agent)",no
-```
-
-ana and ben approve the run, but not the texts. `textsReviewed` counts the texts said about the foton
-(its description and rationale), the ones under review, not the texts someone approved:
+The script ends with four rehearsals that are not in the graph, and each must say no. ana and the llm
+approve:
 
 ```
-…/16adc85a…,0,0,2,"ben approve (not counted: did not cover the description and rationale), ana approve (not counted: …)",no
+…/16adc85a…,yes,1,0,2,"llm approve (not counted: software agent), ana approve",no
+```
+
+ana and ben approve the run, but not the texts:
+
+```
+…/16adc85a…,yes,0,0,2,"ben approve (not counted: did not cover the description and rationale), ana approve (not counted: …)",no
+```
+
+The llm runs a review of its own: it seeds the review scope, writes the rule, anchors it in the parent
+and declares itself a person there. None of that is michael's word:
+
+```
+…/16adc85a…,no,1,0,2,"llm approve (not counted: software agent), ana approve",no
+```
+
+michael declares the llm a person by mistake, and the llm approves its own run. Whoever signed the foton
+does not count, person or not:
+
+```
+…/16adc85a…,yes,1,0,2,"llm approve (not counted: signed the foton), ana approve",no
 ```
 
 One approval per item rather than one claim with three subjects, so each is its own signed statement and

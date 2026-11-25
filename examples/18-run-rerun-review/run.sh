@@ -10,7 +10,8 @@
 #   4. Is the review valid? four-eyes.rq decides, in Oxigraph: four eyes, people only, nobody approving
 #      their own work. The check is a foton whose inputs are the signed records themselves (both scopes,
 #      the foton), the trusted keys, the rule and check.sh; rerun it and plankton compares: L0.
-#      A rehearsal where the llm approves shows that an agent's approval does not count.
+#      Four rehearsals must say no: the llm approves; the run only is approved; the llm runs a review of
+#      its own; the llm, declared a person by mistake, approves its own run.
 #
 # Every input and output carries a raw GitHub permalink (lib/common.sh), so a viewer can fetch the
 # exact bytes. Keys are demo fixtures from fixed seeds; the data are simulated.
