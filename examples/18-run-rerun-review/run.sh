@@ -21,7 +21,7 @@ cd "$(dirname "$0")"
 # its own history: the run's bytes (whales.R, whales.svg) at the first line, the records the verdict
 # reads at the second. At that release, drop both lines and regenerate with the suite's pin.
 : "${KTON_RAW_COMMIT:=23fd4136142f9373f4faef8804c55fe11748a699}"
-: "${KTON_RECORDS_COMMIT:=5ad071b9d37b35ab0791cb9f4790279f559b856e}"
+: "${KTON_RECORDS_COMMIT:=57ebabaebe692c3111d53ff276a04927e4a7a0dd}"
 source ../../lib/common.sh
 
 W=.work; D="$PWD/$W"
@@ -117,13 +117,13 @@ check(){
   local ts; ts=$(ls "$NEKTON_DIR"/objects/scope/*.nekton.jsonl)
   [ "$(printf '%s\n' "$ts" | wc -l)" -eq 1 ] || { echo "  !! $NEKTON_DIR holds more than one scope file" >&2; exit 1; }
   fr="${fr#"$PWD"/}"; ps="${ps#"$PWD"/}"; rs="${rs#"$PWD"/}"; ts="${ts#"$PWD"/}"
-  ./check.sh trust "$fr" "$ts" "$ps" "$rs" > "$C/verdict.csv"
+  ./check.sh trust trust/michael.pub "$fr" "$ts" "$ps" "$rs" > "$C/verdict.csv"
   sed 's/^/     /' "$C/verdict.csv"
   local ins=(--in check.sh --in four-eyes.rq --in "$fr" --in "$ts" --in "$ps" --in "$rs") k
   for k in trust/*.pub; do ins+=(--in "$k"); done
   # its inputs include record files, which carry the run's permalinks; so its own permalinks point at the
   # commit that holds those records (KTON_RECORDS_COMMIT), not at the one that holds the run's bytes
-  KTON_RAW_COMMIT="${KTON_RECORDS_COMMIT:-${KTON_RAW_COMMIT:-}}" plankton author --cmd "./check.sh trust $fr $ts $ps $rs   (oxigraph 0.5.12, ${OXIGRAPH##*@})" \
+  KTON_RAW_COMMIT="${KTON_RECORDS_COMMIT:-${KTON_RAW_COMMIT:-}}" plankton author --cmd "./check.sh trust trust/michael.pub $fr $ts $ps $rs   (oxigraph 0.5.12, ${OXIGRAPH##*@})" \
     "${ins[@]}" --out "$C/verdict.csv" --sign "$(K michael)" --add --print-id 2>/dev/null > "$C/foton.txt"
   echo "$fr $ts $ps $rs" > "$C/inputs"
 }
@@ -134,7 +134,7 @@ check review-whales
 echo "   verdict recorded as foton $(cat "$W/check/review-whales/foton.txt")"
 # re-derive: anyone with the same records, keys and rule runs the check again; same verdict bytes?
 read -r fr ts ps rs < "$W/check/review-whales/inputs"
-./check.sh trust "$fr" "$ts" "$ps" "$rs" > "$W/check/rederived.csv"
+./check.sh trust trust/michael.pub "$fr" "$ts" "$ps" "$rs" > "$W/check/rederived.csv"
 echo -n "   re-derived: "; plankton reproduces "$(plankton hash "$W/check/review-whales/verdict.csv")" "$(plankton hash "$W/check/rederived.csv")" | head -1
 
 echo

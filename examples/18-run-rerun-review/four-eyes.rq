@@ -1,18 +1,22 @@
 # The review rule, complete: four eyes, people only. Anchored by its hash before anyone reviews.
 #
 # What is checked comes from check.sh, in the graph <urn:kton:check>: the review scope R, the foton and
-# the hash of this file. Every claim is read through its own nanopublication: its signer from ITS
+# the hash of this file. The foton's lineage is in the graph <urn:kton:lineage>, and only there does the
+# rule read whether the foton verifies and who signed it. Every claim is read through its own nanopublication: its signer from ITS
 # provenance graph (verified against the trusted keys), its scope from ITS pubinfo graph. A triple that
 # merely appears in some other claim's assertion counts for nothing.
 #
-# - The owner is the verified signer of the genesis of P, the scope R names as its parent.
+# - The owner is given by check.sh (the checker's input, by keyid). P, the scope R names as its parent,
+#   counts only if the owner signed P's genesis; another signature on that genesis adds no owner.
 # - The rule holds only if the owner anchored R in P (review-initialised -> the rule claim) and the rule
 #   claim, signed by the owner in R, names the hash of THIS file.
 # - Who is a person or a software agent: only the owner's declarations in P.
 # - An approval counts only from R, with a verified signature, by a signer the owner declared a person
 #   and not a software agent, who is not a verified signer of the foton, and who also approved, in R,
 #   every description and rationale said about the foton (by claim id: a changed text is a new claim).
-# Four eyes = the rule holds, at least two counted approvals and no reject.
+# Four eyes = the foton verifies, the rule holds, at least two counted approvals and no reject.
+# There is always one row: a foton that does not verify, a rule that does not hold or a review without
+# verdicts says no explicitly rather than by an empty result.
 PREFIX nk:   <https://kton.dev/v/>
 PREFIX lab:  <https://kton.dev/v/lab/>
 PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -21,17 +25,18 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX np:   <http://www.nanopub.org/nschema#>
 PREFIX dct:  <http://purl.org/dc/terms/>
 PREFIX ep:   <https://w3id.org/ep-plan#>
-SELECT ?foton ?ruleAnchored
+SELECT ?foton ?fotonVerified ?ruleAnchored
        (COUNT(DISTINCT ?counted) AS ?approvalsByPeople)
        (COUNT(DISTINCT ?rejecter) AS ?rejects)
        (COUNT(DISTINCT ?text) AS ?textsOnFoton)
        (GROUP_CONCAT(DISTINCT ?note; separator=", ") AS ?reviewers)
-       (IF(?ruleAnchored = "yes" && COUNT(DISTINCT ?counted) >= 2 && COUNT(DISTINCT ?rejecter) = 0, "yes", "no") AS ?fourEyesPeopleOnly)
+       (IF(?fotonVerified = "yes" && ?ruleAnchored = "yes" && COUNT(DISTINCT ?counted) >= 2 && COUNT(DISTINCT ?rejecter) = 0, "yes", "no") AS ?fourEyesPeopleOnly)
 WHERE {
-  GRAPH <urn:kton:check> { ?chk nk:reviewScope ?R ; nk:foton ?foton ; nk:ruleFile ?ruleFile }
-  ?foton nk:signerVerified true .
+  GRAPH <urn:kton:check> { ?chk nk:reviewScope ?R ; nk:foton ?foton ; nk:ruleFile ?ruleFile ; nk:owner ?owner }
+  BIND(IF(EXISTS { GRAPH <urn:kton:lineage> { ?foton nk:signerVerified true } }, "yes", "no") AS ?fotonVerified)
 
-  # R's genesis names its parent P; the owner is the verified signer of P's genesis
+  # R's genesis names its parent P; P counts only if the owner signed its genesis
+  OPTIONAL {
   GRAPH ?gR_h { ?gR np:hasAssertion ?gR_a ; np:hasPublicationInfo ?gR_i }
   FILTER(STR(?gR_h) = CONCAT(STR(?gR), "#Head") && STR(?gR_a) = CONCAT(STR(?gR), "#assertion") && STR(?gR_i) = CONCAT(STR(?gR), "#pubinfo"))
   GRAPH ?gR_i { ?gR nk:scope ?R ; nk:genesis true }
@@ -40,9 +45,10 @@ WHERE {
   FILTER(STR(?gP_h) = CONCAT(STR(?gP), "#Head") && STR(?gP_a) = CONCAT(STR(?gP), "#assertion") && STR(?gP_p) = CONCAT(STR(?gP), "#provenance") && STR(?gP_i) = CONCAT(STR(?gP), "#pubinfo"))
   GRAPH ?gP_i { ?gP nk:scope ?P ; nk:genesis true }
   GRAPH ?gP_p { ?gP_a prov:wasAttributedTo ?owner ; nk:signerVerified true }
+  }
 
   # the rule holds: anchored by the owner in P, the rule claim by the owner in R names this file's hash
-  BIND(IF(EXISTS {
+  BIND(IF(BOUND(?P) && EXISTS {
     GRAPH ?an_h { ?an np:hasAssertion ?an_a ; np:hasProvenance ?an_p ; np:hasPublicationInfo ?an_i }
     FILTER(STR(?an_h) = CONCAT(STR(?an), "#Head") && STR(?an_a) = CONCAT(STR(?an), "#assertion") && STR(?an_p) = CONCAT(STR(?an), "#provenance") && STR(?an_i) = CONCAT(STR(?an), "#pubinfo"))
     GRAPH ?an_i { ?an nk:scope ?P }
@@ -56,11 +62,15 @@ WHERE {
   }, "yes", "no") AS ?ruleAnchored)
 
   # the verdicts on the foton, from R only
+  OPTIONAL {
   GRAPH ?v_h { ?v np:hasAssertion ?v_a ; np:hasProvenance ?v_p ; np:hasPublicationInfo ?v_i }
   FILTER(STR(?v_h) = CONCAT(STR(?v), "#Head") && STR(?v_a) = CONCAT(STR(?v), "#assertion") && STR(?v_p) = CONCAT(STR(?v), "#provenance") && STR(?v_i) = CONCAT(STR(?v), "#pubinfo"))
   GRAPH ?v_i { ?v nk:scope ?R }
   GRAPH ?v_p { ?v_a prov:wasAttributedTo ?who ; nk:signerVerified true }
   GRAPH ?v_a { ?foton nk:reviewed ?v_o . ?v_o lab:value ?verdict }
+  # a signer's name, not the "key:<keyid>" a record without a by gives it; no name shows as its IRI
+  OPTIONAL { ?who rdfs:label ?label FILTER(!STRSTARTS(STR(?label), "key:")) }
+  }
 
   # the texts said about the foton: verified description and rationale claims, by their claim id
   OPTIONAL {
@@ -88,14 +98,14 @@ WHERE {
   } AS ?uncovered)
 
   # who is who: the owner's declarations in P only
-  BIND(EXISTS {
+  BIND(BOUND(?P) && EXISTS {
     GRAPH ?k_h { ?k np:hasAssertion ?k_a ; np:hasProvenance ?k_p ; np:hasPublicationInfo ?k_i }
     FILTER(STR(?k_h) = CONCAT(STR(?k), "#Head") && STR(?k_a) = CONCAT(STR(?k), "#assertion") && STR(?k_p) = CONCAT(STR(?k), "#provenance") && STR(?k_i) = CONCAT(STR(?k), "#pubinfo"))
     GRAPH ?k_i { ?k nk:scope ?P }
     GRAPH ?k_p { ?k_a prov:wasAttributedTo ?owner ; nk:signerVerified true }
     GRAPH ?k_a { ?who rdf:type ?k_o . ?k_o ?k_tp prov:Person }
   } AS ?person)
-  BIND(EXISTS {
+  BIND(BOUND(?P) && EXISTS {
     GRAPH ?g_h { ?g np:hasAssertion ?g_a ; np:hasProvenance ?g_p ; np:hasPublicationInfo ?g_i }
     FILTER(STR(?g_h) = CONCAT(STR(?g), "#Head") && STR(?g_a) = CONCAT(STR(?g), "#assertion") && STR(?g_p) = CONCAT(STR(?g), "#provenance") && STR(?g_i) = CONCAT(STR(?g), "#pubinfo"))
     GRAPH ?g_i { ?g nk:scope ?P }
@@ -103,12 +113,10 @@ WHERE {
     GRAPH ?g_a { ?who rdf:type ?g_o . ?g_o ?g_tp prov:SoftwareAgent }
   } AS ?agent)
   # the foton's verified signers (plankton export --rdf --trust-keys): whoever ran it, first or again
-  BIND(EXISTS { ?foton prov:wasAttributedTo ?who } AS ?author)
-  # a signer's name, not the "key:<keyid>" a record without a by gives it; no name shows as its IRI
-  OPTIONAL { ?who rdfs:label ?label FILTER(!STRSTARTS(STR(?label), "key:")) }
+  BIND(EXISTS { GRAPH <urn:kton:lineage> { ?foton prov:wasAttributedTo ?who } } AS ?author)
   BIND(IF(?agent, "software agent", IF(?author, "signed the foton", IF(!?person, "not declared a person", IF(?uncovered, "did not cover the description and rationale", "")))) AS ?why)
   BIND(IF(STR(?verdict) = "approve" && ?why = "", ?who, ?unbound) AS ?counted)
   BIND(IF(STR(?verdict) = "reject", ?who, ?unbound) AS ?rejecter)
   BIND(CONCAT(COALESCE(?label, STR(?who)), " ", STR(?verdict), IF(?why = "", "", CONCAT(" (not counted: ", ?why, ")"))) AS ?note)
 }
-GROUP BY ?foton ?ruleAnchored
+GROUP BY ?foton ?fotonVerified ?ruleAnchored
