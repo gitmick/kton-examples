@@ -21,7 +21,7 @@ cd "$(dirname "$0")"
 # its own history: the run's bytes (whales.R, whales.svg) at the first line, the records the verdict
 # reads at the second. At that release, drop both lines and regenerate with the suite's pin.
 : "${KTON_RAW_COMMIT:=23fd4136142f9373f4faef8804c55fe11748a699}"
-: "${KTON_RECORDS_COMMIT:=5ad071b9d37b35ab0791cb9f4790279f559b856e}"
+: "${KTON_RECORDS_COMMIT:=963eff6a2d8d6b93bb0b7297481c82edbea6ae93}"
 source ../../lib/common.sh
 
 W=.work; D="$PWD/$W"
